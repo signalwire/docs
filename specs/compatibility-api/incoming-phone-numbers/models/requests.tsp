@@ -37,7 +37,6 @@ model CreateIncomingPhoneNumberRequest {
   @example("https://example.com/sms")
   SmsUrl?: string;
 
-  @webhook("incomingCallStatusCallback", InboundCallStatusCallbackPayload)
   @doc("The URL to request to pass status updates to. See the [Incoming call status callback](/docs/compatibility-api/rest/incoming-phone-numbers/webhooks/incoming-call-status-callback) webhook for the payload your URL will receive.")
   @format("uri")
   @example("https://example.com/status")

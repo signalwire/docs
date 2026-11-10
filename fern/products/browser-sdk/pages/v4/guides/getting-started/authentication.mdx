@@ -1,7 +1,7 @@
 ---
 title: "Authentication"
 subtitle: "Learn how to authenticate with the browser SDK client"
-slug: /guides/authentication
+slug: guides/authentication
 sidebar-title: "Authentication"
 position: 2
 max-toc-depth: 3
@@ -293,6 +293,46 @@ client.warnings$.subscribe((warning) => {
 });
 ```
 
+### When SignalWire refuses the SAT on a reconnect
+
+On a dropped connection, the SDK automatically reconnects and
+picks up the same session. That can succeed even after the SAT has expired,
+but the SDK then registers the client again, and SignalWire refuses to
+register an expired SAT. The SDK reports an `InvalidCredentialsError` on
+[`errors$`](/docs/browser-sdk/v4/reference/signalwire/errors$) and
+[`isRegistered$`](/docs/browser-sdk/v4/reference/signalwire/is-registered$)
+emits `false`: the client is still connected, but it no longer receives
+inbound calls. To avoid this, give the client a fresh SAT before the old one
+expires; a provider with
+[`refresh()`](/docs/browser-sdk/v4/reference/interfaces/credential-provider#refresh)
+or a Client Bound SAT does this for you.
+
+When the SDK can't pick up the session, it signs in again from scratch, which
+needs a SAT that SignalWire still accepts. A fresh SAT comes from your refresh
+path: for a Client Bound SAT, the SDK calls your provider's
+[`authenticate()`](/docs/browser-sdk/v4/reference/interfaces/credential-provider#authenticate)
+again; otherwise it calls your provider's
+[`refresh()`](/docs/browser-sdk/v4/reference/interfaces/credential-provider#refresh).
+
+When the session is Client Bound, or the credential your provider returned has
+passed its `expiry_at`, the SDK gets a fresh SAT before it signs in. If
+SignalWire refuses that SAT, the SDK doesn't try again.
+
+Otherwise the SDK signs in with the SAT it holds. If SignalWire refuses it,
+the SDK gets a fresh SAT and tries once more.
+
+A provider that always returns the same SAT, such as
+[`StaticCredentialProvider`](/docs/browser-sdk/v4/reference/credential-providers/static-credential-provider),
+can't supply a new one, so the SDK signs in with the old one.
+
+When the last attempt is refused, the SDK stops reconnecting, reports the
+error on [`errors$`](/docs/browser-sdk/v4/reference/signalwire/errors$), and
+disconnects the client, so
+[`isConnected$`](/docs/browser-sdk/v4/reference/signalwire/is-connected$) emits
+`false`. Once your provider can return a valid SAT, call
+[`connect()`](/docs/browser-sdk/v4/reference/signalwire/connect) again. With
+`StaticCredentialProvider`, create a new client with a fresh SAT instead.
+
 ## Connection lifecycle
 
 Constructing [`SignalWire`](/docs/browser-sdk/v4/reference/signalwire) runs three steps in sequence: authenticate the SAT, open the WebSocket, and register the user as online. Each step runs by default, and each can be deferred with a constructor option in [`SignalWireOptions`](/docs/browser-sdk/v4/reference/interfaces/signalwire-options) so your UI can drive it later.
@@ -301,7 +341,7 @@ Constructing [`SignalWire`](/docs/browser-sdk/v4/reference/signalwire) runs thre
 | --- | --- | --- | --- |
 | Open the WebSocket | runs | `skipConnection: true` | [`client.connect()`](/docs/browser-sdk/v4/reference/signalwire/connect) |
 | Register as online | runs | `skipRegister: true` | [`client.register()`](/docs/browser-sdk/v4/reference/signalwire/register) |
-| Persist across reloads | off | `persist: true` | (constructor only) |
+| Persist across reloads | off | `persistSession: true` | (constructor only) |
 
 ```ts Browser
 const client = new SignalWire(credentialProvider, {
@@ -309,9 +349,14 @@ const client = new SignalWire(credentialProvider, {
   skipRegister: true,
 });
 
-await client.connect();    // open the WebSocket when the user opts in
-await client.register();   // come online for inbound calls
+// Later, when the user opts in:
+document.getElementById("go-online").addEventListener("click", async () => {
+  await client.connect();    // open the WebSocket
+  await client.register();   // come online for inbound calls
+});
 ```
+
+With `persistSession: true` a Client Bound SAT survives a page reload: the SDK persists the token alongside its DPoP key pair in IndexedDB and re-binds on the new page rather than degrading the session to an unbound refresh token. The stored token is useless without the key, so the binding itself is the theft protection. If the persisted credential has expired by the time the page reloads, the SDK re-mints it through your credential provider before the session and its attach records are restored.
 
 ## Going online and offline
 
@@ -324,7 +369,7 @@ await client.unregister();   // go offline; socket stays open
 await client.register();     // come back online later
 ```
 
-Closing the session entirely is a separate step. [`disconnect()`](/docs/browser-sdk/v4/reference/signalwire/disconnect) closes the WebSocket, and [`destroy()`](/docs/browser-sdk/v4/reference/signalwire/destroy) wipes persisted state on explicit logout.
+Closing the session entirely is a separate step. Both [`disconnect()`](/docs/browser-sdk/v4/reference/signalwire/disconnect) and [`destroy()`](/docs/browser-sdk/v4/reference/signalwire/destroy) end the session and clear its persisted resume state and attach records — `disconnect()` tears down the WebSocket (the client can reconnect), while `destroy()` also releases all timers, subscriptions, and resources. Credentials and device preferences survive both; call [`resetToDefaults()`](/docs/browser-sdk/v4/reference/signalwire/reset-to-defaults) for a full wipe on explicit logout.
 
 Only credentials issued with full user (Subscriber) identity can register. Guest SATs, Invite SATs, and embed-derived Guest SATs are outbound-only, so `register()` is a no-op on those clients — inbound calls require a full Subscriber Access Token.
 
@@ -332,7 +377,7 @@ Only credentials issued with full user (Subscriber) identity can register. Guest
 
 Create a Subscriber Access Token (SAT) for your project using the request snippet below. Have your space name and an API token ready, with at least one of the **Voice / Messaging / Fax / Video** scopes. Both come from the API Credentials section of the SignalWire dashboard. Open the [Create Subscriber Token](/docs/apis/rest/subscribers/tokens/create-subscriber-token) reference to send the request with your space and credentials filled in.
 
-<Warning>
+<Warning title="Protect your Project API token">
 The Project API Token can issue a SAT for any user in your project. Use a development project, or rotate the API token afterward.
 </Warning>
 
@@ -341,6 +386,7 @@ The Project API Token can issue a SAT for any user in your project. Use a develo
 Copy the returned `token`, save the page below as `auth-demo.html`, and open it in a browser. Paste the SAT into the input, click **Authenticate**, and watch the log. It reports whether the SDK was able to open a session with the SAT.
 
 <Accordion title="auth-demo.html — full source">
+
 ```html
 <!doctype html>
 <html lang="en">
@@ -366,7 +412,12 @@ Copy the returned `token`, save the page below as `auth-demo.html`, and open it 
     <pre id="log"></pre>
 
     <script type="module">
-      import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@dev";
+      import {
+        SignalWire,
+        StaticCredentialProvider,
+        InvalidCredentialsError,
+        UnexpectedError,
+      } from "https://esm.sh/@signalwire/js@4.0.0-rc.5";
 
       const log = (msg) =>
         (document.getElementById("log").textContent += msg + "\n");
@@ -386,22 +437,32 @@ Copy the returned `token`, save the page below as `auth-demo.html`, and open it 
           if (ready) {
             log("Authenticated — WebSocket open.");
             readySub.unsubscribe(); // one-shot: stop after the first ready signal
+            errorsSub.unsubscribe();
           }
         });
 
+        // A malformed or refused SAT arrives on errors$. Other errors there,
+        // such as a device that can't be read, don't stop the connect.
         const errorsSub = client.errors$.subscribe((err) => {
-          log("Failed: " + (err.name || "Error") + " — " + err.message);
+          if (!(err instanceof InvalidCredentialsError || err instanceof UnexpectedError)) {
+            log("Warning: " + (err.name || "Error") + " — " + err.message);
+            return;
+          }
+          log("Failed: " + err.name + " — " + err.message);
+          readySub.unsubscribe();
+          errorsSub.unsubscribe();
+          client.disconnect(); // so a retry doesn't leave two clients behind
           button.disabled = false;
-          errorsSub.unsubscribe(); // when you're done
         });
       });
     </script>
   </body>
 </html>
 ```
+
 </Accordion>
 
-You should see `Authenticated — WebSocket open.` in the log. If you see `Failed: InvalidCredentialsError`, the SAT is expired, malformed, or issued for a different SignalWire space than the SDK is connecting to. Create a fresh one and try again.
+You should see `Authenticated — WebSocket open.` in the log. If you see `Failed: InvalidCredentialsError`, the string you pasted isn't a well-formed token. If you see `Failed: UnexpectedError — Unexpected Error at Error fetching user information`, SignalWire refused the SAT: it's expired, revoked, or issued for a different SignalWire space than the SDK is connecting to. Double-check the credentials, create a fresh SAT, and try again.
 
 ## Next steps
 
@@ -409,7 +470,7 @@ You should see `Authenticated — WebSocket open.` in the log. If you see `Faile
   <Card title="Inbound Calls" href="/docs/browser-sdk/v4/guides/inbound-calls" icon="fa-regular fa-phone-arrow-down-left">
     Receive incoming calls in a signed-in user session.
   </Card>
-  <Card title="Outbound Calls" href="/docs/browser-sdk/v4/guides/outbound-calls" icon="fa-regular fa-phone-arrow-up-right">
+  <Card title="Outbound Calls" href="/docs/platform/voice/make-and-receive-calls#place-a-call-from-a-browser" icon="fa-regular fa-phone-arrow-up-right">
     Dial users, rooms, or PSTN destinations.
   </Card>
   <Card title="Subscribers" href="/docs/platform/subscribers" icon="fa-regular fa-users">

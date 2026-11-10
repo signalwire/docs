@@ -1,0 +1,82 @@
+---
+title: "MediaAccessError"
+slug: /reference/errors/media-access-error
+description: "Thrown when local media (camera, microphone, or screen capture) cannot be acquired."
+max-toc-depth: 3
+---
+Raised when `getUserMedia` or `getDisplayMedia` fails to hand the SDK a local track — a denied permission, a device already held exclusively by another application, or a capture the browser refused.
+
+Non-fatal by default: a screen share or additional-device failure never ends the call, and a main-connection failure degrades to receive-only when the call is set to receive media. `fatal` is `true` only when the call cannot continue — [`fallbackToReceiveOnly`](/docs/browser-sdk/v4/reference/interfaces/media-options) was disabled, or the call has no receive intent to fall back to.
+
+## **Extends**
+
+- `Error`
+
+## **Constructors**
+
+### Constructor
+
+```ts
+new MediaAccessError(operation, media, originalError, fatal?): MediaAccessError
+```
+
+### Parameters
+
+<ParamField path="operation" type="string" required toc={true}>
+  The SDK operation that failed, e.g. `'acquireLocalMedia'`, `'startScreenShare'`, `'addInputDevice'`.
+</ParamField>
+
+<ParamField path="media" type="string" required toc={true}>
+  The media being acquired: `'audio'`, `'video'`, `'audiovideo'`, or `'screen'`.
+</ParamField>
+
+<ParamField path="originalError" type="unknown" required toc={true}>
+  The raw `getUserMedia`/`getDisplayMedia` error, typically a `DOMException`.
+</ParamField>
+
+<ParamField path="fatal" type="boolean" default="false" toc={true}>
+  Whether this failure terminates the call.
+</ParamField>
+
+## **Properties**
+
+<ParamField path="denied" type="boolean" required toc={true}>
+  Read-only. `true` when the underlying failure is a permission denial by the user or by policy — that is, when `originalError.name` is `NotAllowedError`, `SecurityError`, or `PermissionDeniedError`.
+</ParamField>
+
+<ParamField path="fatal" type="boolean" required toc={true}>
+  Whether this failure terminates the call.
+</ParamField>
+
+<ParamField path="media" type="string" required toc={true}>
+  The media being acquired: `'audio'`, `'video'`, `'audiovideo'`, or `'screen'`.
+</ParamField>
+
+<ParamField path="operation" type="string" required toc={true}>
+  The SDK operation that failed.
+</ParamField>
+
+<ParamField path="originalError" type="unknown" required toc={true}>
+  The raw `getUserMedia`/`getDisplayMedia` error.
+</ParamField>
+
+## **Examples**
+
+```ts
+import { MediaAccessError } from '@signalwire/js';
+
+call.errors$.subscribe(({ error, leg }) => {
+  if (error instanceof MediaAccessError) {
+    if (error.denied) {
+      showPermissionHelp(error.media);
+    } else if (leg === 'screenshare') {
+      toast('Screen share failed — the call is still connected.');
+    }
+  }
+});
+```
+
+## **See**
+
+- [`CallError`](/docs/browser-sdk/v4/reference/interfaces/call-error) — the envelope this arrives in on `errors$`, carrying `leg` and `legId`.
+- [`MediaOptions.fallbackToReceiveOnly`](/docs/browser-sdk/v4/reference/interfaces/media-options) — controls whether a main-connection failure is fatal.

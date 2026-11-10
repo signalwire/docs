@@ -2,7 +2,7 @@
 id: 7ddc31e0-f27e-435b-b311-874b591dea27
 title: Webhooks
 position: 0
-slug: /webhooks
+slug: webhooks
 description: An introduction to using webhooks to receive information and events about calls and messages.
 max-toc-depth: 3
 ---
@@ -37,13 +37,25 @@ flowchart LR
 
 In the SignalWire Dashboard, open the **My Resources** tab and click **+ Add**, then choose **SWML Script**.
 
+<llms-ignore>
+
 <Frame caption="The Resource selection menu">
 
 ![Selecting a Resource type in the SignalWire Dashboard](/assets/images/dashboard/resources/add-new-resource.webp)
 
 </Frame>
 
+</llms-ignore>
+
+<llms-only>
+
+In **My Resources**, select **+ Add**, then choose **Script** > **SWML Application**.
+
+</llms-only>
+
 Give the script a name, set **Handle Calls Using** to **External URL**, and enter your webhook URL in the **Primary Script URL** field. Click **Create** to save the Resource.
+
+<llms-ignore>
 
 <Frame caption="A SWML Script Resource configured to fetch SWML from an external webhook URL">
 
@@ -51,9 +63,19 @@ Give the script a name, set **Handle Calls Using** to **External URL**, and ente
 
 </Frame>
 
+</llms-ignore>
+
+<llms-only>
+
+In the **New SWML Application** form, enter a name, set **Handle Calls Using** to **External URL**, enter the webhook endpoint in **Primary Script URL**, and create the Resource.
+
+</llms-only>
+
 ### Assign the Resource to your phone number
 
 Open the **Phone Numbers** tab and select the number you want to configure.
+
+<llms-ignore>
 
 <Frame caption="The purchased phone number list in the SignalWire Dashboard">
 
@@ -61,13 +83,31 @@ Open the **Phone Numbers** tab and select the number you want to configure.
 
 </Frame>
 
+</llms-ignore>
+
+<llms-only>
+
+Open **Phone Numbers** > **Purchased**, search for the number if necessary, and select its name to open its settings.
+
+</llms-only>
+
 Click **Edit Settings**. Under **Inbound Call Settings** (or **Inbound Message Settings** for messaging), choose **Assign Resource**, select the Resource you created, and click **Save**.
+
+<llms-ignore>
 
 <Frame caption="Assigning a Resource to a phone number's inbound call settings">
 
 ![A phone number's settings page showing the Assign Resource option for inbound calls](/assets/images/dashboard/phone-numbers/assign-resource-full.webp)
 
 </Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+On the phone number's edit page, select **+ Assign Resource** under **Inbound Call Settings** for calls or **Inbound Message Settings** for messages. Choose the webhook Resource and save.
+
+</llms-only>
 
 </Steps>
 
@@ -86,7 +126,7 @@ Click **Edit Settings**. Under **Inbound Call Settings** (or **Inbound Message S
 ## Status callbacks to keep track of events
 
 Status callbacks are asynchronous HTTP requests SignalWire sends to your server as a call, 
-message, or recording moves through its lifecycle, so your application can react to each state change as it happens.
+message, or recording moves through its lifecycle, keeping your application informed of each state change.
 
 ```mermaid
 flowchart LR
@@ -117,16 +157,46 @@ A status of **Sent** means the message left SignalWire successfully.
 MMS messages do not support DLRs, so they only ever show **Sent**.
 </Info>
 
+### Status callbacks are advisory [#status-callback-reliability]
+
+Status callbacks are best-effort notifications, not a reliable realtime signal.
+They are delivered asynchronously over HTTP, so a callback can arrive late, arrive after a retry,
+or not arrive at all — if your server is unreachable when SignalWire sends the request, the
+callback is simply lost, and nothing notifies your application that it was missed.
+Because a missed callback is invisible to the receiver, never gate time-critical or
+business-critical actions (billing, compliance steps, call teardown, failover) solely on
+receiving one.
+
+For critical paths, use a mechanism whose failure modes are visible to your application:
+
+- **[RELAY over WebSocket](/docs/server-sdks/reference/python/relay)** (also for
+  [TypeScript](/docs/server-sdks/reference/typescript/relay)) — events arrive over a persistent
+  connection, so your client knows immediately when it is disconnected and can fail safe.
+  See the RELAY events reference for
+  [Python](/docs/server-sdks/reference/python/relay/events) and
+  [TypeScript](/docs/server-sdks/reference/typescript/relay/events).
+- **REST polling and reconciliation** — treat a callback as a hint: confirm the state with a
+  `GET` before acting, and run a periodic sweep to catch missed callbacks. Use
+  [Retrieve a call](/docs/compatibility-api/rest/calls/retrieve-a-call) and
+  [Retrieve a message](/docs/compatibility-api/rest/messages/retrieve-message) on the
+  Compatibility API, or [voice logs](/docs/apis/rest/voice-logs/get-voice-log) and
+  [message logs](/docs/apis/rest/message-logs/get-message-log) on the SignalWire REST API.
+- **In-call flow logic** — act on results inside the call flow instead of out-of-band. SWML's
+  [`connect`](/docs/swml/reference/calling/connect#variables) sets result variables
+  (`connect_result`) you can branch on, and cXML's
+  [`<Dial>` `action` URL](/docs/compatibility-api/cxml/reference/voice/dial#dial_action)
+  receives the dial outcome as part of document execution.
+
 <CardGroup cols={2}>
 <Card
   title="Message status callback"
-  href="/docs/apis/rest/messages/webhooks/message-status-callback"
+  href="/docs/apis/rest/webhooks/message-status-callback"
 >
   The full field reference and status values for outbound message status callbacks.
 </Card>
 <Card
   title="10DLC status callback"
-  href="/docs/apis/rest/campaign-registry/webhooks/ten-dlc-status-callback"
+  href="/docs/apis/rest/webhooks/ten-dlc-status-callback"
 >
   Receive 10DLC campaign registration status updates via webhooks.
 </Card>
@@ -137,11 +207,21 @@ MMS messages do not support DLRs, so they only ever show **Sent**.
 To verify webhooks that originated from SignalWire, SignalWire signs its requests with a digital HMAC security key. 
 You can verify that the security key matches the key documented in your Dashboard's [API Credentials](https://my.signalwire.com?page=credentials) with the `validateRequest` method.
 
+<llms-ignore>
+
 <Frame caption="The Signing Key on the API Credentials page">
 
 ![The API Credentials page in a SignalWire Space showing the signing key](/assets/images/dashboard/credentials/api-credentials-with-signing-key.webp)
 
 </Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+In the Dashboard, open **API Credentials**, find **Signing Key**, and select **Show** to reveal the key for the current project.
+
+</llms-only>
 
 <Warning title="This step is not optional!">
 For production applications, it is extremely important to verify the webhook signature to ensure the requests are coming from SignalWire and not a malicious third party.

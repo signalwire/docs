@@ -44,6 +44,7 @@ enum HandleCallsUsing {
 
 enum FabricResponseType {
   AiAgent: "ai_agent",
+  RemoteAiAgent: "remote_ai_agent",
   DialogflowAgent: "dialogflow_agent",
   CallFlow: "call_flow",
   SwmlWebhook: "swml_webhook",
@@ -63,4 +64,15 @@ union AddressChannel {
   AudioChannel,
   MessagingChannel,
   VideoChannel,
+}
+
+@doc("Codecs an address can enable for the calls it receives.")
+enum AddressCodec {
+  OPUS: "OPUS",
+  G722: "G722",
+  PCMU: "PCMU",
+  PCMA: "PCMA",
+  G729: "G729",
+  VP8: "VP8",
+  H264: "H264",
 }

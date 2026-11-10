@@ -20,7 +20,11 @@ namespace SignalWireAPI.Video.Logs {
   interface Logs {
     @operationId("list_logs")
     @summary("List video logs")
-    @doc("List the available logs.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Lists historical Video API activity in the project for usage review and troubleshooting. This collection does not manage live Rooms or Conferences; use [Get video log](/docs/apis/rest/video-logs/get-log) when you already have a log ID.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     list(...ListLogsRequest):
       | ListLogsResponse
       | StatusCode400
@@ -31,7 +35,11 @@ namespace SignalWireAPI.Video.Logs {
 
     @operationId("get_log")
     @summary("Get video log")
-    @doc("Find a log by ID.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Retrieves one historical Video API activity log by ID. Use it to inspect a record selected from [List video logs](/docs/apis/rest/video-logs/list-logs); this read-only endpoint reports past activity and does not control a live Room or Conference.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}")
     read(
       ...LogPathID,

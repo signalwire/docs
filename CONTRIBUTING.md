@@ -64,10 +64,15 @@ Almost all content lives under `fern/`:
 Page structure, required frontmatter, navigation, components, 
 and the strict MDX v3 syntax rules are all documented in the repo's authoring guides:
 
-- [`.claude/rules/documentation-style.md`](.claude/rules/documentation-style.md) — how to structure and format a page.
+- [`.claude/rules/mdx-style.md`](.claude/rules/mdx-style.md) — page types (Diátaxis) and writing voice.
+- [`.claude/rules/mdx-mechanics.md`](.claude/rules/mdx-mechanics.md) — frontmatter, structure, links, the LLM view, and MDX rules that break the build.
+- [`.claude/rules/mdx-components.md`](.claude/rules/mdx-components.md) — the component catalog (house set, custom components, what not to use).
+- [`.claude/rules/mdx-reference-pages.md`](.claude/rules/mdx-reference-pages.md) — reference-page patterns (`ParamField`, section names, examples).
+- [`.claude/rules/mdx-capability-guides.md`](.claude/rules/mdx-capability-guides.md) — guide template and SDK-first examples, with cURL after the SDKs.
 - [`.claude/rules/docs-conventions.md`](.claude/rules/docs-conventions.md) — which docs are hand-authored vs. generated.
 
 These are the single source of truth (and double as the guardrails your AI editor loads automatically), so follow them rather than any summary here.
+The research and rationale behind them lives in [`.claude/docs/mdx-style-reference.md`](.claude/docs/mdx-style-reference.md).
 
 ### Edit the source, not the output
 
@@ -79,6 +84,9 @@ so the committed OpenAPI/JSON Schema files under `fern/apis/**` and `specs/swml/
 > Never hand-edit generated files.
 > Change the `.tsp` source in `specs/`, then rebuild with `yarn build:specs` and commit both the source and the regenerated output.
 > See [API specifications](README.md#api-specifications) in the README for the full spec workflow.
+
+> [!NOTE]
+> The OpenAPI emitters (`@signalwire/*` under `specs/emitters/`) are local workspace packages that must be built before the specs compile. `yarn build:specs` handles this for you — prefer it over running an internal sub-step like `build:signalwire-rest` directly. If a build fails with `Couldn't resolve import "@signalwire/..."` or `missing-implementation: Extern declaration...`, the emitter symlinks are missing — run `yarn install`, then rebuild.
 
 ## Checks your PR has to pass
 

@@ -20,7 +20,11 @@ namespace SignalWireAPI.Video.RoomTokens {
   interface RoomTokens {
     @operationId("create_room_token")
     @summary("Create room token")
-    @doc("Generate a Room Token allowing a client to join a Room.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Creates a Room Token that a client consumes to join a named Video Room with the supplied identity, permissions, join window, and media settings. Call this operation from your server when granting a user access to an SDK-based room; never expose the project API token used to create it. Managed Video Conferences use their own [Conference Tokens](/docs/apis/rest/video/conference-tokens/list-conference-tokens).
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @post
     create(@body body: CreateRoomTokenRequest):
       | RoomTokenResponse

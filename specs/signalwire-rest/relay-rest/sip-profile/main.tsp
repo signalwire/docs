@@ -19,7 +19,7 @@ namespace SignalWireAPI.RelayRest.SipProfile {
     @operationId("retrieve_sip_profile")
     @summary("Get SIP profile")
     @doc("""
-      Retrieves the SIP profile settings for your project.
+      Retrieves the SIP Profile shared across your SignalWire project. The profile supplies project-wide defaults to SIP Credentials that use it; individual registering devices and external destinations are represented by [SIP Credentials](/docs/apis/rest/sip-credentials/get-sip-credential) and [SIP Gateways](/docs/apis/rest/sip-gateway/get-sip-gateway).
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -29,14 +29,16 @@ namespace SignalWireAPI.RelayRest.SipProfile {
     @operationId("update_sip_profile")
     @summary("Update SIP profile")
     @doc("""
-      Updates the SIP profile settings for your project.
-      
+      Changes the project-wide defaults that SIP Credentials use for registration, media, security, and outbound calling. This updates the project's single SIP Profile; it does not create or update an individual [SIP Credential](/docs/apis/rest/sip-credentials/update-sip-credential) or [SIP Gateway](/docs/apis/rest/sip-gateway/update-sip-gateway).
+
+      Omitted fields keep their current values. If you send back a body read from [Get SIP profile](/docs/apis/rest/sip-profile/retrieve-sip-profile), remove `default_send_as` or set it to `null` when it reads `random`, because `random` is not accepted as input.
+
       ${tokenPermissions<"_Voice_">}
       """)
     @put
     update(@body body: UpdateSipProfileRequest):
       | {
-          @statusCode statusCode: 201;
+          @statusCode statusCode: 200;
           @body sip_profile: SipProfileResponse;
         }
       | StatusCode401

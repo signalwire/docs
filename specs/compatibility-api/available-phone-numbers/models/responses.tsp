@@ -8,6 +8,14 @@ model AvailablePhoneNumberListResponse {
   @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/AvailablePhoneNumbers/US/Local")
   uri: string;
 
+  @doc("The search filters applied to this request, keyed by query parameter name. Filters sent with an empty value are left out.")
+  @example(#{ AreaCode: "918" })
+  filters: Record<string>;
+
+  @doc("The names of query parameters in this request that the search doesn't recognize and didn't apply. Parameter names are case-sensitive.")
+  @example(#[])
+  ignored_parameters: string[];
+
   @doc("List of available phone numbers.")
   available_phone_numbers: AvailablePhoneNumber[];
 }

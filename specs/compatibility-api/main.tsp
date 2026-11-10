@@ -19,6 +19,7 @@ import "./recordings/main.tsp";
 import "./transcriptions/main.tsp";
 import "./queues/main.tsp";
 import "./tokens/main.tsp";
+import "./webhooks/main.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;

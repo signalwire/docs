@@ -6,7 +6,7 @@ namespace SWML.Calling;
 
 @summary("native_functions")
 enum SWAIGNativeFunction {
-  @doc("Returns the current time for the time zone set in ai.local_tz.")
+  @doc("Returns the current time for the time zone set in `ai.params.local_tz`.")
   check_time,
 
   @doc("Waits for the given time")

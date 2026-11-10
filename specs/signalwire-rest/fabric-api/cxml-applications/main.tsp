@@ -21,7 +21,7 @@ namespace SignalWireAPI.Fabric.CxmlApplications {
     @operationId("list_cxml_applications")
     @summary("List cXML applications")
     @doc("""
-      A list of cXML Applications
+      Lists the project's addressable cXML Applications, which provide reusable voice and messaging routing. These are the same applications exposed by the Compatibility API's [Applications](/docs/compatibility-api/rest/applications/list-applications), which is also where new ones are created. Use [cXML Webhooks](/docs/apis/rest/cxml-webhook/list-cxml-webhooks) when your server supplies cXML for each request.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -34,7 +34,7 @@ namespace SignalWireAPI.Fabric.CxmlApplications {
     @operationId("get_cxml_application")
     @summary("Get cXML application")
     @doc("""
-      Returns a cXML Application by ID
+      Retrieves one cXML Application resource by ID so you can inspect its voice and messaging routing. Use [List cXML applications](/docs/apis/rest/cxml-applications/list-cxml-applications) to discover IDs, or Compatibility [Get application](/docs/compatibility-api/rest/applications/get-application) when your integration holds an Application SID.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -50,7 +50,7 @@ namespace SignalWireAPI.Fabric.CxmlApplications {
     @operationId("update_cxml_application")
     @summary("Update cXML application")
     @doc("""
-      Updates a cXML Application by ID
+      Changes where a cXML Application sends voice and messaging requests and callbacks. Compatibility [Update application](/docs/compatibility-api/rest/applications/update-application) manages the same application by Application SID; use whichever identifier your integration holds.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -71,7 +71,7 @@ namespace SignalWireAPI.Fabric.CxmlApplications {
     @operationId("delete_cxml_application")
     @summary("Delete cXML application")
     @doc("""
-      Deletes a LAML Application by ID
+      Deletes a cXML Application by resource ID, removing its addresses and the corresponding Compatibility API [Application](/docs/compatibility-api/rest/applications/list-applications) as well. An individual cXML Webhook is a separate resource with its own delete operation.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

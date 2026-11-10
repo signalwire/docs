@@ -1,0 +1,132 @@
+import "@typespec/json-schema";
+import "../../../Shared/Types/main.tsp";
+import "./ai_languages.tsp";
+import "./_shared/fillers.tsp";
+
+using TypeSpec.JsonSchema;
+
+namespace SWML.Calling;
+
+// A multilingual entry is flat: parse_multilingual reads only `language`, `voice`, `engine`,
+// `model`, and `params`. The last four are shared with `languages[]` and picked from
+// LanguagesBase so their descriptions live in one place. Anything added to LanguagesBase must
+// be picked in here deliberately, or it would appear in the schema while the engine ignores it.
+union PickedMultilingualLanguage {
+  "voice",
+  "engine",
+  "model",
+  "params",
+}
+
+@summary("MultilingualLanguage")
+model MultilingualLanguage {
+  @doc("""
+    The language this voice applies to, as a code the ASR engine supports.
+    Use `default` instead of a code to mark the catch-all entry, which speaks any
+    detected language that has no entry of its own.
+    """)
+  @example("es")
+  language: string;
+
+  // `voice` is required on `languages[]` but not here. Only the base entry — the `default`
+  // entry when one is given, otherwise the first language listed — has to carry a voice; an
+  // entry without one is answered in the base voice. OptionalProperties relaxes just that,
+  // and keeps the descriptions in LanguagesBase rather than restating them here.
+  ...OptionalProperties<PickProperties<LanguagesBase, PickedMultilingualLanguage>>;
+}
+
+@summary("multilingual")
+model Multilingual {
+  @doc("""
+    An array of voices, one per language the agent speaks.
+    At least one entry must supply a `voice`, either an entry with `language` set to
+    `default` or the first language listed. Without one, multilingual mode does not
+    start and the agent falls back to a single English voice.
+    """)
+  languages: MultilingualLanguage[];
+
+  @doc("""
+    Restricts the agent to this set of language codes. The speech recognition engine still
+    transcribes whatever it hears, but the agent will not switch into a language outside the
+    list — it keeps the language it is already speaking. The list also tells the agent, in its
+    prompt, which languages are in play. Every code must be supported by the ASR engine and
+    model in use, or multilingual mode does not start.
+    Omit to let the agent follow the caller into any language the ASR engine detects.
+    """)
+  @example(#["en", "es", "fr"])
+  allowed?: string[];
+
+  @doc("""
+    The ASR (Automatic Speech Recognition) engine used to detect the spoken language.
+    This is separate from the TTS engine that speaks each voice.
+    If you leave it unset, `deepgram` is used.
+    Do not set this alongside `params.openai_asr_engine`, which overrides both this engine and
+    `model`. When both are present, the `params` value wins.
+    """)
+  @example("deepgram")
+  engine?: string;
+
+  @doc("The ASR model used to detect the spoken language. The model must support code-switching, or multilingual mode does not start.")
+  @example("nova-3")
+  `model`?: string = "nova-3";
+
+  @doc("""
+    The ASR provider used to detect the spoken language.
+    If you leave it unset, the provider already configured for the agent is used, falling back to
+    `deepgram` when the agent has none. Setting it here also applies it to the recognizer.
+    """)
+  @example("deepgram")
+  provider?: string;
+
+  @doc("""
+    The language the agent opens the conversation in, before the caller has said
+    anything for the ASR engine to detect.
+    """)
+  @example("en")
+  start_language?: string = "en";
+
+  @doc("""
+    How many words a caller must say before the agent will switch languages.
+    A single word is often the same in several languages — a name, `no`, `ok` — so a
+    one-word turn is an unreliable signal. Set to `1` to allow single-word switches.
+    A value below `1` is treated as the default of `2` rather than rejected.
+    """)
+  @minValue(1)
+  @example(2)
+  min_switch_words?: integer = 2;
+
+  @doc("""
+    Fillers used to break silence between turns. This is the speech filler map, so it is the
+    counterpart of `languages[].speech_fillers` rather than of `languages[].fillers`, which is
+    a deprecated spelling of `function_fillers`.
+    Supply an array to have the fillers translated into whichever language the caller
+    is speaking, or an object keyed by language code to set them per language verbatim.
+    An `auto` key inside the object is translated the same way an array is.
+    """)
+  @example(#["umm", "hmm"])
+  fillers?: string[] | FunctionFillers;
+
+  @doc("""
+    Fillers used while a SWAIG function runs.
+    Supply an array to have the fillers translated into whichever language the caller
+    is speaking, or an object keyed by language code to set them per language verbatim.
+    An `auto` key inside the object is translated the same way an array is.
+    """)
+  @example(#["great", "ok"])
+  function_fillers?: string[] | FunctionFillers;
+
+  @doc("""
+    Short backchannels played while the caller still has the floor and the agent is
+    deliberately waiting, as when they spell a name or read out a number, to signal it
+    is still listening. Which waits earn one is set by `params.turn_filler_sources`.
+
+    Supply an object keyed by language code, optionally with a `default` key for
+    languages you have not listed. These fillers are never translated on the fly, so
+    the `auto` key does not apply here — resolving them has to be fast enough to play
+    immediately. An array is accepted and treated as the `default` set.
+
+    An entry that is an absolute path or a `scheme://` URI is played as audio instead of
+    being spoken, which is a way to use a recorded backchannel.
+    """)
+  turn_fillers?: string[] | TurnFillers;
+}

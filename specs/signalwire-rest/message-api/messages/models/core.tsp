@@ -54,6 +54,12 @@ enum MessageKind {
 
   @doc("MMS message containing media.")
   mms,
+
+  @doc("WhatsApp message.")
+  whatsapp,
+
+  @doc("RCS message.")
+  rcs,
 }
 
 @doc("A message record. Returned by the create and update endpoints.")

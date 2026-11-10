@@ -1,7 +1,9 @@
 import "@typespec/http";
 import "@typespec/openapi3";
 import "@typespec/json-schema";
-import "../../../../swml/calling";
+import "../../../../swml/calling/Methods/ai_sidecar";
+import "../../../../swml/calling/Methods/live_translate";
+import "../../../fabric-api/_shared/const.tsp";
 import "./core.tsp";
 
 using TypeSpec.Http;
@@ -14,21 +16,23 @@ using SWML.Calling;
 
 const CallSWMLExample = "{'version': '1.0.0', 'sections': { 'main': [{ 'answer': { 'max_duration': 60 }},{ 'play': { 'urls': ['silence:2', 'say:Hello from SignalWire!']}}]}}";
 
+const CallSWMLDocumentExample = SWML_CONTENTS_EXAMPLE;
+
 const CallFallbackURLExample = "https://example.com/fallback";
 
 const CallSWMLURLExample = "https://example.com/swml";
 
 const CallIdExample = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
 
-const updateCommandDescription = "The `update` command is used to update a existing call with a new dialplan.";
+const updateCommandDescription = "The `update` command is used to update an existing call with a new dialplan.";
 
-const uuidDescription = "The unique identifying ID of a existing call.";
+const uuidDescription = "The unique identifying ID of an existing call.";
 
 const paramsDescription = "An object of parameters that will be utilized by the active command.";
 
 alias CallCreateParamsAlias = CallCreateParamsURL | CallCreateParamsSWML;
 
-alias CallUpdateParamsAlias = CallUpdateParamsURL | CallUpdateParamsSWML;
+alias CallUpdateParamsAlias = CallUpdateParamsStatus | CallUpdateParamsURL | CallUpdateParamsSWML;
 
 @doc("The reason for hanging up the call.")
 enum HangupReason {
@@ -52,6 +56,11 @@ enum HangupReason {
 }
 
 @summary("calling.end")
+@doc("""
+  Ends the call. The optional `reason` selects the hangup cause reported for the call;
+  omitted, the call ends as a normal hangup. To disconnect only the peer leg of a
+  connected call and keep this leg up, use `calling.disconnect` instead.
+  """)
 model CallHangupRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -69,6 +78,11 @@ model CallHangupRequest {
   };
 }
 @summary("calling.ai_hold")
+@doc("""
+  Places a call that is on a live AI agent session on hold. The optional `prompt` is
+  spoken to the caller before hold begins, and `timeout` limits how long the hold lasts.
+  Requires an active AI agent on the call; resume with `calling.ai_unhold`.
+  """)
 model CallHoldRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -80,20 +94,32 @@ model CallHoldRequest {
 
   @doc(paramsDescription)
   params: {
-    @doc("Hold timeout, expressed as a numeric string of seconds. Note: must be sent as a string — integer payloads are rejected.")
-    @example("300")
-    timeout?: string;
+    @doc("""
+      How long to hold the caller, in seconds. Accepts an integer, a string of digits such as
+      `"120"`, or a `"M:SS"` or `"H:MM:SS"` string, where `"1:30"` is 90 seconds. Unit suffixes
+      aren't supported: the letters `h`, `m`, and `s` are dropped and the remaining digits are read
+      as seconds, so `"5m"` is 5 seconds and `"1h30m"` is 130 seconds. Any other letter, or a letter
+      mixed with `:`, makes the string unparseable. The maximum and
+      default is `300`: a value above `300`, a value of `0` or less, or a string that can't be
+      parsed holds for `300` seconds.
+      """)
+    @example(300)
+    timeout?: int32 | string;
 
     @doc("""
       A system message added to the AI conversation before placing the caller on hold.
       The AI will speak this message to the caller before hold music begins.
       """)
     @example("Please hold while I transfer you to a specialist.")
-    prompt?: string;
+    prompt?: string = "Tell the user you are putting them on hold.";
   };
 }
 
 @summary("calling.ai_unhold")
+@doc("""
+  Takes a call off AI hold and resumes the conversation with the AI agent. The optional
+  `prompt` is added to the conversation as the caller comes off hold.
+  """)
 model CallUnholdRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -104,7 +130,11 @@ model CallUnholdRequest {
   command: "calling.ai_unhold";
 
   @doc(paramsDescription)
-  params: {};
+  params: {
+    @doc("A system message added to the AI conversation when taking the caller off hold.")
+    @example("The user has been taken off hold.")
+    prompt?: string = "The user has been taken off hold.";
+  };
 }
 
 @doc("Parameters for resetting the AI conversation state.")
@@ -123,6 +153,11 @@ model CallAIMessageResetParams {
 }
 
 @summary("calling.ai_message")
+@doc("""
+  Injects a message into the conversation of the AI agent on the call — as the `system`,
+  `user`, or `assistant` role — or resets the conversation state via `reset`.
+  Requires an active AI agent session on the call.
+  """)
 model CallAIMessageRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -167,6 +202,7 @@ model CallAIMessageRequest {
 // TranscribeDirection, SpeechEngine, and SupportedAIModels are imported from the SWML module
 
 @summary("start Action")
+@doc("Starts a live transcription session on the call.")
 model LiveTranscribeStartAction {
   @doc("Starts live transcription of the call.")
   start: {
@@ -220,6 +256,7 @@ model LiveTranscribeStartAction {
 }
 
 @summary("summarize Action")
+@doc("Requests an on-demand AI summary of the conversation transcribed so far.")
 model LiveTranscribeSummarizeAction {
   @doc("Request an on-demand AI summary of the conversation.")
   summarize: {
@@ -242,6 +279,12 @@ enum LiveTranscribeStopAction {
 alias LiveTranscribeAction = LiveTranscribeStartAction | LiveTranscribeSummarizeAction | LiveTranscribeStopAction;
 
 @summary("calling.live_transcribe")
+@doc("""
+  Controls real-time transcription on the call. The `action` starts a session, requests an
+  on-demand summary, or stops the session; transcription events and summaries are delivered
+  to the webhook configured on the action. To transcribe the whole call in the background
+  instead, use `calling.transcribe`.
+  """)
 model CallLiveTranscribeRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -265,6 +308,7 @@ model CallLiveTranscribeRequest {
 // TranslationFilterPreset, CustomTranslationFilter, and TranslationFilter are imported from the SWML module
 
 @summary("start Action")
+@doc("Starts a live translation session between the two configured languages.")
 model LiveTranslateStartAction {
   @doc("Starts live translation of the call.")
   start: {
@@ -338,6 +382,7 @@ model LiveTranslateStartAction {
 }
 
 @summary("summarize Action")
+@doc("Requests an on-demand AI summary of the translated conversation.")
 model LiveTranslateSummarizeAction {
   @doc("Request an on-demand AI summary of the translated conversation.")
   summarize: {
@@ -352,6 +397,7 @@ model LiveTranslateSummarizeAction {
 }
 
 @summary("inject Action")
+@doc("Injects a message into the conversation, translated and spoken in the chosen direction.")
 model LiveTranslateInjectAction {
   @doc("Inject a message into the conversation to be translated and spoken.")
   inject: {
@@ -378,6 +424,11 @@ alias LiveTranslateAction =
   | LiveTranslateStopAction;
 
 @summary("calling.live_translate")
+@doc("""
+  Controls real-time translation on the call. The `action` starts a session between two
+  languages, requests an on-demand summary, injects a message to be translated and spoken,
+  or stops the session; translation events are delivered to the configured webhook.
+  """)
 model CallLiveTranslateRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -399,6 +450,12 @@ model CallLiveTranslateRequest {
 }
 
 @summary("dial")
+@doc("""
+  Creates a new outbound call from `from` to `to`, handled by the SWML you supply — fetched
+  from `url` or provided inline as `swml`. The response returns the new call immediately;
+  the lifecycle events selected in `status_events` are delivered to `status_url` as the call
+  progresses. This is the only command that does not take a call `id`.
+  """)
 model CallCreateRequest {
   @doc("The `dial` command is used to create a new call.")
   @example("dial")
@@ -408,6 +465,25 @@ model CallCreateRequest {
   params: CallCreateParamsAlias;
 }
 
+// Not SWML.Calling.ConnectHeaders: the REST API validates `dial` headers with its own
+// name/value rules (pattern, reserved names, 1024-byte cap), so this is a separate contract.
+@summary("SIP header")
+@doc("A custom SIP header to add to the outbound call.")
+model CallSipHeader {
+  @doc("The header name. Must be a single SIP header token: letters, digits, and the symbols ``! # $ % & ' * + - . ^ _ ` | ~``, with no spaces. `Identity` and `X-ProjectID` are reserved and can't be set, in any letter case.")
+  @example("X-Custom-Header")
+  @minLength(1)
+  @pattern("^[!#$%&'*+\\-.^_`|~0-9A-Za-z]+$")
+  name: string;
+
+  @doc("The header value. Must not be empty or contain line breaks (CR or LF) or null characters. At most 1024 bytes, which can be fewer than 1024 characters.")
+  @example("custom-value")
+  @minLength(1)
+  @maxLength(1024)
+  value: string;
+}
+
+@doc("Common `dial` parameters, shared by the URL and inline-SWML forms of the command.")
 model CallCreateParamsBase {
   @doc("The address that initiates the call. For PSTN destinations, must be an E.164 number; for SIP/Verto destinations may also be a SIP URI (`sip:user@host`) or a short caller-id token.")
   @example("sip:from-sip@example-112233445566.sip.signalwire.com")
@@ -417,9 +493,18 @@ model CallCreateParamsBase {
   @example("sip:from-sip@example-112233445567.sip.signalwire.com")
   to?: string;
 
-  @doc("Inline SWML document (JSON or YAML string), or an `http(s)://` URL that returns one, executed at the destination end. Useful for directing the call to a RelayBin / external SWML handler. When present, `to` may be omitted.")
+  @doc("SIP authentication username, forwarded to the destination when `to` is a SIP URI. Ignored for PSTN and WebRTC/Verto destinations. Write-only — never returned in the call response.")
+  @example("alice")
+  username?: string;
+
+  @doc("SIP authentication password, forwarded to the destination when `to` is a SIP URI. Ignored for PSTN and WebRTC/Verto destinations. Write-only — never returned in the call response.")
+  @example("s3cr3t")
+  password?: string;
+
+  @doc("Inline [Calling SWML document](/docs/swml/reference/calling) (JSON or YAML string), or an `http(s)://` URL that returns one, executed at the destination end. Useful for directing the call to a RelayBin / external SWML handler. When present, `to` may be omitted.")
   @example("https://example.com/destination.swml.json")
-  to_script?: string | SWMLObject;
+  @example(CallSWMLDocumentExample)
+  to_script?: string | TypeSpec.Record<unknown>;
 
   @doc("Caller ID displayed to the destination. E.164 for PSTN; short caller-id token or SIP URI for SIP/Verto.")
   @example("+1234567890")
@@ -429,13 +514,21 @@ model CallCreateParamsBase {
   @example(CallFallbackURLExample)
   fallback_url?: string;
 
-  @doc("HTTP or HTTPS URL that receives call lifecycle webhooks for events listed in `status_events`.")
+  @doc("HTTP or HTTPS URL that receives [call state callbacks](/docs/apis/rest/webhooks/call-state-status-callback) for the states listed in `status_events`.")
   @example("https://example.com/status_callback")
   status_url?: url;
 
-  @doc("Call lifecycle events that will be delivered to `status_url`.")
+  @doc("""
+    Call states that are delivered to `status_url` as [call state callbacks](/docs/apis/rest/webhooks/call-state-status-callback).
+    Each value matches the `call_state` of the callback it selects.
+    """)
   @example(#["answered", "ended"])
-  status_events?: ("created" | "ringing" | "answered" | "ended")[] = #["ended"];
+  status_events?: (
+    | "created"
+    | "ringing"
+    | "answered"
+    | "ending"
+    | "ended")[] = #["ended"];
 
   @doc("HTTP method used when requesting the `url`. Defaults to `POST`.")
   @example("POST")
@@ -450,6 +543,25 @@ model CallCreateParamsBase {
   ])
   codecs?: OutboundCallCodec[] | string;
 
+  @doc("""
+    Transport for SIP signaling to the destination. Only valid when `to` is a SIP URI (`sip:` or `sips:`) for a host outside SignalWire; for any other destination the request returns 422.
+    
+    Setting `transport` has the same effect as adding `;transport=` to the `to` URI. If `to` already sets a transport, either with `;transport=` or by being a `sips:` URI (which means `tls`), the two must match or the request returns 422. When neither sets one, SignalWire chooses the transport from the destination's DNS records (NAPTR, then SRV) and falls back to `udp`.
+    
+    The transport also decides media encryption. With `udp` or `tcp`, media is sent as unencrypted RTP. With `tls`, or with no transport set, SignalWire offers SRTP and accepts RTP if the destination declines it.
+    """)
+  @example("tls")
+  transport?: "udp" | "tcp" | "tls";
+
+  @doc("""
+    Custom SIP headers to add to the outbound call's INVITE, for example to carry routing or tracing metadata to the destination. At most 20 headers.
+
+    If any header breaks the rules for `name` or `value`, or there are more than 20, the request returns 422.
+    """)
+  @example(#[#{ name: "X-Custom-Header", value: "custom-value" }])
+  @maxItems(20)
+  headers?: CallSipHeader[];
+
   @doc("Ring timeout in seconds. Must be between 1 and 600.")
   @example(30)
   @minValue(1)
@@ -461,8 +573,10 @@ model CallCreateParamsBase {
   @minValue(0)
   max_price_per_minute?: float64;
 
-  @doc("DTMF digits to send after the call is answered. Allowed characters: `0-9`, `A-D`, `*`, `#`, `w` (wait), `,` (pause).")
+  @doc("DTMF digits to send after the call is answered, at most 98 characters. Allowed characters: `0-9`, `A-D`, `*`, `#`, and the pauses `w` (0.5 seconds), `W` (1 second), and `,` (0.5 seconds). SignalWire waits 0.5 seconds after answer before sending the first digit.")
   @example("1234#")
+  @pattern("^[0-9A-Da-d*#wW,]{1,98}$")
+  @maxLength(98)
   send_digits?: string;
 
   @doc("Preferred FreeSWITCH region(s) for call routing. Must be drawn from the project's available regions. Accepts a single region or a priority-ordered array.")
@@ -482,6 +596,7 @@ model CallCreateParamsBase {
 }
 
 @summary("dial (URL)")
+@doc("`dial` parameters for a call whose handling SWML is fetched from `url`.")
 model CallCreateParamsURL is CallCreateParamsBase {
   @doc("""
     The URL to handle the call. This parameter allows you to specify a webhook or different route in your code containing SWML instructions for handling the call.
@@ -492,12 +607,18 @@ model CallCreateParamsURL is CallCreateParamsBase {
 }
 
 @summary("dial (Inline SWML)")
+@doc("`dial` parameters for a call whose handling SWML is provided inline in `swml`.")
 model CallCreateParamsSWML is CallCreateParamsBase {
-  @doc("Inline SWML object containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
-  swml: SWMLObject;
+  @doc("Inline [Calling SWML document](/docs/swml/reference/calling) containing instructions for handling the call, as a JSON object or as a JSON or YAML string. Either `url` or `swml` must be included for a new call.")
+  @example(CallSWMLDocumentExample)
+  swml: string | TypeSpec.Record<unknown>;
 }
 
 @summary("update")
+@doc("""
+  Common `update` parameters: cancel or complete the call with `status`, or redirect it by
+  supplying new SWML through the URL or inline form.
+  """)
 model CallUpdateParamsBase {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -519,17 +640,29 @@ model CallUpdateParamsBase {
   status_url?: url;
 }
 
+@summary("update (Status)")
+@doc("`update` parameters that cancel or end the call with `status` alone, without new SWML.")
+model CallUpdateParamsStatus {
+  ...OmitProperties<CallUpdateParamsBase, "status">;
+
+  @doc("Either `canceled` (to cancel a not yet connected call) or `completed` (to end a call that is in progress).")
+  @example("completed")
+  status: "canceled" | "completed";
+}
+
 @summary("update (Inline SWML)")
+@doc("`update` parameters that redirect the call to SWML provided inline in `swml`.")
 model CallUpdateParamsSWML is CallUpdateParamsBase {
-  @doc("Inline SWML object containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
-  swml: SWMLObject;
+  @doc("Inline [Calling SWML document](/docs/swml/reference/calling) containing the new instructions for handling the call, as a JSON object or as a JSON or YAML string.")
+  @example(CallSWMLDocumentExample)
+  swml: string | TypeSpec.Record<unknown>;
 }
 
 @summary("update (URL)")
+@doc("`update` parameters that redirect the call to SWML fetched from `url`.")
 model CallUpdateParamsURL is CallUpdateParamsBase {
   @doc("""
     The URL to handle the call. This parameter allows you to specify a webhook or different route in your code containing SWML instructions for handling the call.
-    Either `url` or `swml` must be included for a new call.
     """)
   @example(CallSWMLURLExample)
   url: string;
@@ -537,6 +670,9 @@ model CallUpdateParamsURL is CallUpdateParamsBase {
 
 /**
  * Update a call in progress — cancel, complete, or redirect the SWML flow.
+ *
+ * To cancel or end the call, send `status` on its own; no `url` or `swml` is needed.
+ * To redirect the call, send `url` or `swml` with the new SWML.
  *
  * State-transition rules:
  * - `status: canceled` is only valid while the leg is `queued` or `ringing`.
@@ -559,6 +695,13 @@ model CallUpdateCurrentCallRequest {
 // ============================================
 
 @summary("calling.disconnect")
+@doc("""
+  Disconnects the peer leg of a connected call — for example, one joined by the SWML
+  `connect` method — while keeping this call leg active. The call must currently be connected.
+  Otherwise, the HTTP response is still `200`; the command failure is recorded asynchronously
+  in the [call event log](/docs/apis/rest/voice-logs/list-voice-log-events) with error code `409`,
+  rather than delivered to a status webhook. To end the call itself, use `calling.end`.
+  """)
 model CallDisconnectRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -707,16 +850,10 @@ model PlayRingtoneParams {
   duration?: float64;
 }
 
-@doc("A media item to play on the call. The shape of `params` is determined by `type`.")
-@discriminator("type")
-model PlayMediaItem {
+@doc("Play an audio file from a URL.")
+model PlayAudioItem {
   @doc("The type of media to play.")
   @example(PlayMediaType.audio)
-  type: PlayMediaType;
-}
-
-@doc("Play an audio file from a URL.")
-model PlayAudioItem extends PlayMediaItem {
   type: PlayMediaType.audio;
 
   @doc("Audio playback parameters.")
@@ -725,7 +862,9 @@ model PlayAudioItem extends PlayMediaItem {
 }
 
 @doc("Play text-to-speech. Per-item `language`/`voice`/`gender` override the request-level fallbacks.")
-model PlayTtsItem extends PlayMediaItem {
+model PlayTtsItem {
+  @doc("The type of media to play.")
+  @example(PlayMediaType.tts)
   type: PlayMediaType.tts;
 
   @doc("TTS parameters.")
@@ -738,7 +877,9 @@ model PlayTtsItem extends PlayMediaItem {
 }
 
 @doc("Play silence for a fixed duration.")
-model PlaySilenceItem extends PlayMediaItem {
+model PlaySilenceItem {
+  @doc("The type of media to play.")
+  @example(PlayMediaType.silence)
   type: PlayMediaType.silence;
 
   @doc("Silence parameters.")
@@ -747,12 +888,26 @@ model PlaySilenceItem extends PlayMediaItem {
 }
 
 @doc("Play a country-coded ringtone cadence.")
-model PlayRingtoneItem extends PlayMediaItem {
+model PlayRingtoneItem {
+  @doc("The type of media to play.")
+  @example(PlayMediaType.ringtone)
   type: PlayMediaType.ringtone;
 
   @doc("Ringtone parameters.")
   @example(#{ name: PlayRingtoneName.us, duration: 10.0 })
   params: PlayRingtoneParams;
+}
+
+// Discriminated unions rather than `@discriminator` on a base model (here and for
+// DetectConfig and TapDevice): with the inheritance form, the variant first reached
+// from the property was dropped from the emitted discriminator mapping.
+@doc("A media item to play on the call. The shape of `params` is determined by `type`.")
+@discriminated(#{ discriminatorPropertyName: "type", envelope: "none" })
+union PlayMediaItem {
+  audio: PlayAudioItem,
+  tts: PlayTtsItem,
+  silence: PlaySilenceItem,
+  ringtone: PlayRingtoneItem,
 }
 
 /**
@@ -786,7 +941,7 @@ model CallPlayRequest {
         params: #{ url: "https://example.com/audio.mp3" },
       }
     ])
-    play: (PlayAudioItem | PlayTtsItem | PlaySilenceItem | PlayRingtoneItem)[];
+    play: PlayMediaItem[];
 
     @doc("Volume adjustment in dB. Must be between -40 and 40.")
     @example(0)
@@ -815,13 +970,17 @@ model CallPlayRequest {
     @example(TtsGender.female)
     gender?: TtsGender = TtsGender.female;
 
-    @doc("HTTP or HTTPS URL that receives playback lifecycle webhooks (`playing`, `paused`, `finished`, `error`).")
+    @doc("HTTP or HTTPS URL that receives [play status callbacks](/docs/apis/rest/webhooks/play-status-callback) as playback changes state (`playing`, `paused`, `finished`, `error`).")
     @example("https://example.com/status_callback")
     status_url?: url;
   };
 }
 
 @summary("calling.play.pause")
+@doc("""
+  Pauses playback started by `calling.play`, addressed by its `control_id`.
+  Resume it with `calling.play.resume`.
+  """)
 model CallPlayPauseRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -840,6 +999,7 @@ model CallPlayPauseRequest {
 }
 
 @summary("calling.play.resume")
+@doc("Resumes playback previously paused with `calling.play.pause`, addressed by its `control_id`.")
 model CallPlayResumeRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -858,6 +1018,10 @@ model CallPlayResumeRequest {
 }
 
 @summary("calling.play.stop")
+@doc("""
+  Stops playback started by `calling.play`, addressed by its `control_id`. A `finished`
+  state is delivered to the play operation's `status_url` webhook.
+  """)
 model CallPlayStopRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -876,6 +1040,7 @@ model CallPlayStopRequest {
 }
 
 @summary("calling.play.volume")
+@doc("Adjusts the volume of an active play operation, in dB, addressed by its `control_id`.")
 model CallPlayVolumeRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -981,13 +1146,17 @@ model CallRecordRequest {
     })
     record: RecordParams;
 
-    @doc("Webhook URL invoked with recording events — including a `finished` event that contains the final recording URL. Must begin with `http://` or `https://`.")
+    @doc("Webhook URL that receives [record status callbacks](/docs/apis/rest/webhooks/record-status-callback) — including a `finished` event that contains the final recording URL. Must begin with `http://` or `https://`.")
     @example("https://example.com/status_callback")
     status_url?: url;
   };
 }
 
 @summary("calling.record.pause")
+@doc("""
+  Pauses an active recording, addressed by its `control_id`. `behavior` selects whether the
+  paused span is omitted from the file or kept as silence. Resume with `calling.record.resume`.
+  """)
 model CallRecordPauseRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -1010,6 +1179,7 @@ model CallRecordPauseRequest {
 }
 
 @summary("calling.record.resume")
+@doc("Resumes a recording previously paused with `calling.record.pause`, addressed by its `control_id`.")
 model CallRecordResumeRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -1028,6 +1198,10 @@ model CallRecordResumeRequest {
 }
 
 @summary("calling.record.stop")
+@doc("""
+  Stops an active recording, addressed by its `control_id`. The finished recording's URL is
+  delivered to the record operation's `status_url` webhook.
+  """)
 model CallRecordStopRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -1101,8 +1275,7 @@ model CollectSpeechParams {
 /**
  * Collect user input (DTMF digits, speech, or both) on an active call.
  *
- * At least one of `digits` or `speech` must be provided; requests missing
- * both return 400. Results are delivered asynchronously via the `status_url`
+ * At least one of `digits` or `speech` must be provided. Results are delivered asynchronously via the `status_url`
  * webhook. Digit events have the shape `{control_id, call_id, node_id, result: {type:"digit", params: {digits, terminator}}}`
  * and speech events `{..., result: {type:"speech", params: {text, confidence}}}`.
  *
@@ -1154,13 +1327,17 @@ model CallCollectRequest {
     @example(false)
     start_input_timers?: boolean = false;
 
-    @doc("HTTP or HTTPS URL that receives collect result webhooks.")
+    @doc("HTTP or HTTPS URL that receives [collect status callbacks](/docs/apis/rest/webhooks/collect-status-callback) with each result.")
     @example("https://example.com/collect_callback")
     status_url?: url;
   };
 }
 
 @summary("calling.collect.stop")
+@doc("""
+  Stops an active collect operation, addressed by its `control_id` — including a
+  `continuous` collect, which otherwise restarts after each result.
+  """)
 model CallCollectStopRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -1179,6 +1356,11 @@ model CallCollectStopRequest {
 }
 
 @summary("calling.collect.start_input_timers")
+@doc("""
+  Starts the initial-timeout clock for a collect that was started with
+  `start_input_timers: false` — for example, once a prompt has finished playing and the
+  caller should now respond.
+  """)
 model CallCollectStartInputTimersRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -1265,16 +1447,10 @@ model DetectDigitParams {
   digits?: string;
 }
 
-@doc("Detection configuration. The shape of `params` depends on `type`.")
-@discriminator("type")
-model DetectConfig {
+@doc("Answering-machine detection configuration.")
+model DetectMachineConfig {
   @doc("The type of detection to perform.")
   @example(DetectType.machine)
-  type: DetectType;
-}
-
-@doc("Answering-machine detection configuration.")
-model DetectMachineConfig extends DetectConfig {
   type: DetectType.machine;
 
   @doc("Machine-detection parameters.")
@@ -1283,7 +1459,9 @@ model DetectMachineConfig extends DetectConfig {
 }
 
 @doc("Fax-tone detection configuration.")
-model DetectFaxConfig extends DetectConfig {
+model DetectFaxConfig {
+  @doc("The type of detection to perform.")
+  @example(DetectType.fax)
   type: DetectType.fax;
 
   @doc("Fax-detection parameters.")
@@ -1292,12 +1470,22 @@ model DetectFaxConfig extends DetectConfig {
 }
 
 @doc("DTMF-digit detection configuration.")
-model DetectDigitConfig extends DetectConfig {
+model DetectDigitConfig {
+  @doc("The type of detection to perform.")
+  @example(DetectType.digit)
   type: DetectType.digit;
 
   @doc("Digit-detection parameters.")
   @example(#{ digits: "0123456789#*" })
   params?: DetectDigitParams;
+}
+
+@doc("Detection configuration. The shape of `params` depends on `type`.")
+@discriminated(#{ discriminatorPropertyName: "type", envelope: "none" })
+union DetectConfig {
+  machine: DetectMachineConfig,
+  fax: DetectFaxConfig,
+  digit: DetectDigitConfig,
 }
 
 /**
@@ -1324,20 +1512,21 @@ model CallDetectRequest {
 
     @doc("Detection configuration specifying what to detect.")
     @example(#{ type: DetectType.machine })
-    detect: DetectMachineConfig | DetectFaxConfig | DetectDigitConfig;
+    detect: DetectConfig;
 
     @doc("Maximum time in seconds the detection may run before timing out.")
     @example(30)
     @minValue(0)
     timeout?: float64 = 30;
 
-    @doc("HTTP or HTTPS URL that receives detection result webhooks.")
+    @doc("HTTP or HTTPS URL that receives [detect status callbacks](/docs/apis/rest/webhooks/detect-status-callback) with each detection result.")
     @example("https://example.com/detect_callback")
     status_url?: url;
   };
 }
 
 @summary("calling.detect.stop")
+@doc("Stops an active detect operation before its `timeout` elapses, addressed by its `control_id`.")
 model CallDetectStopRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -1406,16 +1595,10 @@ model TapWsParams {
   codec?: TapCodec;
 }
 
-@doc("Tap device configuration — specifies where to stream captured audio.")
-@discriminator("type")
-model TapDevice {
+@doc("RTP tap device configuration.")
+model TapDeviceRtp {
   @doc("The type of tap device.")
   @example(TapDeviceType.rtp)
-  type: TapDeviceType;
-}
-
-@doc("RTP tap device configuration.")
-model TapDeviceRtp extends TapDevice {
   type: TapDeviceType.rtp;
 
   @doc("RTP connection parameters.")
@@ -1424,12 +1607,21 @@ model TapDeviceRtp extends TapDevice {
 }
 
 @doc("WebSocket tap device configuration.")
-model TapDeviceWs extends TapDevice {
+model TapDeviceWs {
+  @doc("The type of tap device.")
+  @example(TapDeviceType.ws)
   type: TapDeviceType.ws;
 
   @doc("WebSocket connection parameters.")
   @example(#{ uri: "wss://example.com/tap" })
   params: TapWsParams;
+}
+
+@doc("Tap device configuration — specifies where to stream captured audio. The shape of `params` is determined by `type`.")
+@discriminated(#{ discriminatorPropertyName: "type", envelope: "none" })
+union TapDevice {
+  rtp: TapDeviceRtp,
+  ws: TapDeviceWs,
 }
 
 /**
@@ -1463,15 +1655,19 @@ model CallTapRequest {
       type: TapDeviceType.rtp,
       params: #{ addr: "198.51.100.42", port: 5060 },
     })
-    device: TapDeviceRtp | TapDeviceWs;
+    device: TapDevice;
 
-    @doc("HTTP or HTTPS URL that receives tap lifecycle webhooks.")
+    @doc("HTTP or HTTPS URL that receives [tap status callbacks](/docs/apis/rest/webhooks/tap-status-callback) when the tap starts and ends.")
     @example("https://example.com/tap_callback")
     status_url?: url;
   };
 }
 
 @summary("calling.tap.stop")
+@doc("""
+  Stops an active tap, addressed by its `control_id`, ending delivery of the call's audio to
+  the external RTP or WebSocket destination.
+  """)
 model CallTapStopRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -1498,8 +1694,8 @@ model CallTapStopRequest {
  *
  * The transcription covers the whole call and completes when the call ends. For real-time
  * transcription, use `calling.live_transcribe`. Only one transcription can be active on a call
- * at a time; starting another while one is running returns a `409` conflict. Stop it with
- * `calling.transcribe.stop` using the same `control_id`.
+ * at a time. Stop it with `calling.transcribe.stop` using the same `control_id` before starting
+ * another.
  */
 @summary("calling.transcribe")
 model CallTranscribeRequest {
@@ -1517,13 +1713,17 @@ model CallTranscribeRequest {
     @example("transcribe-control-1")
     control_id: string;
 
-    @doc("An HTTP or HTTPS URL that receives the status callback when the transcription finishes.")
+    @doc("An HTTP or HTTPS URL that receives [transcribe state callbacks](/docs/apis/rest/webhooks/transcribe-state-callback) as the transcription starts and finishes, and the [transcript status callback](/docs/apis/rest/webhooks/transcribe-status-callback) when the transcript is ready.")
     @example("https://example.com/transcribe-status")
     status_url?: url;
   };
 }
 
 @summary("calling.transcribe.stop")
+@doc("""
+  Stops the background transcription started by `calling.transcribe`, addressed by its
+  `control_id`, without waiting for the call to end.
+  """)
 model CallTranscribeStopRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -1587,7 +1787,7 @@ model CallStreamRequest {
     @example("stream-control-1")
     control_id: string;
 
-    @doc("WebSocket URL to stream audio to. Must start with `wss://` (TLS is required; plain `ws://` is rejected).")
+    @doc("WebSocket URL to stream audio to. Must start with `wss://`. A plain `ws://` URL is rejected when the command runs on the call: the request still returns `200`, but the stream does not start.")
     @example("wss://example.com/stream")
     @format("uri")
     url: string;
@@ -1612,7 +1812,7 @@ model CallStreamRequest {
     @example(#{ session_id: "abc123" })
     custom_parameters?: TypeSpec.Record<unknown>;
 
-    @doc("HTTP or HTTPS URL that receives stream lifecycle webhooks.")
+    @doc("HTTP or HTTPS URL that receives [stream status callbacks](/docs/apis/rest/webhooks/stream-status-callback) when the stream starts and ends.")
     @example("https://example.com/stream_callback")
     status_url?: url;
 
@@ -1623,6 +1823,10 @@ model CallStreamRequest {
 }
 
 @summary("calling.stream.stop")
+@doc("""
+  Stops an active audio stream, addressed by its `control_id`, closing delivery to the
+  WebSocket endpoint. The call itself continues.
+  """)
 model CallStreamStopRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -1637,160 +1841,6 @@ model CallStreamStopRequest {
     @doc("The control ID of the stream operation to stop.")
     @example("stream-control-1")
     control_id: string;
-  };
-}
-
-// ============================================
-// Conference Command
-// ============================================
-
-/**
- * Bidirectional WebSocket stream to attach to a conference. Conference audio is
- * streamed to a `wss://` URL, enabling real-time audio processing, transcription,
- * or AI agents that listen to the conference. Reuses the same stream schema as the
- * `stream` device type in `connect`.
- */
-@doc("Stream configuration for attaching a WebSocket stream to a conference.")
-model ConferenceStreamParams {
-  @doc("Secure WebSocket URL to stream conference audio to. Must start with `wss://` (TLS is required; plain `ws://` is rejected).")
-  @example("wss://example.com/conference-audio")
-  @format("uri")
-  url: string;
-
-  @doc("Optional human-readable name to identify the stream at the endpoint.")
-  @example("conference-audio")
-  name?: string;
-
-  @doc("Audio codec to request. Freeform; endpoint-specific. Common values include `PCMU`, `PCMA`, `G722`, `L16`.")
-  @example("PCMU")
-  codec?: string;
-
-  @doc("When `true`, enables bidirectional audio so your endpoint can stream audio back into the conference (not just receive it).")
-  @example(true)
-  realtime?: boolean;
-
-  @doc("Bearer token included as `Authorization: Bearer <token>` when establishing the WebSocket connection.")
-  @example("my-secret-token")
-  authorization_bearer_token?: string;
-
-  @doc("Arbitrary JSON object passed through to the WebSocket endpoint as connection metadata.")
-  @example(#{ session_id: "abc123" })
-  custom_parameters?: TypeSpec.Record<unknown>;
-
-  @doc("HTTP or HTTPS URL that receives stream lifecycle webhooks.")
-  @example("https://example.com/stream_callback")
-  status_url?: url;
-
-  @doc("HTTP method used for the `status_url` webhook.")
-  @example(StreamStatusUrlMethod.POST)
-  status_url_method?: StreamStatusUrlMethod = StreamStatusUrlMethod.POST;
-}
-
-/**
- * Join an ad-hoc audio conference. The conference is created automatically if it
- * does not already exist; multiple calls join the same conference by `name`.
- * Optionally attach a bidirectional WebSocket `stream` to the conference audio.
- */
-@summary("calling.join_conference")
-model CallJoinConferenceRequest {
-  @doc(uuidDescription)
-  @example(CallIdExample)
-  id: uuid;
-
-  @doc("The `calling.join_conference` command joins the call to an ad-hoc audio conference.")
-  @example("calling.join_conference")
-  command: "calling.join_conference";
-
-  @doc(paramsDescription)
-  params: {
-    @doc("Name of the conference. All calls joining the same name are placed in the same conference.")
-    @example("team_meeting")
-    name: string;
-
-    @doc("Whether to join the conference in a muted state.")
-    @example(false)
-    muted?: boolean;
-
-    @doc("Sets the behavior of the beep sound when joining or leaving the conference.")
-    @example("onEnter")
-    beep?: "true" | "false" | "onEnter" | "onExit";
-
-    @doc("Start the conference when this participant joins, without waiting for other participants.")
-    @example(true)
-    start_on_enter?: boolean;
-
-    @doc("End the conference when this participant leaves, without waiting for other participants.")
-    @example(false)
-    end_on_exit?: boolean;
-
-    @doc("HTTP or HTTPS URL to fetch audio to play while waiting for the conference to start. Default hold music is played if not set.")
-    @example("https://example.com/hold-music.mp3")
-    wait_url?: url;
-
-    @doc("The maximum number of participants allowed in the conference.")
-    @example(50)
-    max_participants?: integer;
-
-    @doc("Enables or disables recording of the conference.")
-    @example("record-from-start")
-    record?: "do-not-record" | "record-from-start";
-
-    @doc("The geographical region where the conference is hosted.")
-    @example("us")
-    region?: "global" | "us" | "eu" | "ch";
-
-    @doc("Whether to trim silence from the start of the conference recording.")
-    @example("trim-silence")
-    trim?: "trim-silence" | "do-not-trim";
-
-    @doc("Access control level for the conference.")
-    @example("private")
-    acl?: "private" | "public-read";
-
-    @doc("Call SID of a call currently connected to an in-progress conference. The coach can hear but not be heard (coaching mode).")
-    @example("b3877ee3-6f3c-4985-8066-6d24e3f65e12")
-    coach?: string;
-
-    @doc("""
-      Space-separated list of one or more events to send to the status callback URL.
-      Possible values: `start`, `end`, `join`, `leave`, `mute`, `hold`, `modify`, `speaker`, `announcement`.
-      """)
-    @example("join leave")
-    status_callback_event?: string;
-
-    @doc("Content type for status callback requests.")
-    @example("relay")
-    status_callback_event_type?: "cxml" | "laml" | "relay";
-
-    @doc("HTTP or HTTPS URL to which status events will be sent.")
-    @example("https://example.com/conference-status")
-    status_callback?: url;
-
-    @doc("The HTTP method to use when sending status events to the status callback URL.")
-    @example("POST")
-    status_callback_method?: "GET" | "POST";
-
-    @doc("""
-      Space-separated list of one or more events to send to the recording status callback URL.
-      Possible values: `in-progress`, `completed`, `absent`.
-      """)
-    @example("completed")
-    recording_status_callback_event?: string;
-
-    @doc("Content type for recording status callback requests.")
-    @example("relay")
-    recording_status_callback_event_type?: "cxml" | "laml" | "relay";
-
-    @doc("HTTP or HTTPS URL to which recording status events will be sent.")
-    @example("https://example.com/recording-status")
-    recording_status_callback?: url;
-
-    @doc("The HTTP method to use when sending recording status events to the recording status callback URL.")
-    @example("POST")
-    recording_status_callback_method?: "GET" | "POST";
-
-    @doc("Attach a bidirectional WebSocket stream to the conference audio.")
-    stream?: ConferenceStreamParams;
   };
 }
 
@@ -1818,6 +1868,10 @@ model CallDenoiseRequest {
 }
 
 @summary("calling.denoise.stop")
+@doc("""
+  Disables the noise-reduction filter enabled by `calling.denoise`. Takes no parameters;
+  denoise is per-call, addressed by `id` alone.
+  """)
 model CallDenoiseStopRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -1836,6 +1890,13 @@ model CallDenoiseStopRequest {
 // ============================================
 
 @summary("calling.ai.stop")
+@doc("""
+  Stops the AI agent running on the call. The call itself stays up — use it to take over
+  with other call commands, or `calling.end` to hang up entirely.
+  
+  The command name is `calling.ai.stop`, with a dot, unlike the other AI commands such as
+  `calling.ai_hold`. `calling.ai_stop` is not a supported command.
+  """)
 model CallAIStopRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -1864,6 +1925,11 @@ model CallAIStopRequest {
 // /docs/swml/reference/calling/ai-sidecar
 
 @summary("calling.ai_sidecar")
+@doc("""
+  Attaches a real-time AI observer (a sidecar) to an answered call. The sidecar listens to
+  the conversation and streams advice to your application as webhook callbacks; it never
+  speaks on the call. A call has at most one sidecar, addressed by `id` alone.
+  """)
 model CallAISidecarRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -1878,10 +1944,14 @@ model CallAISidecarRequest {
     [SWML ai_sidecar reference](/docs/swml/reference/calling/ai-sidecar) for the full field catalog.
     When `action.summarize` is present, the request summarizes the conversation instead of starting a sidecar.
     """)
-  params: AISidecarObject;
+  params: AISidecarObject | AISidecarSummarizeRequest;
 }
 
 @summary("calling.ai_sidecar.poke")
+@doc("""
+  Sends a message to the attached sidecar and prompts it to respond right away, without
+  waiting for the next customer turn.
+  """)
 model CallAISidecarPokeRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -1900,12 +1970,19 @@ model CallAISidecarPokeRequest {
 }
 
 @summary("calling.ai_sidecar.ask")
+@doc("""
+  Asks the attached sidecar a one-off question without affecting the live conversation.
+  The HTTP response returns the call object and does not include an `ask_id`. If the sidecar was
+  started with a callback `url`, the first callback for the request is `ask_request`, which carries
+  the generated `ask_id`. The later `ask_answer` callback and any `request`, `thought`, `tool_call`,
+  or `tool_result` callbacks triggered by the ask repeat that ID.
+  """)
 model CallAISidecarAskRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
   id: uuid;
 
-  @doc("The `calling.ai_sidecar.ask` command asks the sidecar a one-off question without affecting the live conversation. The response returns an `ask_id` right away, and the answer arrives later as an `ask_answer` webhook callback carrying the same `ask_id`.")
+  @doc("The `calling.ai_sidecar.ask` command asks the sidecar a one-off question without affecting the live conversation. The REST response does not include an `ask_id`; when a callback `url` is configured, the `ask_request` callback supplies it and later callbacks for that ask repeat it.")
   @example("calling.ai_sidecar.ask")
   command: "calling.ai_sidecar.ask";
 
@@ -1918,6 +1995,7 @@ model CallAISidecarAskRequest {
 }
 
 @summary("calling.ai_sidecar.stop")
+@doc("Stops and detaches the AI sidecar from the call. The call and its conversation continue.")
 model CallAISidecarStopRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -1932,17 +2010,18 @@ model CallAISidecarStopRequest {
 }
 
 @summary("calling.ai_sidecar.status")
+@doc("""
+  Requests an internal snapshot of the attached sidecar's activity counters. The HTTP response
+  returns the call object and does not expose the requested snapshot. If the sidecar was started
+  with a callback `url`, its `final` callback provides end-of-session totals such as tool calls,
+  insights, and token usage; see the [SWML `ai_sidecar` callback types](/docs/swml/reference/calling/ai-sidecar#callback-types).
+  """)
 model CallAISidecarStatusRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
   id: uuid;
 
-  @doc("""
-    The `calling.ai_sidecar.status` command returns a snapshot of the sidecar's activity counters. The
-    result is a single `+OK` line of `key=value` counters (`running`, `ticks`, `insights`, `skips`,
-    `tools`, `errors`, `in_tokens`, `out_tokens`, `history_size`, `event_log_bytes`) rather than a JSON
-    object.
-    """)
+  @doc("The `calling.ai_sidecar.status` command requests a snapshot of the sidecar's activity counters.")
   @example("calling.ai_sidecar.status")
   command: "calling.ai_sidecar.status";
 
@@ -1955,6 +2034,7 @@ model CallAISidecarStatusRequest {
 // ============================================
 
 @summary("calling.send_fax.stop")
+@doc("Stops an in-progress fax send on the call, addressed by its `control_id`.")
 model CallSendFaxStopRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -1973,6 +2053,7 @@ model CallSendFaxStopRequest {
 }
 
 @summary("calling.receive_fax.stop")
+@doc("Stops an in-progress fax receive on the call, addressed by its `control_id`.")
 model CallReceiveFaxStopRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -2025,6 +2106,11 @@ model ReferDevice {
 }
 
 @summary("calling.refer")
+@doc("""
+  Sends a SIP REFER on the call, asking the remote SIP endpoint to take the call to a new
+  SIP destination. Available only on SIP calls, with one REFER in progress at a time;
+  refer lifecycle events are delivered to `status_url`.
+  """)
 model CallReferRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -2051,6 +2137,11 @@ model CallReferRequest {
 // ============================================
 
 @summary("calling.transfer")
+@doc("""
+  Transfers the call to a new destination. Whatever the call is doing stops immediately and
+  the destination's SWML takes over; the call keeps the same `id`, and further commands can
+  still be sent while it remains active.
+  """)
 model CallTransferRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -2062,13 +2153,19 @@ model CallTransferRequest {
 
   @doc(paramsDescription)
   params: {
-    @doc("The destination to transfer the call to. Can be a SIP URI, phone number, SWML URL, or an inline SWML object.")
-    @example("sip:destination@example.com")
-    dest: string | SWMLObject;
+    @doc("The destination to transfer the call to: a SWML URL or an inline [Calling SWML document](/docs/swml/reference/calling). To send the caller to a phone number or SIP endpoint, transfer to a document that uses `connect`.")
+    @example("https://example.com/swml")
+    @example(CallSWMLDocumentExample)
+    dest: string | TypeSpec.Record<unknown>;
   };
 }
 
 @summary("calling.user_event")
+@doc("""
+  Fires a custom JSON event on the call, delivered to the connected client — for example, a
+  Browser SDK client on the call. Use it to trigger client-side behavior; the client-side
+  contract matches the [SWML user_event method](/docs/swml/reference/calling/user-event).
+  """)
 model CallUserEventRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -2089,7 +2186,7 @@ model CallUserEventRequest {
 @discriminated(#{ discriminatorPropertyName: "command", envelope: "none" })
 @doc("""
   Call request union for JSON-RPC style method dispatch. Use the `command` field to specify which call method to invoke.
-  All async-safe RELAY methods can be sent through this endpoint without a WebSocket connection.
+  Only the commands listed here are supported. Most operate on an already-active call; `dial` creates a new one. Commands return immediately; operations that continue asynchronously deliver their results to your `status_url` webhooks.
   """)
 union CallRequest {
   dial: CallCreateRequest,
@@ -2125,7 +2222,6 @@ union CallRequest {
   `calling.transcribe.stop`: CallTranscribeStopRequest,
   `calling.stream`: CallStreamRequest,
   `calling.stream.stop`: CallStreamStopRequest,
-  `calling.join_conference`: CallJoinConferenceRequest,
   `calling.denoise`: CallDenoiseRequest,
   `calling.denoise.stop`: CallDenoiseStopRequest,
   `calling.live_transcribe`: CallLiveTranscribeRequest,

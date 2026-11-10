@@ -21,15 +21,16 @@ model CreateMessageRequest {
   @example("Your order #12345 has shipped!")
   body?: string;
 
-  @doc("Array of HTTP or HTTPS URLs for media attachments. Presence of media makes the message MMS. Maximum 8 items.")
+  @doc("Array of HTTP or HTTPS URLs for media attachments. Presence of media makes the message MMS. Maximum 7 items; sending 8 or more returns a `422`.")
   @example(#["https://example.com/tracking.png"])
+  @maxItems(7)
   media?: url[];
 
   @doc("Force the message to be sent as MMS even when no media attachments are provided.")
   @example(false)
   send_as_mms?: boolean = false;
 
-  @doc("A valid URL to receive message status callback events at each state change. See the [Message status callback](/docs/apis/rest/messages/webhooks/message-status-callback) webhook for the payload your URL will receive.")
+  @doc("A valid URL to receive message status callback events at each state change. See the [Message status callback](/docs/apis/rest/webhooks/message-status-callback) webhook for the payload your URL will receive.")
   @example("https://example.com/webhooks/message-status")
   status_callback?: url;
 

@@ -60,6 +60,16 @@ const FABRIC_ADDRESS_TAG_METADATA = #{
   },
 };
 
+const ALIAS_ADDRESSES_TAG = "Alias Addresses";
+
+const ALIAS_ADDRESSES_TAG_METADATA = #{
+  description: "Endpoints related to creating & managing alias addresses — named routes in the `public` or `private` context (`/<context>/<name>`) that forward calls and messages to a handler resource.",
+  externalDocs: #{
+    url: "https://signalwire.com/docs/apis",
+    description: "Developer documentation on Alias Addresses, Fabric API endpoints",
+  },
+};
+
 const FREESWITCH_CONNECTOR_TAG = "FreeSWITCH Connector";
 
 const FREESWITCH_CONNECTOR_TAG_METADATA = #{
@@ -127,6 +137,16 @@ const FABRIC_SIP_ENDPOINTS_TAG_METADATA = #{
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SIP Credentials, Fabric API endpoints",
+  },
+};
+
+const SIP_ADDRESSES_TAG = "SIP Addresses";
+
+const SIP_ADDRESSES_TAG_METADATA = #{
+  description: "Endpoints related to creating & managing SIP Addresses — the SIP configuration (username, Domain, codecs, ciphers, encryption, IP authentication, registration password) for the resource that handles calls to it.",
+  externalDocs: #{
+    url: "https://signalwire.com/docs/apis",
+    description: "Developer documentation on SIP Addresses, Fabric API endpoints",
   },
 };
 
@@ -207,5 +227,25 @@ const PHONE_ROUTES_TAG_METADATA = #{
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on Phone Routes, Fabric API endpoints",
+  },
+};
+
+const WHATSAPP_ROUTES_TAG = "WhatsApp Routes";
+
+const WHATSAPP_ROUTES_TAG_METADATA = #{
+  description: "Assign a Resource to handle the calls or messages a WhatsApp number receives.",
+  externalDocs: #{
+    url: "https://signalwire.com/docs/apis",
+    description: "Developer documentation on WhatsApp Routes, Fabric API endpoints",
+  },
+};
+
+const PHONE_NUMBER_ADDRESSES_TAG = "Phone Number Addresses";
+
+const PHONE_NUMBER_ADDRESSES_TAG_METADATA = #{
+  description: "Endpoints related to managing Phone Number Addresses — the per-channel address that routes an owned phone number's calls or messages to the resource that handles them.",
+  externalDocs: #{
+    url: "https://signalwire.com/docs/apis",
+    description: "Developer documentation on Phone Number Addresses, Fabric API endpoints",
   },
 };

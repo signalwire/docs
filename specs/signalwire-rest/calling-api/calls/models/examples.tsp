@@ -15,14 +15,8 @@ const dialCallExample = #{
     command: "dial",
     params: #{
       from: "+15551234567",
-      to: "+15559876543",
-      url: "https://example.com/swml",
-      caller_id: "+15551234567",
-      status_url: "https://example.com/status_callback",
-      status_events: #["answered", "ended"],
-      codecs: #[OutboundCallCodec.PCMU, OutboundCallCodec.PCMA],
-      timeout: 30,
-      max_price_per_minute: 0.05,
+      to: "+15557654321",
+      url: CallSWMLURLExample,
     },
   },
 };
@@ -30,11 +24,7 @@ const dialCallExample = #{
 const updateCallExample = #{
   request: #{
     command: "update",
-    params: #{
-      id: callId,
-      url: "https://example.com/swml",
-      fallback_url: "https://example.com/fallback",
-    },
+    params: #{ id: callId, url: CallSWMLURLExample },
   },
 };
 
@@ -321,6 +311,7 @@ const detectCallExample = #{
     id: callId,
     params: #{
       control_id: "detect-control-1",
+      status_url: "https://example.com/webhooks/detection",
       detect: #{
         type: DetectType.machine,
         params: #{ initial_timeout: 4.5, end_silence_timeout: 1.0 },
@@ -400,25 +391,6 @@ const streamStopCallExample = #{
     command: "calling.stream.stop",
     id: callId,
     params: #{ control_id: "stream-control-1" },
-  },
-};
-
-// Conference examples
-const joinConferenceCallExample = #{
-  request: #{
-    command: "calling.join_conference",
-    id: callId,
-    params: #{
-      name: "team_meeting",
-      beep: "onEnter",
-      start_on_enter: true,
-      stream: #{
-        url: "wss://example.com/conference-audio",
-        codec: "PCMU",
-        realtime: true,
-        status_url: "https://example.com/stream-status",
-      },
-    },
   },
 };
 
@@ -516,7 +488,7 @@ const transferCallExample = #{
   request: #{
     command: "calling.transfer",
     id: callId,
-    params: #{ dest: "sip:destination@example.com" },
+    params: #{ dest: CallSWMLURLExample },
   },
 };
 

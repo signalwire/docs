@@ -1,7 +1,5 @@
 import "../../../../types";
 import "../../../_shared/const.tsp";
-import "../../../../../swml/calling";
-
 model CallFlowVersion {
   @doc("The unique identifier of the version.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
@@ -27,7 +25,7 @@ model CallFlowVersion {
 
   @doc("The calling SWML document this version snapshots. Uses [calling SWML methods](/docs/swml/reference/calling).")
   @example(SWML_CONTENTS_EXAMPLE)
-  relayml?: SWML.Calling.SWMLObject;
+  relayml?: TypeSpec.Record<unknown>;
 }
 
 model CallFlowVersionListResponse {
@@ -62,7 +60,7 @@ model CallFlowVersionDeployResponse {
 
   @doc("The calling SWML document deployed by this version. Uses [calling SWML methods](/docs/swml/reference/calling).")
   @example(SWML_CONTENTS_EXAMPLE)
-  relayml?: SWML.Calling.SWMLObject;
+  relayml?: TypeSpec.Record<unknown>;
 }
 
 model CallFlowVersionsPaginationResponse {
@@ -76,7 +74,7 @@ model CallFlowVersionsPaginationResponse {
 
   @doc("Link to the next page")
   @example("https://example.signalwire.com/api/fabric/call_flows/versions?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=call_flow")
-  next: url;
+  next?: url;
 
   @doc("Link to the previous page")
   @example("https://example.signalwire.com/api/fabric/call_flows/versions?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=call_flow")
