@@ -2,7 +2,7 @@
 title: Mistral
 subtitle: Text-to-speech
 slug: voice/tts/mistral
-description: Learn how to use Mistral's Voxtral TTS voices with SignalWire AI Voice applications.
+description: Learn how to use Mistral's Voxtral TTS voices in AI agents, SWML, Relay, and the REST Calling API.
 max-toc-depth: 3
 ---
 
@@ -39,7 +39,8 @@ Find the available voices in
 [Mistral AI Studio](https://console.mistral.ai/) under **Audio › Text-to-speech**.
 
 <Warning>
-There is no default or fallback voice — always set a valid Mistral voice ID.
+Mistral has no default voice, so always set a valid Mistral voice ID. If SignalWire can't use the
+ID you set, the call switches to a fallback voice or skips that speech.
 Note that the preset names published with the open-weight Voxtral model (such as `casual_male`)
 are **not** accepted by Mistral's hosted API — use a voice from Mistral AI Studio.
 </Warning>
@@ -94,7 +95,7 @@ languages:
 
 ## Use Mistral voices on a call
 
-A Mistral voice string such as `mistral.<YOUR_MISTRAL_VOICE_ID>` works wherever SignalWire speaks text: an AI
+A Mistral voice string such as `mistral.<YOUR_MISTRAL_VOICE_ID>` works in each of these places: an AI
 agent's `languages`, the `say_voice` of SWML's `play`, and a `tts` media item sent with Relay or
 the REST Calling API. The examples below all use `mistral.<YOUR_MISTRAL_VOICE_ID>`. To control speech while it plays, see
 [Speak text on a call](/docs/platform/voice/speak-text).
@@ -103,7 +104,7 @@ Replace these values in the samples:
 
 | Value | Replace with |
 |---|---|
-| `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for your SWML server; SignalWire sends it from the URL you give it |
+| `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for your SWML server. You include it in the server URL you give SignalWire: `https://signalwire:<password>@<host>/swml` |
 | `<YOUR_PROJECT_ID>` | Your Project ID |
 | `<YOUR_API_TOKEN>` | An API token with the **Voice** permission, used only in server code |
 | `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
@@ -156,8 +157,8 @@ const service = new SWMLService({
   basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
 });
 service.getBuilder().ai({
-  // @ts-expect-error The ai verb takes a { text } prompt; the SDK types prompt as a string or array.
-  prompt: { text: "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride." },
+  // The ai verb takes a { text } prompt; the SDK types prompt as a string or array.
+  prompt: { text: "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride." } as never,
   languages: [
     { name: "English", code: "en-US", voice: "mistral.<YOUR_MISTRAL_VOICE_ID>" },
   ],
@@ -209,9 +210,9 @@ sections:
 
 To send calls from your phone number to the server, follow
 [Answer a call via SWML](/docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml).
-Call the number, and the agent greets you in the Mistral voice. If you hear a different voice, the
-voice string isn't in SignalWire's catalog, so the call falls back to a default voice. See
-[Custom and cloned voices](/docs/platform/voice/tts#custom-and-cloned-voices).
+Call the number, and the agent greets you in the Mistral voice. If you hear a different voice,
+SignalWire couldn't use the voice ID and switched to a fallback voice. Check the ID in
+[Mistral AI Studio](https://console.mistral.ai/).
 
 ### Speak text in a Mistral voice via SWML
 
@@ -371,6 +372,9 @@ await client.run();
 To route calls from your phone number to the handler, assign the number to a Relay Application
 on the `default` topic, as described in
 [Answer a call via WebSocket (Relay)](/docs/platform/voice/make-and-receive-calls#answer-a-call-via-websocket-relay).
+Call the number to hear the sentence. If you hear a different voice, SignalWire couldn't use the
+voice string and played a fallback voice. If the play is rejected as a bad request, check the voice
+string for characters a `tts` item doesn't accept, such as spaces, parentheses, or `/`.
 
 ### Speak text in a Mistral voice on a call in progress via REST
 
@@ -453,6 +457,9 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
 
 The command returns once SignalWire accepts it, and the call hears the sentence in the Mistral
 voice.
+If the call hears a different voice, SignalWire couldn't use the voice string and played a fallback
+voice. If the request is rejected, check the voice string for characters a `tts` item doesn't
+accept, such as spaces, parentheses, or `/`.
 
 ### Create a SWML Script that uses a Mistral voice
 
