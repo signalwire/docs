@@ -8210,6 +8210,7 @@ paths:
 
         - **SMS/MMS** when `from` is a purchased SignalWire phone number or shortcode. The message is MMS when `media` is present or `send_as_mms` is set, otherwise SMS.
         - **WhatsApp** when `from` is a `whatsapp:`-prefixed [WhatsApp number](/docs/platform/messaging/whatsapp/send-messages). Set `message_type` for a content message, or `template_id` for an [approved template](/docs/platform/messaging/whatsapp/message-templates). Free-form WhatsApp content is only allowed within the 24-hour customer service window.
+        - **RCS** when `from` is the ID of an [RCS agent](/docs/platform/messaging/rcs/send-messages). Set `body` for plain text, or `content` for rich content such as cards, carousels, and suggestions.
 
         Use this SignalWire REST operation for JSON requests. Integrations built around form-encoded requests and Message SIDs can use the Compatibility API's [Create message](/docs/compatibility-api/rest/messages/create-message) operation instead.
 
@@ -33582,6 +33583,7 @@ components:
         - sms
         - mms
         - whatsapp
+        - rcs
       description: The kind of message.
     Message.MessageLog:
       type: object
@@ -33808,17 +33810,466 @@ components:
               message: Cannot redact a message that is in progress.
               attribute: base
               url: https://developer.signalwire.com/rest/overview/error-codes/#cannot_redact_in_progress_message
+    Message.RcsAction:
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/Message.RcsReplyAction'
+        - $ref: '#/components/schemas/Message.RcsUrlAction'
+        - $ref: '#/components/schemas/Message.RcsCallAction'
+        - $ref: '#/components/schemas/Message.RcsLocationAction'
+        - $ref: '#/components/schemas/Message.RcsCalendarAction'
+        - $ref: '#/components/schemas/Message.RcsRequestLocationAction'
+      discriminator:
+        propertyName: type
+        mapping:
+          reply: '#/components/schemas/Message.RcsReplyAction'
+          url: '#/components/schemas/Message.RcsUrlAction'
+          call: '#/components/schemas/Message.RcsCallAction'
+          location: '#/components/schemas/Message.RcsLocationAction'
+          calendar: '#/components/schemas/Message.RcsCalendarAction'
+          request_location: '#/components/schemas/Message.RcsRequestLocationAction'
+      description: A suggestion shown with a message. The `type` field determines the other fields.
+    Message.RcsCalendarAction:
+      type: object
+      required:
+        - type
+        - title
+        - event_title
+        - start
+        - end
+        - fallback_url
+      properties:
+        type:
+          type: string
+          enum:
+            - calendar
+        title:
+          type: string
+          description: Text shown on the suggestion.
+          examples:
+            - Add to calendar
+        event_title:
+          type: string
+          description: Title of the calendar event.
+          examples:
+            - Dental appointment
+        start:
+          type: string
+          description: Start time of the event.
+          examples:
+            - '2026-12-01T15:00:00Z'
+        end:
+          type: string
+          description: End time of the event.
+          examples:
+            - '2026-12-01T15:30:00Z'
+        description:
+          type: string
+          description: Optional description of the calendar event.
+          examples:
+            - Bring your insurance card.
+        fallback_url:
+          type: string
+          format: uri
+          description: An HTTP or HTTPS URL to open when the device can't create the calendar event.
+          examples:
+            - https://example.com/appointments/12345
+      unevaluatedProperties:
+        not: {}
+      description: Adds an event to the recipient's calendar.
+    Message.RcsCallAction:
+      type: object
+      required:
+        - type
+        - title
+        - phone
+      properties:
+        type:
+          type: string
+          enum:
+            - call
+        title:
+          type: string
+          description: Text shown on the suggestion.
+          examples:
+            - Call us
+        phone:
+          type: string
+          description: The phone number to call.
+          examples:
+            - '+15557654321'
+      unevaluatedProperties:
+        not: {}
+      description: Starts a phone call from the recipient's device.
+    Message.RcsCard:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          maxLength: 200
+          description: Card title. Maximum 200 characters.
+          examples:
+            - Your order has shipped
+        subtitle:
+          type: string
+          maxLength: 2000
+          description: Card subtitle. Maximum 2000 characters.
+          examples:
+            - 'Order #12345 arrives Thursday.'
+        media:
+          type: string
+          format: uri
+          description: An HTTP or HTTPS URL to a media file shown on the card.
+          examples:
+            - https://example.com/images/package.png
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message.RcsAction'
+          description: Suggestions shown on the card.
+      unevaluatedProperties:
+        not: {}
+      description: 'A rich card: a title with optional subtitle, image, and suggestions.'
+    Message.RcsCardContent:
+      type: object
+      required:
+        - type
+        - title
+      properties:
+        type:
+          type: string
+          enum:
+            - card
+        title:
+          type: string
+          maxLength: 200
+          description: Card title. Maximum 200 characters.
+          examples:
+            - Your order has shipped
+        subtitle:
+          type: string
+          maxLength: 2000
+          description: Card subtitle. Maximum 2000 characters.
+          examples:
+            - 'Order #12345 arrives Thursday.'
+        media:
+          type: string
+          format: uri
+          description: An HTTP or HTTPS URL to a media file shown on the card.
+          examples:
+            - https://example.com/images/package.png
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message.RcsAction'
+          description: Suggestions shown on the card.
+      unevaluatedProperties:
+        not: {}
+      description: Sends a single rich card.
+    Message.RcsCarouselContent:
+      type: object
+      required:
+        - type
+        - cards
+      properties:
+        type:
+          type: string
+          enum:
+            - carousel
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message.RcsCard'
+          minItems: 1
+          maxItems: 10
+          description: The cards in the carousel. At least 1 and at most 10 cards.
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message.RcsAction'
+          maxItems: 3
+          description: Suggestions shown under the carousel. Maximum 3.
+      unevaluatedProperties:
+        not: {}
+      description: Sends a horizontally scrolling set of rich cards.
+    Message.RcsContent:
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/Message.RcsMediaContent'
+        - $ref: '#/components/schemas/Message.RcsLocationContent'
+        - $ref: '#/components/schemas/Message.RcsSuggestionsContent'
+        - $ref: '#/components/schemas/Message.RcsCardContent'
+        - $ref: '#/components/schemas/Message.RcsCarouselContent'
+      discriminator:
+        propertyName: type
+        mapping:
+          media: '#/components/schemas/Message.RcsMediaContent'
+          location: '#/components/schemas/Message.RcsLocationContent'
+          suggestions: '#/components/schemas/Message.RcsSuggestionsContent'
+          card: '#/components/schemas/Message.RcsCardContent'
+          carousel: '#/components/schemas/Message.RcsCarouselContent'
+      description: Rich content for an RCS message. The `type` field determines the other fields.
+    Message.RcsLocationAction:
+      type: object
+      required:
+        - type
+        - title
+        - latitude
+        - longitude
+      properties:
+        type:
+          type: string
+          enum:
+            - location
+        title:
+          type: string
+          description: Text shown on the suggestion.
+          examples:
+            - View store
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          description: Latitude, between -90 and 90.
+          examples:
+            - 41.8781
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          description: Longitude, between -180 and 180.
+          examples:
+            - -87.6298
+        label:
+          type: string
+          description: Optional label for the pin on the map.
+          examples:
+            - Downtown store
+      unevaluatedProperties:
+        not: {}
+      description: Shows a location on a map on the recipient's device.
+    Message.RcsLocationContent:
+      type: object
+      required:
+        - type
+        - title
+        - latitude
+        - longitude
+      properties:
+        type:
+          type: string
+          enum:
+            - location
+        title:
+          type: string
+          description: Name of the location.
+          examples:
+            - Downtown store
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          description: Latitude, between -90 and 90.
+          examples:
+            - 41.8781
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          description: Longitude, between -180 and 180.
+          examples:
+            - -87.6298
+        label:
+          type: string
+          description: Optional label for the pin on the map.
+          examples:
+            - Open until 9pm
+      unevaluatedProperties:
+        not: {}
+      description: Sends a location pin.
+    Message.RcsMediaContent:
+      type: object
+      required:
+        - type
+        - url
+      properties:
+        type:
+          type: string
+          enum:
+            - media
+        url:
+          type: string
+          format: uri
+          description: An HTTP or HTTPS URL to the file.
+          examples:
+            - https://example.com/images/promo.png
+      unevaluatedProperties:
+        not: {}
+      description: Sends a media file.
+    Message.RcsMessageRequest:
+      type: object
+      required:
+        - to
+        - from
+      properties:
+        to:
+          type: string
+          description: "Recipient phone number in E.164 format. Must be a US number: RCS messaging isn't available in other countries yet."
+          examples:
+            - '+15551234567'
+        from:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The ID of your RCS agent, shown on the agent's page in the Dashboard. The agent must be in review, launching, or launched.
+          examples:
+            - 7d3e1f2a-9b8c-4d5e-a6f7-1234567890ab
+        body:
+          type: string
+          description: Plain-text message body. Required when `content` is not provided.
+          examples:
+            - Your appointment is confirmed for tomorrow at 2pm.
+        content:
+          allOf:
+            - $ref: '#/components/schemas/Message.RcsContent'
+          description: 'Rich content: media, a location, text with suggestions, a card, or a carousel. Required when `body` is not provided.'
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+        custom_variables:
+          type: object
+          unevaluatedProperties:
+            type: string
+          maxProperties: 20
+          description: Your own key/value string pairs to attach to the message. Delivered as `custom_variables` in status callbacks when `status_callback` is set.
+      unevaluatedProperties:
+        not: {}
+      description: Send an RCS message from an RCS agent. Provide either `body` for plain text or `content` for rich content, not both. `media` and `message_type` are not supported.
+    Message.RcsReplyAction:
+      type: object
+      required:
+        - type
+        - title
+      properties:
+        type:
+          type: string
+          enum:
+            - reply
+        title:
+          type: string
+          description: Text shown on the suggestion.
+          examples:
+            - Yes, confirm
+      unevaluatedProperties:
+        not: {}
+      description: A suggested reply. Tapping it sends a reply to your agent as an inbound message.
+    Message.RcsRequestLocationAction:
+      type: object
+      required:
+        - type
+        - title
+        - fallback_url
+      properties:
+        type:
+          type: string
+          enum:
+            - request_location
+        title:
+          type: string
+          description: Text shown on the suggestion.
+          examples:
+            - Share your location
+        fallback_url:
+          type: string
+          format: uri
+          description: An HTTP or HTTPS URL to open when the device can't share its location.
+          examples:
+            - https://example.com/find-a-store
+      unevaluatedProperties:
+        not: {}
+      description: Asks the recipient to share their location. The location the recipient shares isn't delivered to your application.
+    Message.RcsSuggestionsContent:
+      type: object
+      required:
+        - type
+        - text
+        - actions
+      properties:
+        type:
+          type: string
+          enum:
+            - suggestions
+        text:
+          type: string
+          maxLength: 3072
+          description: Message text. Maximum 3072 characters.
+          examples:
+            - Can you make your appointment tomorrow at 2pm?
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message.RcsAction'
+          minItems: 1
+          description: Suggestions shown under the text. At least one.
+      unevaluatedProperties:
+        not: {}
+      description: Sends text with suggestions the recipient can tap.
+    Message.RcsUrlAction:
+      type: object
+      required:
+        - type
+        - title
+        - url
+      properties:
+        type:
+          type: string
+          enum:
+            - url
+        title:
+          type: string
+          description: Text shown on the suggestion.
+          examples:
+            - Track your order
+        url:
+          type: string
+          format: uri
+          description: The HTTP or HTTPS URL to open.
+          examples:
+            - https://example.com/orders/12345
+        webview:
+          type: string
+          enum:
+            - browser
+            - full
+            - half
+            - tall
+          description: "How the URL opens: in the device's browser, or in a webview inside the messaging app at full, half, or tall height."
+          examples:
+            - browser
+      unevaluatedProperties:
+        not: {}
+      description: Opens a URL on the recipient's device.
     Message.SendMessageRequest:
       anyOf:
         - $ref: '#/components/schemas/Message.CreateMessageRequest'
         - $ref: '#/components/schemas/Message.WhatsAppContentMessageRequest'
         - $ref: '#/components/schemas/Message.WhatsAppTemplateMessageRequest'
+        - $ref: '#/components/schemas/Message.RcsMessageRequest'
       description: |-
         Request body for `POST /api/messaging/messages`. The channel is determined by the `from` number:
 
         - An SMS/MMS request when `from` is a purchased phone number or shortcode.
         - A WhatsApp **content** message when `from` is a `whatsapp:`-prefixed number and `message_type` is set.
         - A WhatsApp **template** message when `from` is a `whatsapp:`-prefixed number and `template_id` is set.
+        - An RCS message when `from` is the ID of an RCS agent.
     Message.UpdateMessageRequest:
       type: object
       required:
@@ -53848,7 +54299,7 @@ components:
             - My SIP Gateway
         uri:
           type: string
-          description: External SIP URI, including the `sip:` or `sips:` scheme. Must be unique within the project.
+          description: 'External SIP URI, including the `sip:` or `sips:` scheme. Must be unique within the project. SignalWire dials the URI exactly as configured, with one exception: when a call to one of your phone numbers routes to this gateway and the URI has no user part, SignalWire adds the dialed number, without the leading `+`, as the user part.'
           examples:
             - sip:user2@domain.com
         encryption:
