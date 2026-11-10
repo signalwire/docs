@@ -8,5 +8,5 @@ namespace Relay.Calling;
 
 @summary("Pass result")
 model PassResult {
-  ...RelayResultWithCall<"Passing call to another application">;
+  ...RelayResultWithCall<"Passing call to another consumer">;
 }

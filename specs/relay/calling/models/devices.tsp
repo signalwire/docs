@@ -13,14 +13,14 @@ model PhoneDeviceParams {
   @example("+15551230001")
   from_number?: string;
 
-  @doc("Destination number, E.164.")
+  @doc("Destination number, E.164. The emergency and crisis numbers `911`, `933`, `988`, and `+988` are also accepted as written.")
   @example("+15551230002")
   to_number: string;
 
-  @doc("Seconds to ring before giving up.")
+  @doc("Seconds to ring before giving up. Fractions are truncated. Defaults to the request's `timeout`, or 60 if neither is set.")
   @minValue(0)
   @example(30)
-  timeout?: int32 = 30;
+  timeout?: int32;
 
   @doc("Webhook to receive call-state events for this leg.")
   @example("https://example.com/webhooks/relay")
@@ -31,12 +31,18 @@ model PhoneDeviceParams {
   call_state_events?: CallStateEventName[];
 
   @doc("""
-    A prompt that must be confirmed before this leg is bridged. Provide a URL to a
-    SWML document or an inline SWML document. See the SWML reference for details.
+    SWML to run on this leg after it answers and before it is bridged, for example to
+    have the callee confirm they accept the call. Provide an `http(s)` URL that returns
+    a SWML document, or an inline array of SWML methods (the body of a section, not a
+    full document). Only a subset of SWML methods is available here: `switch`, `if`,
+    `cond`, `set`, `unset`, `hangup`, `prompt`, `play`, `record`, `record_call`,
+    `stop_record_call`, `user_event`, `denoise`, `stop_denoise`, `tap`, `stop_tap`,
+    `stream`, `stop_stream`, `transcribe`, `transcribe_stop`, `send_digits`, and
+    `send_sms`.
     """)
   confirm?: url | unknown[];
 
-  @doc("Seconds to wait for the confirmation prompt to complete before giving up.")
+  @doc("Seconds to wait for `confirm` to complete before giving up. Defaults to this leg's `timeout`.")
   @minValue(0)
   @example(30)
   confirm_timeout?: int32;
@@ -53,16 +59,16 @@ model SipDeviceParams {
   @example("Alice")
   from_name?: string;
 
-  @doc("Destination SIP URI / address.")
+  @doc("Destination SIP URI. Must start with `sip:` or `sips:`.")
   @example("sip:bob@example.com")
   to: string;
 
-  @doc("Seconds to ring before giving up.")
+  @doc("Seconds to ring before giving up. Fractions are truncated. Defaults to the request's `timeout`, or 60 if neither is set.")
   @minValue(0)
   @example(30)
-  timeout?: int32 = 30;
+  timeout?: int32;
 
-  @doc("Custom `X-` SIP headers.")
+  @doc("SIP headers to add to the outbound INVITE. See `SipHeader` for the allowed names.")
   headers?: SipHeader[];
 
   @doc("Negotiable codecs (SignalWire-picked if unset).")
@@ -85,7 +91,7 @@ model SipDeviceParams {
   @example("s3cret")
   password?: string;
 
-  @doc("Seconds between SIP session-timer refreshes for this leg.")
+  @doc("Seconds between SIP session-timer refreshes for this leg. Values above the platform maximum are ignored.")
   @minValue(0)
   @example(1800)
   session_timeout?: int32;
@@ -98,10 +104,10 @@ model SipDeviceParams {
   @example(#["ended"])
   call_state_events?: CallStateEventName[];
 
-  @doc("A confirmation prompt (SWML URL or inline SWML).")
+  @doc("SWML to run on this leg after it answers and before it is bridged. Same forms and method subset as the phone device's `confirm`.")
   confirm?: url | unknown[];
 
-  @doc("Seconds to wait for the confirmation prompt to complete before giving up.")
+  @doc("Seconds to wait for `confirm` to complete before giving up. Defaults to this leg's `timeout`.")
   @minValue(0)
   @example(30)
   confirm_timeout?: int32;
@@ -118,10 +124,10 @@ model FabricDeviceParams {
   @example("/private/support")
   to: string;
 
-  @doc("Seconds to ring before giving up.")
+  @doc("Seconds to ring before giving up. Fractions are truncated. Defaults to the request's `timeout`, or 60 if neither is set.")
   @minValue(0)
   @example(30)
-  timeout?: int32 = 30;
+  timeout?: int32;
 
   @doc("Webhook to receive call-state events for this leg.")
   @example("https://example.com/webhooks/relay")
@@ -131,10 +137,10 @@ model FabricDeviceParams {
   @example(#["ended"])
   call_state_events?: CallStateEventName[];
 
-  @doc("A confirmation prompt (SWML URL or inline SWML).")
+  @doc("SWML to run on this leg after it answers and before it is bridged. Same forms and method subset as the phone device's `confirm`.")
   confirm?: url | unknown[];
 
-  @doc("Seconds to wait for the confirmation prompt to complete before giving up.")
+  @doc("Seconds to wait for `confirm` to complete before giving up. Defaults to this leg's `timeout`.")
   @minValue(0)
   @example(30)
   confirm_timeout?: int32;
@@ -143,10 +149,6 @@ model FabricDeviceParams {
 @doc("Parameters for connecting to an existing call by reference (`calling.connect`, `call` device type).")
 @summary("Call reference device parameters")
 model CallRefDeviceParams {
-  @doc("Opaque identifier that, paired with `call_id`, addresses the existing call. Echo back the value you received; treat it as opaque.")
-  @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
-  node_id: string;
-
   @doc("Existing call id.")
   @example("c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c")
   call_id: string;
@@ -155,10 +157,6 @@ model CallRefDeviceParams {
 @doc("Parameters for connecting to a call pulled from a queue (`calling.connect`, `queue` device type).")
 @summary("Queue device parameters")
 model QueueDeviceParams {
-  @doc("Opaque identifier that, paired with the queue, addresses it. Echo back the value you received; treat it as opaque.")
-  @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
-  node_id: string;
-
   @doc("Queue name.")
   @example("support")
   queue_name: string;
@@ -167,8 +165,8 @@ model QueueDeviceParams {
   @example("q-1a2b3c4d")
   queue_id?: string;
 
-  @doc("Destination to dial after the queued call is bridged.")
-  @example("+15551230003")
+  @doc("SWML to run on the call pulled from the queue once its bridge ends: an `https://` URL that returns SWML, or an inline SWML script.")
+  @example("https://example.com/after-queue")
   execute_after_queue?: string;
 }
 
@@ -187,10 +185,9 @@ model StreamDeviceParams {
     Codec, optionally with rate/ptime modifiers — `@<ms>i` sets the packetization
     interval (how many milliseconds of audio per packet), `@<hz>h` sets the sample
     rate (e.g. `PCMU@40i`, `L16@24000h@40i`). One of `PCMU|PCMA|G722|L16`.
-    Default `PCMU`.
     """)
   @example("PCMU")
-  codec?: string = "PCMU";
+  codec?: string;
 
   @doc("Webhook for stream status.")
   @example("https://example.com/webhooks/relay")
@@ -344,9 +341,9 @@ model RingbackSilence extends Ringback {
   type: "silence";
 
   params: {
-    @doc("Seconds of silence.")
-    @minValueExclusive(0)
-    @example(1.5)
+    @doc("Seconds of silence. Must be at least 1.")
+    @minValue(1)
+    @example(2)
     duration: float64;
   };
 }
@@ -361,8 +358,8 @@ model RingbackRingtone extends Ringback {
     @example("us")
     name: ToneName;
 
-    @doc("Seconds to play.")
-    @minValueExclusive(0)
+    @doc("Seconds to play. Must be at least 1.")
+    @minValue(1)
     @example(5)
     duration?: float64;
   };
@@ -388,7 +385,7 @@ model CallPhoneDevice extends CallDevice {
     @example("+15551230002")
     to_number: string;
 
-    @doc("Custom `X-` SIP headers carried on the leg, when present.")
+    @doc("SIP headers received on the leg, when present: custom `X-` headers plus `User-to-User`, `P-Asserted-Identity`, `Identity`, `From`, `To`, `Remote-Party-ID`, `Diversion`, `Session-ID`, and `Call-ID`.")
     headers?: SipHeader[];
   };
 }
@@ -407,7 +404,7 @@ model CallSipDevice extends CallDevice {
     @example("sip:bob@example.com")
     to: string;
 
-    @doc("Custom `X-` SIP headers.")
+    @doc("SIP headers received on the leg, when present: custom `X-` headers plus `User-to-User`, `P-Asserted-Identity`, `Identity`, `From`, `To`, `Remote-Party-ID`, `Diversion`, `Session-ID`, and `Call-ID`.")
     headers?: SipHeader[];
   };
 }

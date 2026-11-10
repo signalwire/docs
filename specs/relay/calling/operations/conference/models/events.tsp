@@ -16,14 +16,14 @@ union ConferenceStatus {
   "participant-join",
   "participant-mute",
   "participant-unmute",
+  "participant-deaf",
+  "participant-undeaf",
   "participant-hold",
   "participant-unhold",
   "participant-modify",
   "participant-speech-start",
   "participant-speech-stop",
 
-  @doc("Per-participant voice-quality (QoS) report. Emitted only when the conference was joined with `emit_call_quality: true`. Carries the participant's QoS metrics.")
-  "participant-call-quality",
 
   "announcement-end",
   "announcement-fail",
@@ -50,13 +50,37 @@ union ConferenceReasonEnded {
   """)
 @summary("Conference event")
 model ConferenceParams {
-  @doc("Opaque identifier that, paired with `call_id`, addresses this call. Present on participant events; absent on `conference-start`/`conference-end`. Treat it as opaque and echo back the value you received.")
+  @doc("Opaque identifier that, paired with `call_id`, addresses the call this event was delivered for. Treat it as opaque and echo back the value you received.")
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id?: string;
+
+  @doc("Identifier of the call segment this event belongs to.")
+  @example("e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f")
+  segment_id?: string;
+
+  @doc("The `tag` you set when placing the call, if any.")
+  @example("my-tag-1")
+  tag?: string;
+
+  @doc("The subscriber the call belongs to, when it is a subscriber call.")
+  @example("b7e4c1a2-3d5f-4e6a-8b9c-0d1e2f3a4b5c")
+  subscriber_id?: string;
+
+  @doc("The address the call belongs to, when it is a subscriber call.")
+  @example("f1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c")
+  address_id?: string;
+
+  @doc("Display name of the subscriber, when it is a subscriber call and a name is set.")
+  @example("Alice")
+  subscriber_name?: string;
 
   @doc("The UUID of the conference.")
   @example("d02c88a9-cf83-4a5a-9c8b-2f4e6b1a0f77")
   conference_id: string;
+
+  @doc("Opaque identifier of the node hosting the conference. Distinct from `node_id`, which identifies the call.")
+  @example("9b8a7c6d-5e4f-4a3b-2c1d-0e9f8a7b6c5d")
+  conference_node_id: string;
 
   @doc("The name of the conference.")
   @example("my_conference")
@@ -74,13 +98,17 @@ model ConferenceParams {
   @example("participant-join")
   status: ConferenceStatus;
 
-  @doc("The `call_id` of the participant this event is about. Present on participant events.")
+  @doc("The `call_id` of the call this event was delivered for. For participant events, the participant the event is about.")
   @example("c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c")
   call_id?: string;
 
   @doc("Whether the participant is muted. Present on participant events.")
   @example(false)
   muted?: boolean;
+
+  @doc("Whether the participant is deafened (can't hear the conference). Present on participant events.")
+  @example(false)
+  deaf?: boolean;
 
   @doc("Whether the participant is on hold. Present on participant events.")
   @example(false)
@@ -110,15 +138,15 @@ model ConferenceParams {
   @example("last-participant-left")
   reason_ended?: ConferenceReasonEnded;
 
-  @doc("Link to the conference recording. Present on `conference-end`.")
+  @doc("Link to the conference recording. Present on `record-*` events and on `conference-end` when the conference was recorded.")
   @example("https://example.com/recordings/conf.mp3")
   recording_url?: url;
 
-  @doc("Recording duration in seconds. Present on `conference-end`.")
+  @doc("Recording duration in seconds. Present on `record-stop` and on `conference-end` when the conference was recorded.")
   @example(42)
   recording_duration?: int32;
 
-  @doc("Recording file size in bytes. Present on `conference-end`.")
+  @doc("Recording file size in bytes. Present on `record-stop` and on `conference-end` when the conference was recorded.")
   @example(524288)
   recording_file_size?: int32;
 
@@ -126,93 +154,19 @@ model ConferenceParams {
   @example("https://example.com/announce.mp3")
   announce_url?: url;
 
-  @doc("Average round-trip time, in milliseconds. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("48")
-  rtt_avg?: string;
-
-  @doc("Minimum round-trip time, in milliseconds. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("32")
-  rtt_min?: string;
-
-  @doc("Maximum round-trip time, in milliseconds. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("120")
-  rtt_max?: string;
-
-  @doc("Minimum outbound jitter, in milliseconds. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("2")
-  out_jitter_min?: string;
-
-  @doc("Maximum outbound jitter, in milliseconds. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("18")
-  out_jitter_max?: string;
-
-  @doc("Average outbound jitter, in milliseconds. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("6")
-  out_jitter_avg?: string;
-
-  @doc("Number of outbound packets lost. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("3")
-  out_lost?: string;
-
-  @doc("Total inbound media bytes received. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("1048576")
-  in_media_bytes?: string;
-
-  @doc("Number of inbound media packets received. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("5000")
-  in_media_packet_count?: string;
-
-  @doc("Number of inbound packets skipped. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("12")
-  in_skip_packet_count?: string;
-
-  @doc("Number of inbound packets affected by jitter. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("40")
-  in_jitter_packet_count?: string;
-
-  @doc("Number of inbound DTMF packets received. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("4")
-  in_dtmf_packet_count?: string;
-
-  @doc("Number of inbound comfort-noise (CNG) packets received. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("2")
-  in_cng_packet_count?: string;
-
-  @doc("Number of inbound packets flushed. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("1")
-  in_flush_packet_count?: string;
-
-  @doc("Total count of inbound stream flaws detected. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("5")
-  in_flaws_total?: string;
-
-  @doc("Inbound stream quality as a percentage (0-100). Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("98")
-  in_quality_percentage?: string;
-
-  @doc("Inbound Mean Opinion Score (MOS), a 1.0-5.0 estimate of perceived audio quality. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("4.4")
-  in_mos?: string;
-
-  @doc("Total outbound media bytes sent. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("1048576")
-  out_media_bytes?: string;
-
-  @doc("Number of outbound media packets sent. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("5000")
-  out_media_packet_count?: string;
-
-  @doc("Number of outbound DTMF packets sent. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("4")
-  out_dtmf_packet_count?: string;
-
-  @doc("Number of outbound comfort-noise (CNG) packets sent. Present only on `participant-call-quality` events, and only when the measurement is available.")
-  @example("2")
-  out_cng_packet_count?: string;
 }
 
 const callingConference = "calling.conference";
-@doc("Fires throughout a conference's life: when it starts and ends, and each time a participant joins, leaves, mutes, holds, speaks, or an announcement plays. Check `status` to see what happened.")
+@doc("""
+  Fires throughout a conference's life: when it starts and ends, and each time a
+  participant joins, leaves, mutes, holds, speaks, or an announcement plays.
+  Check `status` to see what happened. Events are delivered per call: for each
+  call you control in the conference, you receive that call's own participant
+  events plus the conference start and end, and every event carries that
+  call's `call_id` and `node_id`. Events about other participants are not
+  delivered; to receive every conference event, use `status_callback` on
+  `calling.join_conference`.
+  """)
 @summary(callingConference)
 @extension("x-fern-display-name", callingConference)
 model ConferenceEvent is SignalwireEvent<typeof callingConference, ConferenceParams>;

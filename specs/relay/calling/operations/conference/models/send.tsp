@@ -77,13 +77,12 @@ model JoinConferenceParams {
   @example(false)
   end_on_exit?: boolean = false;
 
-  @doc("A URL to cXML, or to an mp3/wav file, to play while this participant waits for the conference to start. Defaults to hold music.")
+  @doc("A URL to cXML, or to an mp3/wav file, to play while this participant waits for the conference to start. Defaults to hold music. Set to an empty string to wait in silence.")
   @example("https://example.com/hold.mp3")
-  wait_url?: url;
+  wait_url?: url | "";
 
-  @doc("The maximum number of participants allowed in the conference, up to 250. Defaults to `250`.")
-  @minValueExclusive(0)
-  @maxValue(250)
+  @doc("The maximum number of participants allowed in the conference. Defaults to `100000`. Values below 2 or above 100000 are ignored and the default is used.")
+  @minValue(1)
   @example(3)
   max_participants?: int32;
 
@@ -114,7 +113,8 @@ model JoinConferenceParams {
   @doc("""
     A space-separated list of which conference events to deliver to
     `status_callback`. Available events: `start`, `end`, `join`, `leave`,
-    `mute`, `hold`, `modify`, `speaker`, `announcement`. Not set by default.
+    `mute`, `hold`, `modify`, `speaker`, `announcement`. Defaults to `end` when
+    `status_callback` is set.
     """)
   @example("start end join leave")
   status_callback_event?: string;
@@ -132,11 +132,12 @@ model JoinConferenceParams {
   recording_status_callback?: url;
 
   @doc("""
-    A space-separated list of which recording lifecycle events to deliver to
-    `recording_status_callback`. Available events: `in-progress`, `completed`, `absent`
-    (for example, `"in-progress completed"`). Defaults to `completed`.
+    Which recording lifecycle event to deliver to `recording_status_callback`:
+    `in-progress`, `completed`, or `absent`. Only a single event is applied;
+    any other value, including a list of several events, is treated as
+    `completed`. Defaults to `completed`.
     """)
-  @example("in-progress completed")
+  @example("completed")
   recording_status_callback_event?: string;
 
   @doc("The payload format for `recording_status_callback`. Defaults to `relay`.")
@@ -153,13 +154,6 @@ model JoinConferenceParams {
     the stream device in `calling.connect`.
     """)
   stream?: StreamDeviceParams;
-
-  @doc("""
-    Opt into per-participant call-quality reporting. When `true`, the conference
-    emits `participant-call-quality` events carrying voice-quality (QoS) metrics for
-    each participant. Defaults to `false`.
-    """)
-  emit_call_quality?: boolean = false;
 }
 
 model LeaveConferenceParams {

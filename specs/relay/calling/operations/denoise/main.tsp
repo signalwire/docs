@@ -33,8 +33,8 @@ model DenoiseStopRequest is JsonRpcRequest<typeof callingDenoiseStop, DenoiseSto
 @extension("x-fern-display-name", callingDenoiseStopResponse)
 @reply model DenoiseStopReply is JsonRpcResponse<DenoiseStopResult>;
 
-@doc("Stops noise reduction previously started with `calling.denoise` on a call. Returns a `409` conflict if the call is not currently denoised.")
+@doc("Stops noise reduction previously started with `calling.denoise` on a call. A `calling.call.denoise` event with `denoised: false` follows. Returns a `409` conflict if the call is not currently denoised.")
 @channel(callingDenoiseStop)
 @summary("Stop call noise reduction")
 @extension("x-fern-display-name", callingDenoiseStop)
-op denoiseStop(...DenoiseStopRequest): DenoiseStopReply;
+op denoiseStop(...DenoiseStopRequest): DenoiseStopReply | CallDenoiseEvent;

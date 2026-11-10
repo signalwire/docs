@@ -27,7 +27,7 @@ op layoutList(...LayoutListRequest): LayoutListReply;
 const callLayoutSet = "call.layout.set";
 const callLayoutSetResponse = "${callLayoutSet} response";
 model LayoutSetRequest is JsonRpcRequest<typeof callLayoutSet, LayoutSetParams>;
-model LayoutSetResult { ...FabricResult<"Layout set">; }
+model LayoutSetResult { ...FabricResult; }
 @extension("x-fern-display-name", callLayoutSetResponse)
 @reply
 model LayoutSetReply is JsonRpcResponse<LayoutSetResult>;

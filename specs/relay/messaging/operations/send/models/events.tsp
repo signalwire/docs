@@ -22,15 +22,15 @@ model StateEventData {
   @example("outbound")
   direction: MessageDirection;
 
-  @doc("Your label for the message, echoed back so you can correlate this state update with the message you sent.")
+  @doc("Your label for the message, echoed back so you can correlate this state update with the message you sent. `null` when you did not set one.")
   @example("order-98765")
-  tag?: string;
+  tag: string | null;
 
   @doc("Reserved and currently unused — always an empty array. Use `tag` to label a message.")
   @example(#[])
-  tags?: string[];
+  tags: string[];
 
-  @doc("The sender's phone number, in E.164 format.")
+  @doc("The sender: an E.164 phone number or a short code.")
   @example("+15551230001")
   from_number: string;
 
@@ -38,13 +38,13 @@ model StateEventData {
   @example("+15551230002")
   to_number: string;
 
-  @doc("The text of the message.")
+  @doc("The text of the message. `null` for a media-only message.")
   @example("Your order has shipped!")
-  body: string;
+  body: string | null;
 
-  @doc("Any media URLs included with the message. Absent for text-only messages.")
+  @doc("Any media URLs included with the message. An empty array for text-only messages.")
   @example(#["https://example.com/receipt.png"])
-  media?: string[];
+  media: string[];
 
   @doc("How many SMS segments the message was split into.")
   @example(1)
@@ -57,6 +57,19 @@ model StateEventData {
   @doc("Why the message ended up in this state. Included only when it is `undelivered` or `failed`.")
   @example("spam")
   reason?: string;
+
+  @doc("""
+    A machine-readable error code describing the failure, such as
+    `unrouteable_message`, `insufficient_balance_to_send_message`,
+    `carrier_violation`, or `unknown_destination_handset`. For WhatsApp, the
+    platform's numeric error code. Included only when an error occurred.
+    """)
+  @example("carrier_violation")
+  error_code?: string;
+
+  @doc("A description of the error. Same text as `reason`. Included only when an error occurred.")
+  @example("spam")
+  error_message?: string;
 }
 
 const messagingState = "messaging.state";
@@ -100,9 +113,9 @@ model ReceiveEventData {
   @example("Is my order on the way?")
   body: string;
 
-  @doc("Any media URLs included with the message.")
+  @doc("Any media URLs included with the message. `null` when the message has no media.")
   @example(#["https://example.com/photo.jpg"])
-  media?: string[];
+  media: string[] | null;
 
   @doc("How many SMS segments the message was split into.")
   @example(1)

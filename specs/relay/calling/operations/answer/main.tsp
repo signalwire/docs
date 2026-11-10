@@ -18,7 +18,10 @@ model AnswerRequest is JsonRpcRequest<typeof callingAnswer, AnswerParams>;
 @extension("x-fern-display-name", callingAnswerResponse)
 @reply model AnswerReply is JsonRpcResponse<AnswerResult>;
 
-@doc("Answers an incoming call so audio begins flowing and you can start controlling it.")
+@doc("""
+  Answers an incoming call so audio begins flowing and you can start controlling it.
+  Fails with `"409"` if the call is outbound, already answered, or has ended.
+  """)
 @channel(callingAnswer)
 @summary("Answer an incoming call")
 @extension("x-fern-display-name", callingAnswer)

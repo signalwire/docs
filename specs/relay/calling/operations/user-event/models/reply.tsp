@@ -8,5 +8,5 @@ namespace Relay.Calling;
 
 @summary("User event result")
 model UserEventResult {
-  ...RelayResultWithCall<"Sending user event">;
+  ...RelayResultWithCall<"success">;
 }

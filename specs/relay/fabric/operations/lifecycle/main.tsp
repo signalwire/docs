@@ -12,7 +12,7 @@ namespace Relay.Fabric;
 const callEnd = "call.end";
 const callEndResponse = "${callEnd} response";
 model EndRequest is JsonRpcRequest<typeof callEnd, EndParams>;
-model EndResult { ...FabricResult<"Ended">; }
+model EndResult { ...FabricResult; }
 @extension("x-fern-display-name", callEndResponse)
 @reply
 model EndReply is JsonRpcResponse<EndResult>;
@@ -26,7 +26,7 @@ op end(...EndRequest): EndReply;
 const callHangup = "call.hangup";
 const callHangupResponse = "${callHangup} response";
 model HangupRequest is JsonRpcRequest<typeof callHangup, HangupParams>;
-model HangupResult { ...FabricResult<"Hung up">; }
+model HangupResult { ...FabricResult; }
 @extension("x-fern-display-name", callHangupResponse)
 @reply
 model HangupReply is JsonRpcResponse<HangupResult>;

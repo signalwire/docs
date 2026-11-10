@@ -21,7 +21,8 @@ model MemberRemoveParams {
   @doc("The call leg you're operating from — your own leg on this call.")
   self: Target;
 
-  @doc("The call legs to remove.")
+  @doc("The call legs to remove. Must contain at least one complete target.")
+  @minItems(1)
   targets: Target[];
 }
 
@@ -31,6 +32,7 @@ model MemberPositionSetParams {
   @doc("The call leg you're operating from — your own leg on this call.")
   self: Target;
 
-  @doc("The members to reposition, each paired with the layout position to move it to.")
+  @doc("The members to reposition, each paired with the layout position to move it to. Must contain at least one entry.")
+  @minItems(1)
   targets: TargetPosition[];
 }

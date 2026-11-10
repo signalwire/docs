@@ -31,7 +31,7 @@ model TranscribeUtterance {
   @example(1712345678123456)
   timestamp: int64;
 
-  @doc("Recognition confidence for the utterance, roughly 0.0-1.0.")
+  @doc("Recognition confidence for the utterance, roughly 0.0-1.0. Omitted when the engine reports none.")
   @example(0.94)
   confidence?: float64;
 
@@ -46,20 +46,60 @@ model TranscribeUtterance {
   @doc("Number of words in the utterance text.")
   @example(7)
   word_count?: int32;
+
+  @doc("Milliseconds since this speaker's previous utterance. Omitted on the speaker's first utterance.")
+  @example(850)
+  silence_before_ms?: int32;
+
+  @doc("The kind of content filter that matched this utterance, when one did.")
+  filter_type?: string;
+
+  @doc("The value the content filter matched, when one did.")
+  filter_value?: string;
+
+  @doc("Engine-reported start offset of the utterance, in seconds. Present with `verbose_utterances`.")
+  start?: float64;
+
+  @doc("Engine-reported end offset of the utterance, in seconds. Present with `verbose_utterances`.")
+  end?: float64;
+
+  @doc("Engine-reported duration of the utterance, in seconds. Present with `verbose_utterances`.")
+  duration?: float64;
+
+  @doc("Duration of the utterance, in milliseconds. Present with `verbose_utterances`.")
+  duration_ms?: float64;
+
+  @doc("Engine-reported word-level detail (timings, confidence). Present with `verbose_utterances`; the shape is engine-specific.")
+  words?: unknown[];
+
+  @doc("Engine-reported alternative transcripts. Present with `verbose_utterances`; the shape is engine-specific.")
+  alternatives?: unknown[];
+
+  @doc("Engine request identifier. Present with `verbose_utterances`.")
+  request_id?: string;
+
+  @doc("Language detected by the engine. Present with `verbose_utterances`.")
+  detected_language?: string;
+
+  @doc("Whether the engine marked this as the end of a spoken phrase. Present with `verbose_utterances`.")
+  speech_final?: boolean;
+
+  @doc("Whether the engine marked this result as final. Present with `verbose_utterances`.")
+  is_final?: boolean;
 }
 
 @doc("""
   A live-transcription result delivered while the call is still in progress — one
-  recognized utterance at a time. Streams to your `webhook` when you start
-  `calling.live_transcribe`.
+  recognized utterance at a time. Sent only when you start
+  `calling.live_transcribe` with `live_events` enabled.
   """)
 @summary("Live transcribe utterance event")
 model TranscribeUtteranceEventData {
   ...CallEventAddress;
 
-  @doc("Recognition confidence for this utterance, roughly 0.0-1.0. Mirrors `utterance.confidence`; provided at the top level for convenience.")
+  @doc("Recognition confidence for this utterance as reported by the engine, roughly 0.0-1.0. `null` when the engine reports none.")
   @example(0.94)
-  confidence?: float64;
+  confidence: float64 | null;
 
   @doc("The recognized utterance.")
   utterance: TranscribeUtterance;
@@ -72,7 +112,7 @@ model TranscribeUtteranceEventData {
 }
 
 const callingAiTranscribeUtterance = "calling.ai.transcribe.utterance";
-@doc("Streams a single recognized utterance during a `calling.live_transcribe` session.")
+@doc("Streams a single recognized utterance during a `calling.live_transcribe` session started with `live_events` enabled.")
 @summary(callingAiTranscribeUtterance)
 @extension("x-fern-display-name", callingAiTranscribeUtterance)
 model TranscribeUtteranceEvent

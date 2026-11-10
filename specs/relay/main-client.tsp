@@ -27,6 +27,11 @@ using SignalWire.AsyncAPI;
   `signalwire.authorization.state` event comes back that lets you reconnect quickly,
   and `signalwire.reauthenticate` refreshes your token.
 
+  ## Protocol version
+
+  Send `version: {major: 4, minor: 0, revision: 0}` on `signalwire.connect`. Call
+  Fabric (`call.*`, `subscriber.*`) requires major version `4`.
+
   Building a backend integration instead? See the **Server** reference for the
   `calling`, `messaging`, `tasking`, and `provisioning` surface.
   """)

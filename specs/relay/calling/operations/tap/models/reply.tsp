@@ -10,15 +10,15 @@ namespace Relay.Calling;
 @doc("Fully-resolved delivery-device settings echoed back in the tap result.")
 @summary("Tap echo device params")
 model TapEchoDeviceParams {
-  @doc("Resolved media IPv4 address.")
+  @doc("Resolved media IPv4 address. Omitted in the rare case the address can't be determined.")
   @example("10.10.10.10")
-  addr: string;
+  addr?: string;
 
-  @doc("Resolved media port.")
+  @doc("Resolved media port. Omitted in the rare case the port can't be determined.")
   @example(30030)
-  port: int32;
+  port?: int32;
 
-  @doc("Resolved codec for the tapped audio.")
+  @doc("Resolved codec for the tapped audio. May be lowercase (for example `opus`).")
   @example("PCMU")
   codec: string;
 
@@ -43,7 +43,7 @@ model TapEchoDevice {
   @example("rtp")
   type: "rtp" | "ws";
 
-  @doc("Fully-resolved delivery-device parameters.")
+  @doc("Resolved delivery-device parameters.")
   params: TapEchoDeviceParams;
 }
 

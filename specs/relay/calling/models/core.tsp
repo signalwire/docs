@@ -35,24 +35,32 @@ model CallEventAddress {
 
 @doc("""
   The base result returned by calling methods. Check `code`: `"200"` means success;
-  anything else means the request failed, and `message` explains why. Failures are
-  reported through these fields rather than thrown as a separate error.
+  anything else means the request failed, and `message` explains why.
+
+  Most failures arrive this way, inside `result`. A request that is malformed or not
+  allowed (for example a missing `node_id`, a parameter of the wrong type, or a
+  connection without calling permission) is instead rejected with a JSON-RPC `error`
+  and no `result`.
 
   This base carries only the fields every result has. Methods that echo the call or
   the control handle use `RelayResultWithCall` or `RelayResult` instead.
   """)
 @summary("Calling result (base)")
 model RelayResultBase<Message extends valueof string = "OK"> {
-  @doc("Result code as a string, e.g. `\"200\"` (success), `\"400\"`, `\"404\"`.")
+  @doc("""
+    Result code as a string. `"200"` means success. Failures use an HTTP-style code
+    such as `"400"` (bad request), `"403"`, `"404"` (call not found), `"405"`, `"409"`
+    (conflict, for example another operation is still running), `"410"` (call gone),
+    or `"500"`. If the call could not be reached in time, `code` is a lowercase error
+    identifier instead, such as `response_timeout`, `not_available`, or
+    `internal_error`.
+    """)
   @example("200")
   code: string;
 
   @doc("Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.")
   @example(Message)
   message?: string;
-
-  @doc("Present on partial failures — an array of per-device error entries, each describing which device failed and why.")
-  data?: unknown[];
 }
 
 @doc("""
@@ -83,17 +91,18 @@ model RelayResult<Message extends valueof string = "OK"> {
 }
 
 @doc("""
-  A custom SIP header. Custom `X-` headers are allowed, except the reserved
-  `X-SignalWire*` and `X-CID*` prefixes. A few standard headers (`Privacy`,
-  `P-Asserted-Identity`, `User-to-User`) are also permitted.
+  A SIP header, as a `name` / `value` pair. When you set headers on a request, custom
+  `X-` headers are allowed, plus the standard `Privacy`, `P-Asserted-Identity`, and
+  `User-to-User` headers. Names starting with `SignalWire`, `X-SignalWire`, `X-CID`,
+  or `X-SW-Xregion` are reserved and rejected.
   """)
 @summary("SIP header")
 model SipHeader {
-  @doc("Header name. Typically an `X-`-prefixed custom header; the reserved `X-SignalWire*` and `X-CID*` names are rejected.")
+  @doc("Header name. Must be a valid SIP token longer than two characters, for example `X-Custom-Key`.")
   @example("X-Custom-Key")
   name: string;
 
-  @doc("Header value. Must not contain CR or LF characters.")
+  @doc("Header value. Must be non-empty and must not contain CR or LF characters.")
   @example("custom-value")
   value: string;
 }
@@ -117,7 +126,7 @@ union CallStateEventName {
   "ended",
 }
 
-@doc("Reason an outbound/active call is ended (`calling.end`).")
+@doc("Reason passed to `calling.end`.")
 @summary("Call end reason")
 union CallEndReason {
   "hangup",
@@ -133,24 +142,6 @@ union CallEndReason {
 union TtsGender {
   "male",
   "female",
-}
-
-@doc("""
-  Codecs you can negotiate when answering a call. The full set applies to SIP and
-  WebRTC calls; **phone** calls accept only `PCMU`, `PCMA`, `G729`, `G722`, and
-  `AMR-WB` — requesting `OPUS`, `VP8`, or `H264` on a phone answer is rejected with
-  a `"400"`.
-  """)
-@summary("Answer codec")
-union AnswerCodec {
-  "PCMU",
-  "PCMA",
-  "OPUS",
-  "G729",
-  "G722",
-  "AMR-WB",
-  "VP8",
-  "H264",
 }
 
 @doc("Codecs you can request for a SIP device when you dial or connect.")

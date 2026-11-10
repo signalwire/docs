@@ -51,8 +51,9 @@ union WhatsAppMessageType {
 
 @summary("Send parameters")
 model SendParams {
-  @doc("The context that delivery and reply events for this message are sent to. Defaults to `default`.")
+  @doc("The context that delivery and reply events for this message are sent to. Defaults to `default`. Up to 250 characters.")
   @example("office")
+  @maxLength(250)
   context?: string;
 
   @doc("""
@@ -62,21 +63,31 @@ model SendParams {
   @example("order-98765")
   tag?: string;
 
+  @doc("""
+    Accepted for compatibility but not stored — `messaging.state` events always
+    report an empty `tags` array. Use `tag` to label a message. Up to 20 strings.
+    """)
+  @maxItems(20)
+  @example(#["priority"])
+  tags?: string[];
+
   @doc("The recipient's phone number, in E.164 format (for example, `+15551231234`).")
   @example("+15551230002")
   to_number: string;
 
-  @doc("The phone number to send from, in E.164 format. Must be a number on your account.")
+  @doc("The number to send from: an E.164 phone number or a 5–6 digit short code. Must be on your account.")
   @example("+15551230001")
   from_number: string;
 
   @doc("""
     The text of the message. Include `body`, `media`, or both — at least one is
     required — unless you are sending a WhatsApp template message (`template_id`),
-    in which case `body` must be omitted.
+    in which case `body` must be omitted. For WhatsApp media and interactive
+    messages (`message_type`), `body` may instead be a JSON object or array
+    describing the content.
     """)
   @example("Your order has shipped!")
-  body?: string;
+  body?: string | Record<unknown> | unknown[];
 
   @doc("""
     One or more media URLs to send as an MMS. You must include `body`, `media`,
@@ -87,7 +98,7 @@ model SendParams {
   @example(#["https://example.com/receipt.png"])
   media?: string[];
 
-  @doc("HTTPS URL that SignalWire POSTs per-message delivery-status updates to.")
+  @doc("HTTP or HTTPS URL that SignalWire POSTs per-message delivery-status updates to.")
   @example("https://example.com/message-status")
   status_callback?: url;
 

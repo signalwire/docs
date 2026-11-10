@@ -12,21 +12,6 @@ model ReferSipDeviceParams {
   @doc("SIP URI to transfer the call to. Must be a `sip:` or `sips:` URI, for example `sip:userb@example.com`.")
   @example("sip:userb@example.com")
   to: string;
-
-  @doc("SIP URI for the referral From address; must begin with `sip:` or `sips:`.")
-  @example("sip:alice@example.com")
-  from?: string;
-
-  @doc("Username for authenticating against the destination SIP endpoint, if it requires credentials.")
-  @example("foo")
-  username?: string;
-
-  @doc("Password for authenticating against the destination SIP endpoint, if it requires credentials.")
-  @example("bar")
-  password?: string;
-
-  @doc("Reserved. Accepted for compatibility but currently ignored — no headers are added to the REFER.")
-  headers?: SipHeader[];
 }
 
 @doc("Where to transfer the call. Set `type` to `sip` and supply the SIP destination in `params`.")
@@ -44,7 +29,7 @@ model ReferSipDevice extends ReferDevice {
   @example("sip")
   type: "sip";
 
-  @doc("The SIP destination and any auth/headers for the transfer.")
+  @doc("The SIP destination for the transfer.")
   params: ReferSipDeviceParams;
 }
 
@@ -54,8 +39,4 @@ model ReferParams {
 
   @doc("Where to transfer the call. Only SIP destinations are supported (`type: \"sip\"`).")
   device: ReferDevice;
-
-  @doc("HTTPS URL that `calling.call.refer` status events are POSTed to.")
-  @example("https://example.com/webhooks/relay")
-  status_url?: url;
 }

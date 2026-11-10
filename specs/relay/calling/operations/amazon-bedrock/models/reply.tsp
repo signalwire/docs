@@ -7,7 +7,10 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 @summary("Amazon Bedrock result")
-@doc("Confirmation that the Amazon Bedrock agent connected.")
+@doc("""
+  Sent when the Bedrock session ends, not when it starts. Once the request passes
+  validation, the result is `"200"` / `success` even if the agent failed to run.
+  """)
 model AmazonBedrockResult {
   ...RelayResultWithCall<"success">;
 }

@@ -7,28 +7,24 @@ namespace Relay.Fabric;
 @doc("""
   A member of a Call Fabric conference — one participant's state. Carried on the
   `member.updated`, `member.joined`, and `member.left` events and returned by
-  `call.member.list`. Fields match the Video API's `Member`.
+  `call.member.list` in a conference. Fields match the Video API's `Member`.
 
-  Note: on a 1:1 (non-conference) call, `member.joined`/`member.left` carry a leaner
-  variant of this object — it keys the member by `member_id`
-  instead of `id`, adds `node_id` (and, when present, `address_id` and `subscriber_id`),
-  and reports `echo_cancellation`/`auto_gain`/`noise_suppression`/`denoise`/`lowbitrate`
-  (all defaulting to `false`) instead of the volume/sensitivity fields. If you consume
-  member events on direct 1:1 calls, treat those fields as the variant set.
+  On a 1:1 (non-conference) call, member data uses the `CallMember` shape instead,
+  keyed by `member_id` rather than `id`.
   """)
 @summary("Call Fabric member")
 model Member {
-  @doc("The member ID. Equals the call ID for a member that is not in a conference.")
+  @doc("The member ID.")
   @example("c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c")
   id: string;
 
-  @doc("The room this member belongs to. In a 1:1 call this is the call ID; in a conference it is the room ID.")
+  @doc("The room this member belongs to.")
   room_id: string;
 
   @doc("The room session this member belongs to.")
   room_session_id: string;
 
-  @doc("Friendly display name — the caller ID for a 1:1 call.")
+  @doc("Friendly display name.")
   @example("Alice")
   name: string;
 
@@ -51,19 +47,19 @@ model Member {
   @doc("Whether the member has their hand raised.")
   handraised: boolean;
 
-  @doc("Whether the member is visible in the layout. Always `true` for a 1:1 call.")
+  @doc("Whether the member is visible in the layout.")
   visible: boolean;
 
   @doc("Whether the member is deafened (not hearing the conference audio).")
   deaf: boolean;
 
-  @doc("Input (microphone) volume, in decibels, from -50 to 50.")
+  @doc("Input (microphone) volume, in decibels, from -50 to 50. May be fractional.")
   @example(0)
-  input_volume: int32;
+  input_volume: float64;
 
-  @doc("Output (speaker) volume, in decibels, from -50 to 50.")
+  @doc("Output (speaker) volume, in decibels, from -50 to 50. May be fractional.")
   @example(0)
-  output_volume: int32;
+  output_volume: float64;
 
   @doc("Input (microphone) sensitivity, from 0.0 to 100.0.")
   @example(50)
@@ -75,8 +71,90 @@ model Member {
   @doc("Customer-provided metadata for the member.")
   meta: Record<unknown>;
 
+  @doc("The node the member's call leg lives on. Present on most member events.")
+  @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
+  node_id?: string;
+
   @doc("The fields that changed — present on the `member.updated` event.")
   updated?: string[];
+}
+
+@doc("""
+  The member object for a 1:1 (non-conference) Call Fabric call. Carried on
+  `member.joined` and `member.left`, inside `call.joined`'s `room_session.members`, and
+  returned by `call.member.list` on a 1:1 call. Unlike the conference `Member`, it is
+  keyed by `member_id` (no `id`) and has no volume, sensitivity, or position fields. The
+  boolean state fields report their defaults.
+  """)
+@summary("Call Fabric 1:1 member")
+model CallMember {
+  @doc("The member ID. Equals the member's call ID.")
+  @example("c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c")
+  member_id: string;
+
+  @doc("The member's call ID.")
+  @example("c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c")
+  call_id: string;
+
+  @doc("The node the member's call leg lives on.")
+  @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
+  node_id: string;
+
+  @doc("The room ID. On a 1:1 call this is the call ID.")
+  room_id: string;
+
+  @doc("The room session ID. On a 1:1 call this is the call ID.")
+  room_session_id: string;
+
+  @doc("Always `member`.")
+  @example("member")
+  type: "member";
+
+  @doc("Display name: the subscriber's name when the leg belongs to a subscriber, otherwise the dialed number or address.")
+  @example("Alice")
+  name: string;
+
+  @doc("The call that created this member's call, when there is one.")
+  parent_id?: string;
+
+  @doc("The Resource address the call is associated with, when known.")
+  address_id?: string;
+
+  @doc("The subscriber the call belongs to, when known.")
+  subscriber_id?: string;
+
+  @doc("Always `true` on a 1:1 call.")
+  visible: boolean;
+
+  @doc("Reported as `false` on a 1:1 call.")
+  handraised: boolean;
+
+  @doc("Reported as `false` on a 1:1 call.")
+  audio_muted: boolean;
+
+  @doc("Reported as `false` on a 1:1 call.")
+  video_muted: boolean;
+
+  @doc("Reported as `false` on a 1:1 call.")
+  deaf: boolean;
+
+  @doc("Reported as `false` on a 1:1 call.")
+  echo_cancellation: boolean;
+
+  @doc("Reported as `false` on a 1:1 call.")
+  auto_gain: boolean;
+
+  @doc("Reported as `false` on a 1:1 call.")
+  noise_suppression: boolean;
+
+  @doc("Reported as `false` on a 1:1 call.")
+  denoise: boolean;
+
+  @doc("Reported as `false` on a 1:1 call.")
+  lowbitrate: boolean;
+
+  @doc("The public metadata set on the call. An empty object when none is set.")
+  meta: Record<unknown>;
 }
 
 @doc("A minimal member reference carried on the `member.talking` event: just the member `id` and whether they are talking.")
@@ -153,6 +231,10 @@ model RoomSession {
   @doc("The room session ID.")
   id: string;
 
+  @doc("Your project ID.")
+  @example("b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e")
+  project_id: string;
+
   @doc("The room ID.")
   room_id: string;
 
@@ -184,7 +266,7 @@ model RoomSession {
   prioritize_handraise: boolean;
 
   @doc("Number of audience (receive-only) participants.")
-  audience_count?: int32;
+  audience_count: int32;
 
   @doc("A preview image URL for the room, when available.")
   preview_url?: string;
@@ -192,8 +274,8 @@ model RoomSession {
   @doc("Customer-provided metadata for the room.")
   meta: Record<unknown>;
 
-  @doc("The members currently in the room session. Included when requested.")
-  members?: Member[];
+  @doc("The members currently in the room session. An empty array when the member list is not included.")
+  members: Member[];
 
   @doc("The room's recordings. Included when requested.")
   recordings?: Record<unknown>[];
@@ -232,8 +314,8 @@ model CallRoomSession {
   @doc("Customer-provided metadata for the room.")
   meta: Record<unknown>;
 
-  @doc("The members in the session. Present on `call.joined`, absent on `call.left`.")
-  members?: Member[];
+  @doc("The members in the session. Present on `call.joined`, absent on `call.left`. On a 1:1 call these are `CallMember` objects.")
+  members?: (CallMember | Member)[];
 
   @doc("The room's recordings. Present (as an empty array) on `call.joined`, absent on `call.left`.")
   recordings?: Record<unknown>[];

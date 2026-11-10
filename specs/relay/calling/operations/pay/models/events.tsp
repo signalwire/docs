@@ -9,8 +9,9 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-@doc("Why the most recent collection attempt failed.")
+@doc("Why the most recent collection attempt failed. An empty string means there was no error.")
 union PayErrorType {
+  "",
   "timeout",
   "invalid-card-number",
   "invalid-card-type",
@@ -72,11 +73,11 @@ model CallPayParams {
   status_url_method?: string;
 
   // --- Progress events ---
-  @doc("Progress: the field currently being collected, or a lifecycle marker (`payment-processing`, `payment-completed`, `payment-failed`, `payment-canceled`). The `bank-routing-number` and `bank-account-number` values never fire, since bank-debit is not yet supported.")
+  @doc("Progress: the field currently being collected, or a lifecycle marker (`payment-processing`, `payment-completed`, `payment-failed`, `payment-canceled`). Always present on progress events. The `bank-routing-number` and `bank-account-number` values never fire, since bank-debit is not yet supported.")
   @example("payment-card-number")
-  "for"?: PayPromptFor;
+  "for"?: PayPromptFor | "";
 
-  @doc("Progress: why the most recent collection attempt failed, if it did.")
+  @doc("Progress: why the most recent collection attempt failed. Always present on progress events; an empty string when the attempt didn't fail.")
   @example("invalid-card-number")
   error_type?: PayErrorType;
 
@@ -97,15 +98,15 @@ model CallPayParams {
   @example("success")
   result?: PayOutcome;
 
-  @doc("Final: token type issued for the payment.")
+  @doc("Final: the token for the payment. When the payment connector created a token (for example, a zero-amount tokenization), this is the connector's token ID; otherwise it's the requested token type (`one-time` or `reusable`).")
   @example("one-time")
-  payment_token?: PayTokenType;
+  payment_token?: string;
 
   @doc("Final: the payment connector's confirmation / charge identifier.")
   @example("ch_3Nk9c2Ij8xLm4Qp0")
   payment_confirmation_code?: string;
 
-  @doc("Final: why the payment failed, if it did.")
+  @doc("Final: why the payment failed. An empty string when it didn't fail.")
   @example("card-declined")
   payment_error?: PayErrorType;
 
@@ -130,7 +131,7 @@ model CallPayParams {
   payment_card_expiration_date?: string;
 
   // --- Present on both progress and final events (masked) ---
-  @doc("Payment method being collected.")
+  @doc("Payment method being collected. Always present.")
   @example("credit-card")
   payment_method?: PayMethod;
 
@@ -138,9 +139,9 @@ model CallPayParams {
   @example("xxxxxxxxxxxx4242")
   payment_card_number?: string;
 
-  @doc("Detected card brand.")
+  @doc("Detected card brand. Always present on progress events; an empty string until the brand is detected.")
   @example("visa")
-  payment_card_type?: PayCardType;
+  payment_card_type?: PayCardType | "";
 
   @doc("Postal code collected with the card.")
   @example("94105")

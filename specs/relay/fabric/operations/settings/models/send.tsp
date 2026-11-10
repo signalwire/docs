@@ -67,7 +67,7 @@ model DenoiseSetParams {
   denoise: boolean;
 }
 
-@doc("Parameters for `call.audioflags.set`. Set any combination of the audio processing flags.")
+@doc("Parameters for `call.audioflags.set`. Set any combination of the audio processing flags, but at least one of `echo_cancellation`, `noise_suppression`, or `auto_gain`; with none set, the request fails with JSON-RPC error `-32602`.")
 @summary("Audio flags parameters")
 model AudioflagsSetParams {
   @doc("The call leg you're operating from — your own leg on this call.")

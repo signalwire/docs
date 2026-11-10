@@ -7,6 +7,7 @@ using TypeSpec.OpenAPI;
 namespace Relay.WebRTC;
 
 const webrtcMessage = "webrtc.message";
+const webrtcMessageResponse = "${webrtcMessage} response";
 @doc("""
   Delivers a Verto frame from SignalWire to your client. This fires when SignalWire
   has a Verto response to one of your `webrtc.verto` frames, but also when

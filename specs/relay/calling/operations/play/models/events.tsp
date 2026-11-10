@@ -19,7 +19,7 @@ union CallPlayState {
 model CallPlayParams {
   ...CallAddress;
 
-  @doc("The `control_id` of the playback this event refers to, returned when you started it with `calling.play`.")
+  @doc("The `control_id` of the playback this event refers to, as set on the `calling.play` or `calling.play_and_collect` that started it.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
@@ -29,7 +29,7 @@ model CallPlayParams {
 }
 
 const callingCallPlay = "calling.call.play";
-@doc("Fires when audio playback on a call starts, pauses, resumes, finishes, or errors, so you can track a `calling.play` through to completion.")
+@doc("Fires when audio playback on a call starts, pauses, resumes, finishes, or errors, so you can track a `calling.play` (or the prompt of a `calling.play_and_collect`) through to completion.")
 @summary(callingCallPlay)
 @extension("x-fern-display-name", callingCallPlay)
 model CallPlayEvent is SignalwireEvent<typeof callingCallPlay, CallPlayParams>;

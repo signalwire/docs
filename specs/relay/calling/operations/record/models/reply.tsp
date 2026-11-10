@@ -10,9 +10,9 @@ namespace Relay.Calling;
 model RecordResult {
   ...RelayResult<"Recording">;
 
-  @doc("URL of the recording, when available on the immediate result (the finished URL is normally delivered on the `calling.call.record` event).")
+  @doc("Where the recording will be stored. The file is complete once a `calling.call.record` event reports `finished`.")
   @example("https://example.com/recordings/c2a1e9f4.mp3")
-  url?: url;
+  url: url;
 }
 
 @summary("Record pause result")

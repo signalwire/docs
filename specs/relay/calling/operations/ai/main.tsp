@@ -25,6 +25,10 @@ model AiReply is JsonRpcResponse<AiResult>;
   runs, other blocking operations like `connect` or `play_and_collect` cannot
   start, and control returns when the session ends. Events continue to flow while
   the session is active.
+
+  A `project_id` key anywhere in the params (for example inside `global_data` or a
+  SWAIG function definition) is refused with a JSON-RPC error `-32602`, and the
+  request is not processed.
   """)
 @channel(callingAi)
 @summary("Start an AI agent on the call")
@@ -32,8 +36,6 @@ model AiReply is JsonRpcResponse<AiResult>;
 op ai(...AiRequest):
   | AiReply
   | CallAiEvent
-  | AiStartEvent
-  | AiUserSpeakingEvent
   | AiCompletionEvent
   | AiResponseEvent
   | AiResponseUtteranceEvent
@@ -56,7 +58,7 @@ model AiStopRequest is JsonRpcRequest<typeof callingAiStop, AiStopParams>;
 @reply
 model AiStopReply is JsonRpcResponse<AiStopResult>;
 
-@doc("Stop an active AI agent session on the call.")
+@doc("Stop the AI agent session running on the call.")
 @channel(callingAiStop)
 @summary("Stop an active AI agent session")
 @extension("x-fern-display-name", callingAiStop)

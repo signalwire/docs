@@ -13,7 +13,7 @@ const callMicrophoneVolumeSet = "call.microphone.volume.set";
 const callMicrophoneVolumeSetResponse = "${callMicrophoneVolumeSet} response";
 model MicrophoneVolumeSetRequest
   is JsonRpcRequest<typeof callMicrophoneVolumeSet, MicrophoneVolumeSetParams>;
-model MicrophoneVolumeSetResult { ...FabricResult<"Microphone volume set">; }
+model MicrophoneVolumeSetResult { ...FabricResult; }
 @extension("x-fern-display-name", callMicrophoneVolumeSetResponse)
 @reply
 model MicrophoneVolumeSetReply is JsonRpcResponse<MicrophoneVolumeSetResult>;
@@ -31,7 +31,7 @@ model MicrophoneSensitivitySetRequest
     typeof callMicrophoneSensitivitySet,
     MicrophoneSensitivitySetParams
   >;
-model MicrophoneSensitivitySetResult { ...FabricResult<"Microphone sensitivity set">; }
+model MicrophoneSensitivitySetResult { ...FabricResult; }
 @extension("x-fern-display-name", callMicrophoneSensitivitySetResponse)
 @reply
 model MicrophoneSensitivitySetReply is JsonRpcResponse<MicrophoneSensitivitySetResult>;
@@ -48,7 +48,7 @@ const callSpeakerVolumeSet = "call.speaker.volume.set";
 const callSpeakerVolumeSetResponse = "${callSpeakerVolumeSet} response";
 model SpeakerVolumeSetRequest
   is JsonRpcRequest<typeof callSpeakerVolumeSet, SpeakerVolumeSetParams>;
-model SpeakerVolumeSetResult { ...FabricResult<"Speaker volume set">; }
+model SpeakerVolumeSetResult { ...FabricResult; }
 @extension("x-fern-display-name", callSpeakerVolumeSetResponse)
 @reply
 model SpeakerVolumeSetReply is JsonRpcResponse<SpeakerVolumeSetResult>;

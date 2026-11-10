@@ -8,28 +8,29 @@ namespace Relay.Calling;
 
 @summary("Dial parameters")
 model DialParams {
-  @doc("Your label for this dial. Every resulting `calling.call.*` and `calling.call.dial` event carries this `tag`, so use it to match events back to this request. Required: the dial acknowledgement returns no `call_id`, so this tag is your only handle for correlating the resulting call and its events.")
+  @doc("Your label for this dial. Every resulting `calling.call.*` and `calling.call.dial` event carries this `tag`, so use it to match events back to this request. Optional, but set it: the dial result returns no `call_id`, so this tag is your only handle for correlating the resulting call and its events.")
   @example("my-tag-1")
-  tag: string;
+  tag?: string;
 
   @doc("""
     Devices to dial. The outer array is sequential ringing groups; the inner
     array is simultaneous (parallel) dials within a group. The first device to
-    answer wins.
+    answer wins. Up to 20 devices in total; devices beyond the limit are skipped
+    and reported in the result's `message_data`.
     """)
   devices: DialDevice[][];
 
-  @doc("Maximum length of the call, in seconds. The call ends automatically once this is reached.")
-  @minValue(0)
-  @example(3600)
-  max_duration?: int32;
-
-  @doc("Default ring timeout, in seconds, used when a device doesn't set its own.")
-  @minValueExclusive(0)
+  @doc("Default ring timeout, in seconds, used when a device doesn't set its own. Fractions are truncated. Defaults to 60.")
+  @minValue(1)
   @example(30)
   timeout?: float64;
 
-  @doc("DTMF (touch-tone) digits to send once the call is answered. Use `w` or `W` to insert pauses.")
+  @doc("""
+    DTMF (touch-tone) digits to send once the call is answered: `0`-`9`, `*`, `#`,
+    and `A`-`D`. Use `w` or `W` to wait and `,` to pause. At most 98 characters.
+    """)
+  @minLength(1)
+  @maxLength(98)
   @example("1234#")
   send_digits?: string;
 
@@ -37,11 +38,4 @@ model DialParams {
   @minValue(0)
   @example(0.05)
   max_price_per_minute?: float64;
-
-  @doc("""
-    An inline SWML script or an `https://` URL that returns one, attached to the
-    dial. Provide it as a string or as a SWML object.
-    """)
-  @example("https://example.com/swml")
-  dest_swml?: string | Record<unknown>;
 }

@@ -17,7 +17,8 @@ using SignalWire.AsyncAPI;
   the Verto method it carries — and SignalWire passes it through as-is.
 
   **Audience:** client-side. The browser SDK exposes this for peer (Verto)
-  calling; server-side code uses the `calling` service instead. Authenticate
-  with a `jwt_token`.
+  calling; server-side code uses the `calling` service instead. Connections
+  authenticated with a Subscriber Access Token send frames with `webrtc.verto`;
+  connections authenticated with a Relay JWT send them with `webrtc.message`.
   """)
 namespace Relay.WebRTC;

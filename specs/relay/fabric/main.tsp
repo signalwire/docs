@@ -23,8 +23,9 @@ using SignalWire.AsyncAPI;
   `subscriber.online` / `subscriber.offline`.
   
   Call Fabric addresses each call leg explicitly with a `{node_id, call_id, member_id}`
-  target, and it is a **4.0+** surface: a connection must authenticate at protocol major 4 (typically
-  with a Subscriber Access Token) to use it. React to what happens with the `call.state`
-  and member events.
+  target. The `call.*` and `subscriber.*` methods need a connection opened with
+  `signalwire.connect` at `version` 4.0 (typically with a Subscriber Access Token); on
+  an older protocol version they fail with JSON-RPC error `-32001`. React to what
+  happens with the `call.state` and member events.
   """)
 namespace Relay.Fabric;

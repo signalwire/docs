@@ -8,12 +8,15 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-@doc("What the fax detector heard.")
+@doc("""
+  What the fax detector reports. On a detection, the value is the `tone` you asked
+  it to listen for (uppercase), not a measurement of which tone was heard.
+  """)
 union CallDetectFaxEvent {
-  @doc("The answering fax machine's tone (CED).")
+  @doc("A fax was detected while listening for the answering fax's tone (CED, the default). A fax preamble also triggers this.")
   "CED",
 
-  @doc("The calling fax machine's tone (CNG).")
+  @doc("A fax was detected while listening for the calling fax's tone (CNG).")
   "CNG",
 
   @doc("The detector finished.")
@@ -64,7 +67,7 @@ model CallDetectFax extends CallDetectResult {
   type: "fax";
 
   params: {
-    @doc("What the fax detector heard.")
+    @doc("The fax tone the detector was listening for when it detected a fax, or `finished`.")
     @example("CED")
     event: CallDetectFaxEvent;
   };
@@ -92,7 +95,7 @@ model CallDetectDigit extends CallDetectResult {
   type: "digit";
 
   params: {
-    @doc("The DTMF (touch-tone) digit that was detected: one of `0`-`9`, `#`, or `*`. Carries the terminal `finished` value once the detector completes.")
+    @doc("The DTMF (touch-tone) digit that was detected: one of `0`-`9`, `#`, or `*` by default, or `A`-`D` when your `digits` filter includes them. Carries the terminal `finished` value once the detector completes.")
     @example("5")
     event: string;
   };

@@ -12,7 +12,7 @@ namespace Relay.Fabric;
 const callDigitSend = "call.digit.send";
 const callDigitSendResponse = "${callDigitSend} response";
 model DigitSendRequest is JsonRpcRequest<typeof callDigitSend, DigitSendParams>;
-model DigitSendResult { ...FabricResult<"Digits sent">; }
+model DigitSendResult { ...FabricResult; }
 @extension("x-fern-display-name", callDigitSendResponse)
 @reply
 model DigitSendReply is JsonRpcResponse<DigitSendResult>;

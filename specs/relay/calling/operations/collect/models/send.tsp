@@ -30,9 +30,9 @@ model CollectDigits {
 
   @doc("""
     How long to wait, in seconds, for the next key press after one is received
-    before giving up. Defaults to `5.0`.
+    before giving up. Must be at least `1`. Defaults to `5.0`.
     """)
-  @minValueExclusive(0)
+  @minValue(1)
   @example(5.0)
   digit_timeout?: float64 = 5.0;
 }
@@ -41,18 +41,23 @@ model CollectDigits {
 model CollectSpeech {
   @doc("""
     How much silence, in seconds, to wait for before treating the caller as
-    finished speaking. Defaults to `1`.
+    finished speaking. Defaults to `0.5`. A value you send must be at least `1`,
+    so leave it unset to keep the sub-second default.
     """)
-  @minValueExclusive(0)
+  @minValue(1)
   @example(1.0)
-  end_silence_timeout?: float64 = 1.0;
+  end_silence_timeout?: float64 = 0.5;
 
-  @doc("Maximum time, in seconds, to spend collecting speech. Defaults to `60`.")
-  @minValueExclusive(0)
+  @doc("Maximum time, in seconds, to spend collecting speech. Must be at least `1`. Defaults to `60`.")
+  @minValue(1)
   @example(5.0)
   speech_timeout?: float64 = 60.0;
 
-  @doc("Language to recognize, as a BCP-47 tag such as `en-US`. Defaults to `en-US`.")
+  @doc("""
+    Language to recognize, as a BCP-47 tag such as `en-US`. To pin the engine for
+    this language, use the form `<engine>:<tag>`, where `<engine>` is `Google`,
+    `Google.V2`, or `Deepgram` (for example `Deepgram:en-US`). Defaults to `en-US`.
+    """)
   @example("en-US")
   language?: string = "en-US";
 
@@ -66,7 +71,7 @@ model CollectSpeech {
   engine?: CollectSpeechEngine;
 
   @doc("""
-    Recognition model to use. One of `default`, `enhanced`, `enhanced.phone_call`,
+    Recognition model to use, such as `default`, `enhanced`, `enhanced.phone_call`,
     or `enhanced.video`. Not set by default.
     """)
   @example("enhanced.phone_call")
@@ -84,9 +89,9 @@ model CollectParams {
     How long to wait, in seconds, for the caller to start giving input. This
     timer only runs once it has been started — either at the outset when
     `start_input_timers` is `true`, or later via `calling.collect.start_input_timers`.
-    Defaults to `4.0`.
+    Must be at least `1`. Defaults to `4.0`.
     """)
-  @minValueExclusive(0)
+  @minValue(1)
   @example(5.0)
   initial_timeout?: float64 = 4.0;
 

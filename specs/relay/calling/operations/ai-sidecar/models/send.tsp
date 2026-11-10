@@ -10,7 +10,16 @@ namespace Relay.Calling;
 @summary("AI sidecar params")
 model AiSidecarParams {
   ...CallAddress;
-  ...SWML.Calling.AISidecarObject;
+  ...OmitProperties<SWML.Calling.AISidecarObject, "lang">;
+
+  @doc("""
+    The conversation language as a single BCP-47 tag. Sets the speech recognition
+    language and is shared with the model as a hint. Required to attach a sidecar;
+    not used with `action.summarize`.
+    """)
+  @example("en-US")
+  @minLength(1)
+  lang?: string;
 }
 
 @summary("AI sidecar poke params")

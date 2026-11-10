@@ -10,19 +10,9 @@ namespace Relay.Calling;
 model AnswerParams {
   ...CallAddress;
 
-  @doc("""
-    Audio codecs to offer when answering, in preference order. If you omit this,
-    SignalWire picks suitable codecs for you. Every codec you list must be
-    supported by the call type — otherwise the request fails with `"400"`. Phone
-    calls accept a narrower set than `sip` or `webrtc` calls, so check
-    `call.device.type` in the `calling.call.state` events to know which call type
-    you're answering.
-    """)
-  @example(#["PCMU", "PCMA"])
-  codecs?: AnswerCodec[];
-
-  @doc("Maximum length of the call, in seconds. The call ends automatically once this is reached.")
-  @minValue(0)
+  @doc("Maximum length of the call, in seconds, from 15 to 14400 (4 hours). The call ends automatically once this is reached. Defaults to 14400; values outside the range are rejected with `\"400\"`.")
+  @minValue(15)
+  @maxValue(14400)
   @example(3600)
   max_duration?: int32;
 }

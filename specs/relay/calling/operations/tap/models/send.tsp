@@ -6,24 +6,27 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-@doc("Which side of the tapped party's audio to capture: `listen` = the audio the tapped party hears; `speak` = the audio the tapped party says (the default); `both` = both directions.")
+@doc("Which side of the tapped party's audio to capture: `listen` = the audio the tapped party hears; `speak` = the audio the tapped party says; `both` = both directions.")
 union TapDirection {
   "listen",
   "speak",
   "both",
 }
 
-@doc("Codec for the tapped audio. Case-insensitive; the uppercase form shown here is canonical.")
+@doc("Codec for the tapped audio. Send it all uppercase (`PCMU`) or all lowercase (`pcmu`); mixed case such as `Pcmu` is rejected.")
 union TapCodec {
   "OPUS",
   "PCMA",
   "PCMU",
+  "opus",
+  "pcma",
+  "pcmu",
 }
 
 @doc("Audio-tap settings.")
 @summary("Audio tap params")
 model TapAudioParams {
-  @doc("Side of the call to tap.")
+  @doc("Side of the call to tap. Required; there is no default.")
   @example("listen")
   direction: TapDirection;
 }
@@ -44,19 +47,23 @@ model TapAudio extends TapConfig {
 @doc("RTP delivery-target settings.")
 @summary("RTP delivery target")
 model TapRtpDeviceParams {
-  @doc("RTP destination IPv4 address. Must be a public IP address you control; private addresses and SignalWire's own addresses are rejected.")
+  @doc("RTP destination IPv4 address, in dotted-quad form. Must be a public address; private, loopback, link-local, documentation, multicast, and other reserved ranges are rejected, as are octets with leading zeros.")
   @example("12.34.56.78")
   addr: string;
 
   @doc("RTP port.")
+  @minValue(1)
+  @maxValue(65535)
   @example(1234)
   port: int32;
 
-  @doc("Codec for the tapped audio. Matches the tapped audio if not set.")
+  @doc("Codec for the tapped audio. If not set, uses the call's codec when it is `PCMU`, `PCMA`, or `OPUS`, and `PCMU` otherwise.")
   @example("PCMU")
   codec?: TapCodec;
 
-  @doc("Packet interval, in milliseconds — how many milliseconds of audio each RTP packet carries. Matches the tapped audio if not set.")
+  @doc("Packet interval, in milliseconds — how many milliseconds of audio each RTP packet carries. A multiple of 10 from 10 to 120. Matches the tapped audio if not set.")
+  @minValue(10)
+  @maxValue(120)
   @example(20)
   ptime?: int32;
 }
@@ -68,7 +75,7 @@ model TapWsDeviceParams {
   @example("wss://example.com/tap")
   uri: string;
 
-  @doc("Codec for the tapped audio. Matches the tapped audio if not set.")
+  @doc("Codec for the tapped audio. If not set, uses the call's codec when it is `PCMU`, `PCMA`, or `OPUS`, and `PCMU` otherwise.")
   @example("PCMU")
   codec?: TapCodec;
 }
@@ -105,10 +112,6 @@ model TapParams {
 
   @doc("Device to receive the tapped media.")
   device: TapDevice;
-
-  @doc("HTTP(s) URL that tap status events are POSTed to.")
-  @example("https://example.com/webhooks/relay")
-  status_url?: url;
 }
 
 model TapStopParams {

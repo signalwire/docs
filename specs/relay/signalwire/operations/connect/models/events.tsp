@@ -20,7 +20,8 @@ const signalwireAuthorizationState = "signalwire.authorization.state";
 @doc("""
   Delivers your latest authorization state so you can restore it if you
   reconnect. Save the `authorization_state` value each time this event arrives.
+  The envelope carries only `event_type` and `params`.
   """)
 @summary(signalwireAuthorizationState)
 @extension("x-fern-display-name", signalwireAuthorizationState)
-model AuthorizationStateEvent is SignalwireEvent<typeof signalwireAuthorizationState, AuthorizationStateParams>;
+model AuthorizationStateEvent is SignalwireConnectionEvent<typeof signalwireAuthorizationState, AuthorizationStateParams>;

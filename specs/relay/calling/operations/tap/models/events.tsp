@@ -14,7 +14,7 @@ union TapState {
   "finished",
 }
 
-@doc("Which side of the tapped party's audio to capture: `listen` = the audio the tapped party hears; `speak` = the audio the tapped party says (the default); `both` = both directions.")
+@doc("Which side of the tapped party's audio to capture: `listen` = the audio the tapped party hears; `speak` = the audio the tapped party says; `both` = both directions.")
 union CallTapDirection {
   "speak",
   "listen",
@@ -60,13 +60,13 @@ model CallTapRtpDevice extends CallTapDevice {
     @example(30030)
     port: int32;
 
-    @doc("Codec used for the tapped audio stream. Absent when it matches the tapped audio.")
+    @doc("Codec used for the tapped audio stream. Always present: your requested codec, or the one chosen for you if you didn't set it.")
     @example("PCMU")
-    codec?: string;
+    codec: string;
 
-    @doc("Packet interval, in milliseconds — how many milliseconds of audio each RTP packet carries. Absent when it matches the tapped audio.")
+    @doc("Packet interval, in milliseconds — how many milliseconds of audio each RTP packet carries. Always present: your requested value, or the call's packet interval if you didn't set it.")
     @example(20)
-    ptime?: int32;
+    ptime: int32;
   };
 }
 
@@ -80,9 +80,9 @@ model CallTapWsDevice extends CallTapDevice {
     @example("wss://example.com/media")
     uri: string;
 
-    @doc("Codec used for the tapped audio stream. Absent when it matches the tapped audio.")
+    @doc("Codec used for the tapped audio stream. Always present: your requested codec, or the one chosen for you if you didn't set it.")
     @example("PCMU")
-    codec?: string;
+    codec: string;
   };
 }
 

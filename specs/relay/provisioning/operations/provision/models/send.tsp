@@ -13,8 +13,8 @@ union ConnectorTarget {
 }
 
 @doc("The target type, identity, and network endpoints of the connector requesting configuration.")
-model ConfigureParams {
-  @doc("The connector type to provision. Currently only `freeswitch` is supported.")
+model ProvisionParams {
+  @doc("The connector type to provision. Currently only `freeswitch` is supported; any other value is rejected.")
   @example("freeswitch")
   target: ConnectorTarget;
 
@@ -26,7 +26,7 @@ model ConfigureParams {
   @example("8.8.8.8:5060")
   external_endpoint: string;
 
-  @doc("UUID of the Relay connector being configured.")
+  @doc("UUID of the Relay connector being configured. Must be a connector in your project.")
   @example("b6ef5331-dce8-4c56-890d-949039398361")
   relay_connector_id: string;
 }

@@ -68,7 +68,7 @@ model RecordAudio {
   @example(44.0)
   input_sensitivity?: float64 = 44.0;
 
-  @doc("Maximum recording length, in seconds. Use `0` for no limit. Default `0`.")
+  @doc("Maximum recording length, in whole seconds (fractions are dropped). Use `0` for no limit. Default `0`.")
   @minValue(0)
   @example(0)
   max_length?: float64 = 0;
@@ -90,7 +90,7 @@ model RecordParams {
   @doc("What to record. Currently audio is the only option — set its parameters under `audio`.")
   record: RecordSpec;
 
-  @doc("HTTPS URL that status events are POSTed to.")
+  @doc("HTTP or HTTPS URL that status events are POSTed to.")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
 }

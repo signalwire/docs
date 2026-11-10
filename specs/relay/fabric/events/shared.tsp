@@ -9,6 +9,64 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Fabric;
 
+@doc("SIP signaling details for a SIP call leg. Each field is present only when the call carried it.")
+@summary("Call Fabric SIP data")
+model FabricSipData {
+  @doc("User part of the SIP Request-URI.")
+  sip_req_user?: string;
+
+  @doc("The SIP Request-URI.")
+  sip_req_uri?: string;
+
+  @doc("Host part of the SIP Request-URI.")
+  sip_req_host?: string;
+
+  @doc("User part of the SIP `From` header.")
+  sip_from_user?: string;
+
+  @doc("The SIP `From` URI.")
+  sip_from_uri?: string;
+
+  @doc("Host part of the SIP `From` header.")
+  sip_from_host?: string;
+
+  @doc("User part of the SIP `To` header.")
+  sip_to_user?: string;
+
+  @doc("The SIP `To` URI.")
+  sip_to_uri?: string;
+
+  @doc("Host part of the SIP `To` header.")
+  sip_to_host?: string;
+
+  @doc("User part of the SIP `Contact` header.")
+  sip_contact_user?: string;
+
+  @doc("Port of the SIP `Contact` header.")
+  sip_contact_port?: string;
+
+  @doc("The SIP `Contact` URI.")
+  sip_contact_uri?: string;
+
+  @doc("Host part of the SIP `Contact` header.")
+  sip_contact_host?: string;
+
+  @doc("URI parameters of the `From` header, as name/value pairs.")
+  sip_from_params?: Record<string>;
+
+  @doc("URI parameters of the `To` header, as name/value pairs.")
+  sip_to_params?: Record<string>;
+
+  @doc("URI parameters of the `Contact` header, as name/value pairs.")
+  sip_contact_params?: Record<string>;
+
+  @doc("URI parameters of the Request-URI, as name/value pairs.")
+  sip_req_params?: Record<string>;
+
+  @doc("The raw `P-Asserted-Identity` header.")
+  sip_p_asserted_identity?: string;
+}
+
 @doc("The device handling a Call Fabric call leg.")
 @summary("Call Fabric device")
 model FabricCallDevice {
@@ -51,16 +109,16 @@ model FabricParentRef {
 @doc("Payload of the Call Fabric `call.state` event: a call leg's address, state, timing, and connection detail.")
 @summary("Call Fabric call state event payload")
 model CallStateParams {
-  @doc("The call this event is about. Present on essentially every event.")
+  @doc("The call this event is about.")
   @example("c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c")
-  call_id?: string;
+  call_id: string;
 
   @doc("The node the call leg lives on.")
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id: string;
 
   @doc("The room session this call leg belongs to. In a 1:1 call this is the call ID.")
-  room_session_id?: string;
+  room_session_id: string;
 
   @doc("Identifier of the call segment this event belongs to, for correlating events within the same segment.")
   @example("e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f")
@@ -78,42 +136,54 @@ model CallStateParams {
   @example("outbound")
   direction: string;
 
-  @doc("When the call started, as a Unix timestamp in milliseconds.")
+  @doc("When the call started, as a Unix timestamp in milliseconds. `0` until known.")
   @example(1712345678123)
-  start_time?: int64;
+  start_time: int64;
 
-  @doc("When the call was answered, as a Unix timestamp in milliseconds. Present once the call has been answered.")
+  @doc("When the call was answered, as a Unix timestamp in milliseconds. `0` until the call is answered.")
   @example(1712345680456)
-  answer_time?: int64;
+  answer_time: int64;
 
-  @doc("When the call ended, as a Unix timestamp in milliseconds. Present once the call has ended.")
-  @example(1712345695789)
-  end_time?: int64;
+  @doc("When the call ended, as a Unix timestamp in milliseconds. `0` until the call ends.")
+  @example(0)
+  end_time: int64;
 
-  @doc("Why the call ended: one of `hangup`, `cancel`, `busy`, `decline`, `noAnswer`, `error`. Present once the call has ended.")
+  @doc("Why the call ended: one of `hangup`, `cancel`, `busy`, `decline`, `noAnswer`, `error`, `abandoned`, `maxDuration`, or `notFound`. Present once an end reason is known.")
   @example("hangup")
   end_reason?: string;
 
-  @doc("Which side ended the call — `inbound` or `outbound`. Present once the call has ended.")
+  @doc("Which side ended the call: `inbound`, `outbound`, or `none` when it could not be determined. Present together with `end_reason`.")
   @example("outbound")
-  end_source?: string;
+  end_source?: "inbound" | "outbound" | "none";
 
   @doc("Set to the string `\"true\"` on the call leg that won a dial race. Absent otherwise. Note the value is the string `\"true\"`, not a JSON boolean.")
   @example("true")
   dial_winner?: "true";
 
-  @doc("Inbound-audio Mean Opinion Score (voice quality). Present when RTP quality stats are available.")
-  @example(4)
-  audio_in_mos?: int32;
+  @doc("Inbound-audio Mean Opinion Score (voice quality), as a decimal such as `4.42`. Present when RTP quality stats are available.")
+  @example(4.42)
+  audio_in_mos?: float64;
 
   @doc("The device handling this call leg.")
-  device?: FabricCallDevice;
+  device: FabricCallDevice;
 
   @doc("Present when this leg is directly connected to another call.")
   peer?: FabricPeerRef;
 
   @doc("Present when this call was created by another call.")
   parent?: FabricParentRef;
+
+  @doc("SIP signaling details. Present on SIP call legs.")
+  sip_data?: FabricSipData;
+
+  @doc("The Resource address the call is associated with. Present on subscriber call legs.")
+  address_id?: string;
+
+  @doc("The subscriber the call belongs to. Present on subscriber call legs.")
+  subscriber_id?: string;
+
+  @doc("The subscriber's display name. Present on subscriber call legs when set.")
+  subscriber_name?: string;
 }
 
 const fabricCallState = "call.state";
@@ -148,8 +218,8 @@ model CallJoinedParams {
   @doc("The node your call leg lives on.")
   node_id: string;
 
-  @doc("The capabilities granted to you on this call — the operations you are permitted to perform.")
-  capabilities: string[];
+  @doc("The capabilities granted to you on this call — the operations you are permitted to perform. Omitted when no capabilities are reported.")
+  capabilities?: string[];
 
   @doc("The call ID this call originated from. Present when this call has an originating call.")
   origin_call_id?: string;
@@ -185,14 +255,10 @@ model CallLeftParams {
 
   @doc("The call ID this call originated from. Present when this call has an originating call.")
   origin_call_id?: string;
-
-  @doc("Why you left the call, when a reason is supplied.")
-  @example("hangup")
-  reason?: string;
 }
 
 const fabricCallLeft = "call.left";
-@doc("Fires when you leave a Call Fabric call, delivering the (reduced) room session you left and, when supplied, the reason.")
+@doc("Fires when your Call Fabric call leg starts ending, delivering the (reduced) room session you left. To learn why the call ended, read `end_reason` on the `call.state` event.")
 @summary(fabricCallLeft)
 @extension("x-fern-display-name", fabricCallLeft)
 model CallLeftEvent is SignalwireEvent<typeof fabricCallLeft, CallLeftParams>;
@@ -200,8 +266,8 @@ model CallLeftEvent is SignalwireEvent<typeof fabricCallLeft, CallLeftParams>;
 @doc("Payload of the `member.joined` event: the member that joined and the room they joined.")
 @summary("Member joined event payload")
 model MemberJoinedParams {
-  @doc("The member that joined, with their state.")
-  member: Member;
+  @doc("The member that joined, with their state. A `CallMember` on a 1:1 call, a `Member` in a conference.")
+  member: CallMember | Member;
 
   @doc("The room ID.")
   room_id: string;
@@ -217,7 +283,7 @@ model MemberJoinedParams {
 }
 
 const fabricMemberJoined = "member.joined";
-@doc("Fires when a member joins a Call Fabric conference, delivering the new member's state.")
+@doc("Fires when a member joins a Call Fabric call or conference, delivering the new member's state.")
 @summary(fabricMemberJoined)
 @extension("x-fern-display-name", fabricMemberJoined)
 model MemberJoinedEvent
@@ -226,8 +292,8 @@ model MemberJoinedEvent
 @doc("Payload of the `member.left` event: the member that left and the room.")
 @summary("Member left event payload")
 model MemberLeftParams {
-  @doc("The member that left, with their last-known state.")
-  member: Member;
+  @doc("The member that left, with their last-known state. A `CallMember` on a 1:1 call, a `Member` in a conference.")
+  member: CallMember | Member;
 
   @doc("The room ID.")
   room_id: string;
@@ -240,14 +306,10 @@ model MemberLeftParams {
 
   @doc("The call ID this member originated from. Present when this member has an originating call.")
   origin_call_id?: string;
-
-  @doc("Why the member left, when a reason is supplied.")
-  @example("hangup")
-  reason?: string;
 }
 
 const fabricMemberLeft = "member.left";
-@doc("Fires when a member leaves a Call Fabric conference, delivering the member and, when supplied, the reason.")
+@doc("Fires when a member leaves a Call Fabric call or conference, delivering the member's last-known state.")
 @summary(fabricMemberLeft)
 @extension("x-fern-display-name", fabricMemberLeft)
 model MemberLeftEvent
@@ -304,6 +366,9 @@ model RoomUpdatedParams {
 
   @doc("The room session ID.")
   room_session_id: string;
+
+  @doc("Deprecated. A legacy copy of `room_session` that carries `room_session_id` in place of `id`. Use `room_session` instead.")
+  room?: Record<unknown>;
 }
 
 const fabricRoomUpdated = "room.updated";
@@ -503,7 +568,7 @@ model FabricRecordEventSpec {
   audio?: FabricRecordEventAudio;
 }
 
-@doc("Payload of the Call Fabric `call.record` event: recording state and, once finished, the download URL and metadata.")
+@doc("Payload of the Call Fabric `call.record` event: recording state, the recording URL, and, once finished, the file metadata.")
 @summary("Call Fabric record event payload")
 model CallRecordParams {
   ...FabricMediaEventAddress;
@@ -520,7 +585,7 @@ model CallRecordParams {
   @example("c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c")
   recording_id?: string;
 
-  @doc("Where to download the finished recording. Not available until the state is `finished`.")
+  @doc("Where the recording is stored. Present on every state, including `recording` and `paused`; the file is complete once the state is `finished`.")
   @example("https://example.com/recordings/c2a1e9f4.mp3")
   url?: url;
 
@@ -553,7 +618,7 @@ model CallRecordParams {
 }
 
 const fabricCallRecord = "call.record";
-@doc("Fires when a recording on a Call Fabric call starts, pauses, resumes, or finishes. The finished event includes the download URL, duration, and file size.")
+@doc("Fires when a recording on a Call Fabric call starts, pauses, resumes, or finishes. Every state carries the recording URL; the finished event adds the duration and file size.")
 @summary(fabricCallRecord)
 @extension("x-fern-display-name", fabricCallRecord)
 model CallRecordEvent
@@ -822,9 +887,9 @@ model CallStreamParams {
   @example("streaming")
   state: FabricStreamState;
 
-  @doc("The WebSocket URL the call audio is being streamed to.")
+  @doc("The WebSocket URL the call audio is being streamed to. Omitted when not available.")
   @example("wss://example.com/media")
-  url: url;
+  url?: url;
 
   @doc("The friendly name you gave the stream, if you set one.")
   @example("my_stream")
@@ -953,6 +1018,496 @@ model CallDetectEvent
   is SignalwireEvent<typeof fabricCallDetect, CallDetectParams>;
 
 // ===========================================================================
+// Other call.* events delivered to Call Fabric call legs. These mirror the
+// Calling API's calling.call.* events, renamed with a call. prefix and with
+// room_session_id added.
+// ===========================================================================
+
+// ── call.dial ────────────────────────────────────────────────────────────────
+@doc("Payload of the Call Fabric `call.dial` event: the outcome of a dial that reached your call leg.")
+@summary("Call Fabric dial event payload")
+model CallDialParams {
+  @doc("The dial's `tag`. This event has no call ID of its own, so `call_id` carries the same value.")
+  @example("my-tag-1")
+  call_id: string;
+
+  @doc("The dial's `tag`, repeated here.")
+  @example("my-tag-1")
+  room_session_id: string;
+
+  @doc("The node that handled the dial.")
+  @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
+  node_id: string;
+
+  @doc("The `tag` set on the dial request.")
+  @example("my-tag-1")
+  tag: string;
+
+  @doc("Where the dial stands.")
+  @example("answered")
+  dial_state: "dialing" | "answered" | "failed";
+
+  @doc("The call leg the dial reached, in the same shape as the `call.state` payload without `room_session_id` or the timing and quality fields.")
+  call?: Record<unknown>;
+
+  @doc("Why the dial failed. Present when `dial_state` is `failed`.")
+  @example("noAnswer")
+  reason?: string;
+
+  @doc("Which side ended the dial: `inbound`, `outbound`, or `none`. Present together with `reason`.")
+  @example("outbound")
+  source?: "inbound" | "outbound" | "none";
+}
+
+const fabricCallDial = "call.dial";
+@doc("Fires when a dial reaches a Call Fabric call leg, reporting whether it was answered or failed.")
+@summary(fabricCallDial)
+@extension("x-fern-display-name", fabricCallDial)
+model CallDialEvent is SignalwireEvent<typeof fabricCallDial, CallDialParams>;
+
+// ── call.send_digits ─────────────────────────────────────────────────────────
+@doc("Payload of the Call Fabric `call.send_digits` event.")
+@summary("Call Fabric send-digits event payload")
+model CallSendDigitsParams {
+  ...FabricMediaAddress;
+
+  @doc("The `control_id` of the send-digits operation.")
+  @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
+  control_id: string;
+
+  @doc("`finished` once all digits were sent, `error` if sending failed.")
+  @example("finished")
+  state: "finished" | "error";
+}
+
+const fabricCallSendDigits = "call.send_digits";
+@doc("Fires when sending DTMF digits on a Call Fabric call leg finishes or fails.")
+@summary(fabricCallSendDigits)
+@extension("x-fern-display-name", fabricCallSendDigits)
+model CallSendDigitsEvent
+  is SignalwireEvent<typeof fabricCallSendDigits, CallSendDigitsParams>;
+
+// ── call.refer ───────────────────────────────────────────────────────────────
+@doc("Payload of the Call Fabric `call.refer` event: the progress of a SIP REFER transfer.")
+@summary("Call Fabric refer event payload")
+model CallReferParams {
+  ...FabricMediaEventAddress;
+
+  @doc("Where the transfer stands.")
+  @example("success")
+  state: "inProgress" | "cancel" | "busy" | "noAnswer" | "error" | "success";
+
+  @doc("The SIP URI the call is being transferred to.")
+  @example("sip:bob@example.com")
+  sip_refer_to: string;
+
+  @doc("The SIP response code to the REFER, as a string. Present once received.")
+  @example("202")
+  sip_refer_response_code?: string;
+
+  @doc("The SIP response code reported by the NOTIFY messages that follow the REFER, as a string. Present once received.")
+  @example("200")
+  sip_notify_response_code?: string;
+}
+
+const fabricCallRefer = "call.refer";
+@doc("Fires each time a SIP REFER transfer of a Call Fabric call leg changes state.")
+@summary(fabricCallRefer)
+@extension("x-fern-display-name", fabricCallRefer)
+model CallReferEvent is SignalwireEvent<typeof fabricCallRefer, CallReferParams>;
+
+// ── call.denoise ─────────────────────────────────────────────────────────────
+@doc("Payload of the Call Fabric `call.denoise` event.")
+@summary("Call Fabric denoise event payload")
+model CallDenoiseParams {
+  ...FabricMediaEventAddress;
+
+  @doc("Whether noise reduction is now on.")
+  @example(true)
+  denoised: boolean;
+}
+
+const fabricCallDenoise = "call.denoise";
+@doc("Fires when noise reduction is turned on or off on a Call Fabric call leg.")
+@summary(fabricCallDenoise)
+@extension("x-fern-display-name", fabricCallDenoise)
+model CallDenoiseEvent
+  is SignalwireEvent<typeof fabricCallDenoise, CallDenoiseParams>;
+
+// ── call.echo ────────────────────────────────────────────────────────────────
+@doc("Payload of the Call Fabric `call.echo` event.")
+@summary("Call Fabric echo event payload")
+model CallEchoParams {
+  ...FabricMediaEventAddress;
+
+  @doc("Whether audio is still being echoed back (`echoing`) or the echo has stopped (`finished`).")
+  @example("echoing")
+  state: "echoing" | "finished";
+}
+
+const fabricCallEcho = "call.echo";
+@doc("Fires when audio echo starts on a Call Fabric call leg and again when it stops.")
+@summary(fabricCallEcho)
+@extension("x-fern-display-name", fabricCallEcho)
+model CallEchoEvent is SignalwireEvent<typeof fabricCallEcho, CallEchoParams>;
+
+// ── call.room ────────────────────────────────────────────────────────────────
+@doc("Payload of the Call Fabric `call.room` event.")
+@summary("Call Fabric room event payload")
+model CallRoomParams {
+  ...FabricMediaEventAddress;
+
+  @doc("The outcome: the call `joined` the room, `failed` to join, chose to `leave`, was canceled (`cancel`) before joining, or was refused because the room was `locked`.")
+  @example("joined")
+  join_status: "joined" | "failed" | "leave" | "cancel" | "locked";
+
+  @doc("The name of the room.")
+  @example("my_room")
+  room_name: string;
+}
+
+const fabricCallRoom = "call.room";
+@doc("Fires when a Call Fabric call leg joins, leaves, or is prevented from joining a room.")
+@summary(fabricCallRoom)
+@extension("x-fern-display-name", fabricCallRoom)
+model CallRoomEvent is SignalwireEvent<typeof fabricCallRoom, CallRoomParams>;
+
+// ── call.transcribe ──────────────────────────────────────────────────────────
+@doc("Payload of the Call Fabric `call.transcribe` event.")
+@summary("Call Fabric transcribe event payload")
+model CallTranscribeParams {
+  ...FabricMediaEventAddress;
+
+  @doc("The `control_id` of the transcription.")
+  @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
+  control_id: string;
+
+  @doc("Whether transcription is running (`transcribing`) or has stopped (`finished`).")
+  @example("finished")
+  state: "transcribing" | "finished";
+
+  @doc("Where the recording captured with the transcription is stored.")
+  url?: string;
+
+  @doc("The ID of the recording captured with the transcription.")
+  recording_id?: string;
+
+  @doc("The status callback URL set on the transcription, if any.")
+  status_url?: string;
+
+  @doc("Recording length in seconds. Present when `state` is `finished`.")
+  @example(30.0)
+  duration?: float64;
+
+  @doc("Recording size in bytes. Present when `state` is `finished`.")
+  @example(123456)
+  size?: int64;
+
+  @doc("When the recording started, as a Unix timestamp in seconds. Present when `state` is `finished`.")
+  start_time?: float64;
+
+  @doc("When the recording ended, as a Unix timestamp in seconds. Present when `state` is `finished`.")
+  end_time?: float64;
+}
+
+const fabricCallTranscribe = "call.transcribe";
+@doc("Fires when transcription on a Call Fabric call leg starts and again when it finishes.")
+@summary(fabricCallTranscribe)
+@extension("x-fern-display-name", fabricCallTranscribe)
+model CallTranscribeEvent
+  is SignalwireEvent<typeof fabricCallTranscribe, CallTranscribeParams>;
+
+// ── call.queue ───────────────────────────────────────────────────────────────
+@doc("Payload of the Call Fabric `call.queue` event.")
+@summary("Call Fabric queue event payload")
+model CallQueueParams {
+  ...FabricMediaAddress;
+
+  @doc("The `control_id` of the queue session.")
+  @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
+  control_id: string;
+
+  @doc("What happened: `enqueue`, `dequeue`, `leave`, or `stats` (a periodic position update). Handle unknown values gracefully.")
+  @example("enqueue")
+  status: string;
+
+  @doc("The queue ID.")
+  id: string;
+
+  @doc("The queue name.")
+  @example("support")
+  name: string;
+
+  @doc("The call's position in line, counting from the front.")
+  position: int32;
+
+  @doc("How many calls are waiting in the queue.")
+  size: int32;
+
+  @doc("Average time calls spend in the queue, in seconds.")
+  avg_time: int32;
+
+  @doc("When the call entered the queue, as a Unix timestamp in microseconds. `0` until then.")
+  enqueue_ts: int64;
+
+  @doc("When the call was pulled from the queue, as a Unix timestamp in microseconds. `0` until then.")
+  dequeue_ts: int64;
+
+  @doc("When the call left the queue, as a Unix timestamp in microseconds. `0` until then.")
+  leave_ts: int64;
+
+  @doc("The status callback URL set for the queue. Empty when none was set.")
+  status_url: string;
+}
+
+const fabricCallQueue = "call.queue";
+@doc("Fires as a Call Fabric call leg moves through a queue: when it joins, is pulled to be connected, or leaves, plus periodic position updates.")
+@summary(fabricCallQueue)
+@extension("x-fern-display-name", fabricCallQueue)
+model CallQueueEvent is SignalwireEvent<typeof fabricCallQueue, CallQueueParams>;
+
+// ── call.fax ─────────────────────────────────────────────────────────────────
+@doc("""
+  Details of a fax event. `type` is `page` after each page, with `params.direction` and
+  `params.number`; or `finished` at the end, with `params.direction`, `identity`,
+  `remote_identity`, `document`, `format`, `pages`, `success`, `result`, and `result_text`.
+  """)
+@summary("Call Fabric fax details")
+model FabricFaxDetails {
+  @doc("Which stage this event reports.")
+  @example("finished")
+  type: "page" | "finished";
+
+  @doc("The stage-specific details.")
+  params: Record<unknown>;
+}
+
+@doc("Payload of the Call Fabric `call.fax` event.")
+@summary("Call Fabric fax event payload")
+model CallFaxParams {
+  ...FabricMediaEventAddress;
+
+  @doc("The `control_id` of the fax.")
+  @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
+  control_id: string;
+
+  @doc("The fax progress or result.")
+  fax: FabricFaxDetails;
+}
+
+const fabricCallFax = "call.fax";
+@doc("Fires as a fax on a Call Fabric call leg progresses: once per page, then once when it finishes.")
+@summary(fabricCallFax)
+@extension("x-fern-display-name", fabricCallFax)
+model CallFaxEvent is SignalwireEvent<typeof fabricCallFax, CallFaxParams>;
+
+// ── call.pay ─────────────────────────────────────────────────────────────────
+@doc("""
+  Payload of the Call Fabric `call.pay` event. Progress events carry `for`, `error_type`
+  (which may be empty), `attempt`, and the masked data collected so far; the final event
+  carries `result` and the masked payment details (`payment_card_number`,
+  `payment_card_type`, `payment_token`, `payment_confirmation_code`, `payment_error`, and
+  so on). Card data is always masked.
+  """)
+@summary("Call Fabric pay event payload")
+model CallPayParams {
+  ...FabricMediaAddress;
+
+  @doc("The `control_id` of the pay session.")
+  @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
+  control_id: string;
+
+  ...Record<unknown>;
+}
+
+const fabricCallPay = "call.pay";
+@doc("Fires as a pay session on a Call Fabric call leg progresses and once more when it completes.")
+@summary(fabricCallPay)
+@extension("x-fern-display-name", fabricCallPay)
+model CallPayEvent is SignalwireEvent<typeof fabricCallPay, CallPayParams>;
+
+// ── call.ai ──────────────────────────────────────────────────────────────────
+@doc("Payload of the Call Fabric `call.ai` event: how an AI agent session ended.")
+@summary("Call Fabric AI event payload")
+model CallAiParams {
+  ...FabricMediaEventAddress;
+
+  @doc("The `control_id` of the AI session.")
+  @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
+  control_id: string;
+
+  @doc("`finished` when the session ended normally, `error` when it ended abnormally.")
+  @example("finished")
+  state: "finished" | "error";
+}
+
+const fabricCallAi = "call.ai";
+@doc("Fires when an AI agent session on a Call Fabric call leg ends.")
+@summary(fabricCallAi)
+@extension("x-fern-display-name", fabricCallAi)
+model CallAiEvent is SignalwireEvent<typeof fabricCallAi, CallAiParams>;
+
+// ── user_event ───────────────────────────────────────────────────────────────
+@doc("Payload of the Call Fabric `user_event` event: the custom object the sender provided, plus the call address.")
+@summary("Call Fabric user event payload")
+model FabricUserEventParams {
+  ...FabricMediaEventAddress;
+  ...Record<unknown>;
+}
+
+const fabricUserEvent = "user_event";
+@doc("Fires when a custom user event is emitted on a Call Fabric call leg, for example by a SWML `user_event` method or an AI agent action. The payload is whatever object the sender provided.")
+@summary(fabricUserEvent)
+@extension("x-fern-display-name", fabricUserEvent)
+model FabricUserEvent
+  is SignalwireEvent<typeof fabricUserEvent, FabricUserEventParams>;
+
+// ── ai.* ─────────────────────────────────────────────────────────────────────
+@doc("""
+  Payload of an `ai.*` event on a Call Fabric call leg: the call address plus the
+  event-specific fields. Each event carries the same fields as the matching
+  `calling.ai.*` event in the Calling API.
+  """)
+@summary("Call Fabric AI activity event payload")
+model FabricAiEventParams {
+  ...FabricMediaEventAddress;
+  ...Record<unknown>;
+}
+
+const fabricAiCompletion = "ai.completion";
+@doc("Fires on a Call Fabric call leg when the agent completes a response turn, with the response `text` and whether it was `barged`. Same fields as the Calling API's `calling.ai.completion` event.")
+@summary(fabricAiCompletion)
+@extension("x-fern-display-name", fabricAiCompletion)
+model FabricAiCompletionEvent
+  is SignalwireEvent<typeof fabricAiCompletion, FabricAiEventParams>;
+
+const fabricAiResponse = "ai.response";
+@doc("Fires on a Call Fabric call leg when the agent produces its full response text for a turn. Same fields as the Calling API's `calling.ai.response` event.")
+@summary(fabricAiResponse)
+@extension("x-fern-display-name", fabricAiResponse)
+model FabricAiResponseEvent
+  is SignalwireEvent<typeof fabricAiResponse, FabricAiEventParams>;
+
+const fabricAiResponseUtterance = "ai.response_utterance";
+@doc("Fires on a Call Fabric call leg when the agent speaks one segment of its response. Same fields as the Calling API's `calling.ai.response_utterance` event.")
+@summary(fabricAiResponseUtterance)
+@extension("x-fern-display-name", fabricAiResponseUtterance)
+model FabricAiResponseUtteranceEvent
+  is SignalwireEvent<typeof fabricAiResponseUtterance, FabricAiEventParams>;
+
+const fabricAiSpeechDetect = "ai.speech_detect";
+@doc("Fires on a Call Fabric call leg when the caller's final transcript for a turn is recognized. Same fields as the Calling API's `calling.ai.speech_detect` event.")
+@summary(fabricAiSpeechDetect)
+@extension("x-fern-display-name", fabricAiSpeechDetect)
+model FabricAiSpeechDetectEvent
+  is SignalwireEvent<typeof fabricAiSpeechDetect, FabricAiEventParams>;
+
+const fabricAiPartialResult = "ai.partial_result";
+@doc("Fires on a Call Fabric call leg when an interim transcript of the caller's speech is available. Same fields as the Calling API's `calling.ai.partial_result` event.")
+@summary(fabricAiPartialResult)
+@extension("x-fern-display-name", fabricAiPartialResult)
+model FabricAiPartialResultEvent
+  is SignalwireEvent<typeof fabricAiPartialResult, FabricAiEventParams>;
+
+const fabricAiBeginSpeaking = "ai.begin_speaking";
+@doc("Fires on a Call Fabric call leg when speaking starts in the AI session. Same fields as the Calling API's `calling.ai.begin_speaking` event.")
+@summary(fabricAiBeginSpeaking)
+@extension("x-fern-display-name", fabricAiBeginSpeaking)
+model FabricAiBeginSpeakingEvent
+  is SignalwireEvent<typeof fabricAiBeginSpeaking, FabricAiEventParams>;
+
+const fabricAiWarning = "ai.warning";
+@doc("Fires on a Call Fabric call leg when the AI session reports a non-fatal warning. Same fields as the Calling API's `calling.ai.warning` event.")
+@summary(fabricAiWarning)
+@extension("x-fern-display-name", fabricAiWarning)
+model FabricAiWarningEvent
+  is SignalwireEvent<typeof fabricAiWarning, FabricAiEventParams>;
+
+const fabricAiTransparentBarge = "ai.transparent_barge";
+@doc("Fires on a Call Fabric call leg when the caller interrupts the agent and the turn is handled as a transparent barge. Same fields as the Calling API's `calling.ai.transparent_barge` event.")
+@summary(fabricAiTransparentBarge)
+@extension("x-fern-display-name", fabricAiTransparentBarge)
+model FabricAiTransparentBargeEvent
+  is SignalwireEvent<typeof fabricAiTransparentBarge, FabricAiEventParams>;
+
+const fabricAiStop = "ai.stop";
+@doc("Fires on a Call Fabric call leg when the AI session stops, with session timing and billing detail. Same fields as the Calling API's `calling.ai.stop` event.")
+@summary(fabricAiStop)
+@extension("x-fern-display-name", fabricAiStop)
+model FabricAiStopEvent
+  is SignalwireEvent<typeof fabricAiStop, FabricAiEventParams>;
+
+const fabricAiPostPrompt = "ai.post_prompt";
+@doc("Fires on a Call Fabric call leg when the end-of-call summary is produced. Same fields as the Calling API's `calling.ai.post_prompt` event.")
+@summary(fabricAiPostPrompt)
+@extension("x-fern-display-name", fabricAiPostPrompt)
+model FabricAiPostPromptEvent
+  is SignalwireEvent<typeof fabricAiPostPrompt, FabricAiEventParams>;
+
+const fabricAiSwaig = "ai.swaig";
+@doc("Fires on a Call Fabric call leg when a SWAIG function is called. Same fields as the Calling API's `calling.ai.swaig` event.")
+@summary(fabricAiSwaig)
+@extension("x-fern-display-name", fabricAiSwaig)
+model FabricAiSwaigEvent
+  is SignalwireEvent<typeof fabricAiSwaig, FabricAiEventParams>;
+
+const fabricAiSwaigAction = "ai.swaig_action";
+@doc("Fires on a Call Fabric call leg when a SWAIG function returns an action. Same fields as the Calling API's `calling.ai.swaig_action` event.")
+@summary(fabricAiSwaigAction)
+@extension("x-fern-display-name", fabricAiSwaigAction)
+model FabricAiSwaigActionEvent
+  is SignalwireEvent<typeof fabricAiSwaigAction, FabricAiEventParams>;
+
+const fabricAiSidecar = "ai.sidecar";
+@doc("Fires on a Call Fabric call leg when the AI sidecar reports activity. Same fields as the Calling API's `calling.ai.sidecar` event.")
+@summary(fabricAiSidecar)
+@extension("x-fern-display-name", fabricAiSidecar)
+model FabricAiSidecarEvent
+  is SignalwireEvent<typeof fabricAiSidecar, FabricAiEventParams>;
+
+const fabricAiTranscribeUtterance = "ai.transcribe.utterance";
+@doc("Fires on a Call Fabric call leg when live transcription produces an utterance. Same fields as the Calling API's `calling.ai.transcribe.utterance` event.")
+@summary(fabricAiTranscribeUtterance)
+@extension("x-fern-display-name", fabricAiTranscribeUtterance)
+model FabricAiTranscribeUtteranceEvent
+  is SignalwireEvent<typeof fabricAiTranscribeUtterance, FabricAiEventParams>;
+
+const fabricAiTranscribeLiveSummarize = "ai.transcribe.live_summarize";
+@doc("Fires on a Call Fabric call leg when live transcription produces a running summary. Same fields as the Calling API's `calling.ai.transcribe.live_summarize` event.")
+@summary(fabricAiTranscribeLiveSummarize)
+@extension("x-fern-display-name", fabricAiTranscribeLiveSummarize)
+model FabricAiTranscribeLiveSummarizeEvent
+  is SignalwireEvent<typeof fabricAiTranscribeLiveSummarize, FabricAiEventParams>;
+
+const fabricAiTranscribeConversationLog = "ai.transcribe.conversation_log";
+@doc("Fires on a Call Fabric call leg when live transcription delivers its conversation log. Same fields as the Calling API's `calling.ai.transcribe.conversation_log` event.")
+@summary(fabricAiTranscribeConversationLog)
+@extension("x-fern-display-name", fabricAiTranscribeConversationLog)
+model FabricAiTranscribeConversationLogEvent
+  is SignalwireEvent<typeof fabricAiTranscribeConversationLog, FabricAiEventParams>;
+
+const fabricAiTranslateTranscriptDelta = "ai.translate.transcript_delta";
+@doc("Fires on a Call Fabric call leg when live translation produces translated text. Same fields as the Calling API's `calling.ai.translate.transcript_delta` event.")
+@summary(fabricAiTranslateTranscriptDelta)
+@extension("x-fern-display-name", fabricAiTranslateTranscriptDelta)
+model FabricAiTranslateTranscriptDeltaEvent
+  is SignalwireEvent<typeof fabricAiTranslateTranscriptDelta, FabricAiEventParams>;
+
+const fabricAiTranslateLiveSummary = "ai.translate.live_summary";
+@doc("Fires on a Call Fabric call leg when live translation produces a running summary. Same fields as the Calling API's `calling.ai.translate.live_summary` event.")
+@summary(fabricAiTranslateLiveSummary)
+@extension("x-fern-display-name", fabricAiTranslateLiveSummary)
+model FabricAiTranslateLiveSummaryEvent
+  is SignalwireEvent<typeof fabricAiTranslateLiveSummary, FabricAiEventParams>;
+
+const fabricAiTranslateConversationLog = "ai.translate.conversation_log";
+@doc("Fires on a Call Fabric call leg when live translation delivers its conversation log. Same fields as the Calling API's `calling.ai.translate.conversation_log` event.")
+@summary(fabricAiTranslateConversationLog)
+@extension("x-fern-display-name", fabricAiTranslateConversationLog)
+model FabricAiTranslateConversationLogEvent
+  is SignalwireEvent<typeof fabricAiTranslateConversationLog, FabricAiEventParams>;
+
+// ===========================================================================
 // Conference events (room.*, rooms.*, member.promoted/demoted, recording.*,
 // playback.*, stream.*)
 // ===========================================================================
@@ -969,6 +1524,9 @@ model RoomStartedParams {
 
   @doc("The room session that started, with its full state.")
   room_session: RoomSession;
+
+  @doc("Deprecated. A legacy copy of `room_session` that carries `room_session_id` in place of `id`. Use `room_session` instead.")
+  room?: Record<unknown>;
 }
 
 const fabricRoomStarted = "room.started";
@@ -990,6 +1548,9 @@ model RoomSubscribedParams {
 
   @doc("Your call ID in this room session. Present when subscribing as a member.")
   call_id?: string;
+
+  @doc("Deprecated. A legacy copy of `room_session` that carries `room_session_id` in place of `id`. Use `room_session` instead.")
+  room?: Record<unknown>;
 }
 
 const fabricRoomSubscribed = "room.subscribed";
@@ -1012,13 +1573,12 @@ model RoomEndedParams {
   @doc("The room session that ended, with its final state.")
   room_session: RoomSession;
 
-  @doc("Why the room ended, when a reason is supplied.")
-  @example("last_member_left")
-  reason?: string;
+  @doc("Deprecated. A legacy copy of `room_session` that carries `room_session_id` in place of `id`. Use `room_session` instead.")
+  room?: Record<unknown>;
 }
 
 const fabricRoomEnded = "room.ended";
-@doc("Fires when a Call Fabric room session ends. Delivers the room session's final state and, when supplied, the reason.")
+@doc("Fires when a Call Fabric room session ends. Delivers the room session's final state.")
 @summary(fabricRoomEnded)
 @extension("x-fern-display-name", fabricRoomEnded)
 model RoomEndedEvent
@@ -1030,6 +1590,9 @@ model RoomEndedEvent
 model RoomsSubscribedParams {
   @doc("Every active room session in the project at subscribe time.")
   room_sessions: RoomSession[];
+
+  @doc("Deprecated. Legacy copies of `room_sessions` that carry `room_session_id` in place of `id`. Use `room_sessions` instead.")
+  rooms?: Record<unknown>[];
 }
 
 const fabricRoomsSubscribed = "rooms.subscribed";
@@ -1052,12 +1615,12 @@ model MemberPromotedParams {
   @doc("The ID of the member that was promoted.")
   member_id: string;
 
-  @doc("Your refreshed authorization for this connection, reflecting the capabilities gained by the promotion. Treat it as opaque. The same refreshed state is also delivered on the `signalwire.authorization.state` event.")
-  authorization?: Record<unknown>;
+  @doc("Your refreshed authorization for this connection, reflecting the capabilities gained by the promotion. Treat it as opaque. A `signalwire.authorization.state` event with the matching reconnect state follows.")
+  authorization: Record<unknown>;
 }
 
 const fabricMemberPromoted = "member.promoted";
-@doc("Fires when an audience participant is promoted to a full member. Delivers the promoted member and your refreshed `authorization` for the connection (also delivered on the `signalwire.authorization.state` event).")
+@doc("Fires on the promoted participant's own connection when it is promoted from audience to full member. Delivers the member ID and the connection's refreshed `authorization`; a `signalwire.authorization.state` event follows.")
 @summary(fabricMemberPromoted)
 @extension("x-fern-display-name", fabricMemberPromoted)
 model MemberPromotedEvent
@@ -1076,12 +1639,12 @@ model MemberDemotedParams {
   @doc("The ID of the member that was demoted.")
   member_id: string;
 
-  @doc("Your refreshed authorization for this connection, reflecting the capabilities lost by the demotion. Treat it as opaque. The same refreshed state is also delivered on the `signalwire.authorization.state` event.")
-  authorization?: Record<unknown>;
+  @doc("Your refreshed authorization for this connection, reflecting the capabilities lost by the demotion. Treat it as opaque. A `signalwire.authorization.state` event with the matching reconnect state follows.")
+  authorization: Record<unknown>;
 }
 
 const fabricMemberDemoted = "member.demoted";
-@doc("Fires when a full member is demoted to an audience participant. Delivers the demoted member and your refreshed `authorization` for the connection (also delivered on the `signalwire.authorization.state` event).")
+@doc("Fires on the demoted member's own connection when it is demoted to an audience participant. Delivers the member ID and the connection's refreshed `authorization`; a `signalwire.authorization.state` event follows.")
 @summary(fabricMemberDemoted)
 @extension("x-fern-display-name", fabricMemberDemoted)
 model MemberDemotedEvent
@@ -1102,7 +1665,7 @@ model RecordingEventParams {
 }
 
 const fabricRecordingStarted = "recording.started";
-@doc("Fires when a recording starts in a Call Fabric room, for example after `call.recording.start`.")
+@doc("Fires when a recording starts in a Call Fabric room.")
 @summary(fabricRecordingStarted)
 @extension("x-fern-display-name", fabricRecordingStarted)
 model RecordingStartedEvent
@@ -1137,7 +1700,7 @@ model PlaybackEventParams {
 }
 
 const fabricPlaybackStarted = "playback.started";
-@doc("Fires when media playback starts in a Call Fabric room, for example after `call.play`.")
+@doc("Fires when media playback starts in a Call Fabric room.")
 @summary(fabricPlaybackStarted)
 @extension("x-fern-display-name", fabricPlaybackStarted)
 model PlaybackStartedEvent
@@ -1172,7 +1735,7 @@ model StreamEventParams {
 }
 
 const fabricStreamStarted = "stream.started";
-@doc("Fires when an RTMP stream starts in a Call Fabric room, for example after `call.stream.start`.")
+@doc("Fires when an RTMP stream starts in a Call Fabric room.")
 @summary(fabricStreamStarted)
 @extension("x-fern-display-name", fabricStreamStarted)
 model StreamStartedEvent
@@ -1228,20 +1791,21 @@ model ConversationMessagePayload {
   @doc("The message type.")
   type?: string;
 
-  @doc("The message subtype.")
+  @doc("The message subtype. Always `update` on `conversation.message.updated`.")
   subtype?: string;
 
   @doc("The message kind.")
   kind?: string;
 
-  @doc("When the message was created, as an epoch timestamp.")
+  @doc("When the message was created, as a Unix timestamp in seconds with a fractional part.")
+  @example(1712345678.842113)
   ts?: float64;
 
-  @doc("The message text.")
-  text?: string;
+  @doc("The message text. `null` on `conversation.message.updated`.")
+  text?: string | null;
 
-  @doc("Human-readable name of the conversation.")
-  conversation_name?: string;
+  @doc("Human-readable name of the conversation. May be `null`.")
+  conversation_name?: string | null;
 
   @doc("Display name of the sender.")
   user_name?: string;
@@ -1258,8 +1822,8 @@ model ConversationMessagePayload {
   @doc("The Resource address the message was sent from.")
   from_fabric_address_id?: string;
 
-  @doc("Whether the message is hidden.")
-  hidden?: boolean;
+  @doc("Whether the message is hidden. On `conversation.message` this may arrive as the string `\"false\"` rather than a boolean.")
+  hidden?: boolean | "true" | "false";
 
   ...Record<unknown>;
 }
@@ -1268,7 +1832,8 @@ const fabricConversationMessage = "conversation.message";
 @doc("""
   Fires on a subscriber's Conversation stream when a new message is published to a
   conversation the subscriber is part of. `params` carries the merged message payload and
-  stream metadata.
+  stream metadata. The envelope `timestamp` is a string of Unix seconds with a fractional
+  part, for example `"1712345678.842113"`.
   """)
 @summary(fabricConversationMessage)
 @extension("x-fern-display-name", fabricConversationMessage)
@@ -1282,7 +1847,9 @@ model ConversationMessageEvent
 const fabricConversationMessageUpdated = "conversation.message.updated";
 @doc("""
   Fires when a previously published conversation message is edited. `params` carries the
-  updated, merged message payload and stream metadata.
+  updated, merged message payload and stream metadata; `subtype` is `update` and `text`
+  is `null`. The envelope `timestamp` is a string of Unix milliseconds, for example
+  `"1712345678842"`.
   """)
 @summary(fabricConversationMessageUpdated)
 @extension("x-fern-display-name", fabricConversationMessageUpdated)
@@ -1296,7 +1863,8 @@ model ConversationMessageUpdatedEvent
 const fabricConversationBroadcast = "conversation.broadcast";
 @doc("""
   Fires when a message is broadcast to every subscriber who shares a conversation with the
-  sending address. `params` carries the merged broadcast payload and stream metadata.
+  sending address. `params` carries the merged broadcast payload and stream metadata. The
+  envelope `timestamp` is a string of Unix milliseconds, for example `"1712345678842"`.
   """)
 @summary(fabricConversationBroadcast)
 @extension("x-fern-display-name", fabricConversationBroadcast)
@@ -1329,7 +1897,8 @@ model ConversationJoinedParams {
 const fabricConversationJoined = "conversation.joined";
 @doc("""
   Fires when a subscriber is added to a conversation. `params` identifies the subscriber, the
-  originating address, and the conversation group and name.
+  originating address, and the conversation group and name. The envelope `timestamp` is a
+  string of Unix seconds with a fractional part, for example `"1712345678.842"`.
   """)
 @summary(fabricConversationJoined)
 @extension("x-fern-display-name", fabricConversationJoined)

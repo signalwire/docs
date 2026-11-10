@@ -21,7 +21,8 @@ model DisconnectRequest is JsonRpcRequest<typeof callingDisconnect, DisconnectPa
 @doc("""
   Splits apart legs that were joined with `calling.connect`, separating the calls
   without hanging up on either one. Each call stays live so you can keep
-  controlling it or connect it elsewhere.
+  controlling it or connect it elsewhere. Fails with `"409"` if the call is not
+  connected.
   """)
 @channel(callingDisconnect)
 @summary("Disconnect connected legs without hanging up")

@@ -66,7 +66,7 @@ model CallRecordParams {
   @example("c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c")
   recording_id?: string;
 
-  @doc("Where to download the finished recording. Not available until the state is `finished`.")
+  @doc("Where the recording is stored. Can appear on any state; the file is complete only once the state is `finished`.")
   @example("https://example.com/recordings/c2a1e9f4.mp3")
   url?: url;
 

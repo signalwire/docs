@@ -22,9 +22,15 @@ model AiSidecarRequest
 model AiSidecarReply is JsonRpcResponse<AiSidecarResult>;
 
 @doc("""
-  Attach a real-time AI observer (sidecar) to an answered call, or — when
-  `action.summarize` is present — generate a one-off conversation summary instead
-  of attaching a sidecar. Requires an active `live_transcribe`.
+  Attach a real-time AI observer (sidecar) to an answered call. The sidecar runs its
+  own transcription; it does not need `calling.live_transcribe`. When
+  `action.summarize` is present, the request instead summarizes the conversation of
+  the sidecar already running on the call: only `action.summarize` is read, and the
+  request fails if no sidecar is attached.
+
+  A `project_id` key anywhere in the params (for example inside `global_data` or a
+  SWAIG function definition) is refused with a JSON-RPC error `-32602`, and the
+  request is not processed.
   """)
 @channel(callingAiSidecar)
 @summary("Attach a real-time AI observer (sidecar) to the call")
@@ -39,7 +45,7 @@ model AiSidecarPokeRequest
 
 @extension("x-fern-display-name", callingAiSidecarPokeResponse)
 @reply
-model AiSidecarPokeReply is JsonRpcResponse<AiSidecarResult>;
+model AiSidecarPokeReply is JsonRpcResponse<AiSidecarPokeResult>;
 
 @doc("""
   Send a message to the sidecar and prompt it to respond right away,
@@ -78,7 +84,7 @@ model AiSidecarStopRequest
 
 @extension("x-fern-display-name", callingAiSidecarStopResponse)
 @reply
-model AiSidecarStopReply is JsonRpcResponse<AiSidecarResult>;
+model AiSidecarStopReply is JsonRpcResponse<AiSidecarStopResult>;
 
 @doc("Stop and detach the AI sidecar from the call.")
 @channel(callingAiSidecarStop)

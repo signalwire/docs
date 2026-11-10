@@ -11,13 +11,11 @@ model TransferParams {
   ...CallAddress;
 
   @doc("""
-    Where to hand off the call. Pass an `https://` URL that returns a SWML
-    script, the name of another Relay application prefixed with `context:`, or an
-    inline SWML script — either as a string or as a SWML object. The form is
-    detected from the value: an `https://` URL is fetched for SWML, a `context:`
-    prefix routes to a Relay application, and anything else is treated as inline
-    SWML.
+    The SWML to hand the call to, as a string: an `https://` URL that returns a SWML
+    document, or an inline SWML document serialized as a JSON string. The destination
+    is checked only when it runs, so the request succeeds even if the URL or script
+    turns out to be invalid.
     """)
   @example("https://example.com/swml")
-  dest: string | Record<unknown>;
+  dest: string;
 }

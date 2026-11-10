@@ -190,6 +190,18 @@ model CallStateParams {
   @doc("Inbound-audio Mean Opinion Score (voice quality, ~1.0-5.0). Present when media (RTP) quality stats are available.")
   @example(4.4)
   audio_in_mos?: float64;
+
+  @doc("For calls placed by or to a Call Fabric subscriber, the Fabric address ID involved. Absent otherwise.")
+  @example("f1e2d3c4-b5a6-4978-8a9b-0c1d2e3f4a5b")
+  address_id?: string;
+
+  @doc("For calls placed by or to a Call Fabric subscriber, the subscriber's ID. Absent otherwise.")
+  @example("0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d")
+  subscriber_id?: string;
+
+  @doc("For calls placed by or to a Call Fabric subscriber, the subscriber's display name. Absent otherwise.")
+  @example("Alice")
+  subscriber_name?: string;
 }
 
 const callingCallState = "calling.call.state";
@@ -212,7 +224,7 @@ model CallReceiveParams {
   @example("inbound")
   direction: CallDirection;
 
-  @doc("The context the call arrived on, such as `pbx`. Always present on the receive event. For this event the same value is also surfaced at the top level of the event envelope (alongside `event_type`), so you can read it from either place.")
+  @doc("The context the call arrived on, such as `pbx`. Always present on the receive event. The same value is also set as `context` at the top level of the event envelope, so you can read it from either place.")
   @example("pbx")
   context: string;
 
@@ -225,25 +237,34 @@ const callingCallReceive = "calling.call.receive";
 @summary(callingCallReceive)
 @extension("x-fern-display-name", callingCallReceive)
 model CallReceiveEvent
-  is SignalwireEvent<typeof callingCallReceive, CallReceiveParams>;
+  is SignalwireContextEvent<typeof callingCallReceive, CallReceiveParams>;
 
 @doc("""
-  Payload of the `calling.error` event. This is a general-purpose error report for the
-  AI features running on a call, so its shape is not fixed. Beyond the call address and
-  the `error` / `fatal` fields below, additional fields vary by the error source (webhook
-  failures, SWAIG tool errors, model fallbacks, speech/TTS errors, and so on).
+  Payload of the `calling.error` event. Its shape is not fixed: beyond the call address
+  and the fields below, additional fields vary by the error source (for example
+  `webhook_url`, `httpErrorCode`, `function`, `tool`, `schema_errors`, `engine`,
+  `voice`, or `fallback_*` fields describing a model or voice fallback).
   """)
 @summary("Call error event payload")
 model CallErrorParams {
   ...CallEventAddress;
+  ...Record<unknown>;
 
   @doc("""
-    A description of what went wrong — usually a human-readable string. A few error
-    sources instead place a structured object here. Absent on the error types that
-    describe the failure with other fields.
+    What went wrong. Usually a human-readable string; some sources place a structured
+    object here instead, such as the error body returned by an AI provider. Absent on
+    error types that describe the failure with other fields.
     """)
   @example("SWAIG function call failed")
-  error?: string;
+  error?: string | Record<unknown>;
+
+  @doc("A short category for the error, when the source sets one — for example `webhook_fail` or `event_webhook_fail`.")
+  @example("webhook_fail")
+  error_type?: string;
+
+  @doc("A machine-readable reason for the error, when the source sets one.")
+  @example("voice_config_error")
+  error_reason?: string;
 
   @doc("Whether the error was fatal to the operation in progress — for example, one that ended the AI session. Absent when not reported.")
   @example(true)
@@ -254,9 +275,13 @@ const callingError = "calling.error";
 @doc("""
   Fires when an error occurs in the AI features running on a call (`calling.ai`,
   `calling.amazon_bedrock`, or live transcription/translation). It reports problems such
-  as a failed SWAIG webhook, a model or tool error, or a speech-processing failure. The
-  payload always identifies the call; `error` and `fatal` describe the problem, and
-  additional fields vary by the error source.
+  as a failed SWAIG webhook, a missing or invalid SWAIG function, a model or voice
+  fallback, or a speech-processing failure. The payload always identifies the call;
+  the other fields vary by the error source.
+
+  A failed call command (for example a `calling.play` or `calling.connect` that returns a
+  non-`"200"` `code`) is not reported on your connection through this event; check the
+  command's result instead.
   """)
 @summary(callingError)
 @extension("x-fern-display-name", callingError)
@@ -297,8 +322,9 @@ model ConversationLogEntry {
 
 @doc("""
   Aggregate metrics for a transcription session, included on the final
-  `calling.ai.transcribe.conversation_log` event. In sidecar mode the per-side keys are
-  reported as `customer_*` / `agent_*` instead of `remote_caller_*` / `local_caller_*`.
+  `calling.ai.transcribe.conversation_log` event. When an AI sidecar is attached, the
+  per-side keys are reported as `customer_*` / `agent_*` instead of
+  `remote_caller_*` / `local_caller_*`.
   """)
 @summary("Transcription metrics")
 model TranscriptionMetrics {
@@ -306,10 +332,12 @@ model TranscriptionMetrics {
   @example(42)
   total_utterances?: int32;
 
-  @doc("Timestamp of the first utterance (same units as the event `timestamp`).")
+  @doc("When the first utterance was recognized, as a Unix timestamp in microseconds.")
+  @example(1712345678123456)
   first_utterance_ts?: float64;
 
-  @doc("Timestamp of the last utterance.")
+  @doc("When the last utterance was recognized, as a Unix timestamp in microseconds.")
+  @example(1712345799123456)
   last_utterance_ts?: float64;
 
   @doc("Number of speaking turns from the far end.")
@@ -331,6 +359,24 @@ model TranscriptionMetrics {
 
   @doc("Average recognition confidence across your side's turns, roughly 0.0-1.0.")
   local_caller_avg_confidence?: float64;
+
+  @doc("Number of speaking turns from the customer. Sidecar mode only.")
+  customer_turns?: int32;
+
+  @doc("Number of speaking turns from the agent. Sidecar mode only.")
+  agent_turns?: int32;
+
+  @doc("Total words spoken by the customer. Sidecar mode only.")
+  customer_words?: int32;
+
+  @doc("Total words spoken by the agent. Sidecar mode only.")
+  agent_words?: int32;
+
+  @doc("Average recognition confidence across the customer's turns, roughly 0.0-1.0. Sidecar mode only.")
+  customer_avg_confidence?: float64;
+
+  @doc("Average recognition confidence across the agent's turns, roughly 0.0-1.0. Sidecar mode only.")
+  agent_avg_confidence?: float64;
 }
 
 @doc("""
@@ -379,14 +425,17 @@ model AiChannelData {
   @doc("The call ID.")
   call_id: string;
 
-  @doc("When the call started.")
-  call_start_date?: string;
+  @doc("When the call started, as a Unix timestamp in microseconds.")
+  @example(1712345670000000)
+  call_start_date?: int64;
 
-  @doc("When the call was answered.")
-  call_answer_date?: string;
+  @doc("When the call was answered, as a Unix timestamp in microseconds. `0` if not answered yet.")
+  @example(1712345675000000)
+  call_answer_date?: int64;
 
-  @doc("When the call ended.")
-  call_end_date?: string;
+  @doc("When the call ended, as a Unix timestamp in microseconds. `0` while the call is still up.")
+  @example(0)
+  call_end_date?: int64;
 
   @doc("The caller's name.")
   caller_id_name?: string;

@@ -32,11 +32,11 @@ model CallAiEvent is SignalwireEvent<typeof callingCallAi, CallAiEventData>;
 model AiCompletionEventData {
   ...CallEventAddress;
 
-  @doc("The assistant's completed utterance for the turn. Redacted when the app has `redact_prompt` set.")
+  @doc("The assistant's completed utterance for the turn. Redacted when the app has `redact_prompt` set. Always an empty string on `calling.amazon_bedrock` sessions.")
   @example("Sure — I can help you place an order. Would you like pickup or delivery?")
   text: string;
 
-  @doc("Whether the turn completed normally or was cut short by a barge-in: `barged` when the caller interrupted the assistant, otherwise `normal`.")
+  @doc("Whether the turn completed normally or was cut short by a barge-in: `barged` when the caller interrupted the assistant, otherwise `normal`. Always `normal` on `calling.amazon_bedrock` sessions.")
   @example("normal")
   type: "normal" | "barged";
 }
@@ -84,7 +84,7 @@ model AiResponseUtteranceEvent
 model AiSpeechDetectEventData {
   ...CallEventAddress;
 
-  @doc("The caller's final recognized transcript for the turn.")
+  @doc("The caller's final recognized transcript for the turn. Not sent when the app has `redact_prompt` set, except with a realtime speech-to-speech model or on `calling.amazon_bedrock`.")
   @example("I'd like to order a large pepperoni pizza for delivery.")
   text: string;
 }
@@ -115,7 +115,13 @@ model AiPartialResultEvent
   is SignalwireEvent<typeof callingAiPartialResult, AiPartialResultEventData>;
 
 @summary("AI begin speaking event")
-@doc("Signal-only event: the assistant has started speaking. Carries only the call address.")
+@doc("""
+  Signal-only event that carries only the call address. What it marks depends on the
+  model: normally, the caller started speaking; with a realtime speech-to-speech
+  model such as `gpt-realtime`, the assistant started speaking. On
+  `calling.amazon_bedrock` it fires together with the caller's final transcript for
+  the turn.
+  """)
 model AiBeginSpeakingEventData {
   ...CallEventAddress;
 }
@@ -126,40 +132,31 @@ const callingAiBeginSpeaking = "calling.ai.begin_speaking";
 model AiBeginSpeakingEvent
   is SignalwireEvent<typeof callingAiBeginSpeaking, AiBeginSpeakingEventData>;
 
-@summary("AI start event")
-@doc("Signal-only event: the AI session has started. Carries only the call address.")
-model AiStartEventData {
-  ...CallEventAddress;
-}
-
-const callingAiStart = "calling.ai.start";
-@summary(callingAiStart)
-@extension("x-fern-display-name", callingAiStart)
-model AiStartEvent is SignalwireEvent<typeof callingAiStart, AiStartEventData>;
-
-@summary("AI user speaking event")
-@doc("Signal-only event: the caller has started speaking (barge-in). Carries only the call address.")
-model AiUserSpeakingEventData {
-  ...CallEventAddress;
-}
-
-const callingAiUserSpeaking = "calling.ai.user_speaking";
-@summary(callingAiUserSpeaking)
-@extension("x-fern-display-name", callingAiUserSpeaking)
-model AiUserSpeakingEvent
-  is SignalwireEvent<typeof callingAiUserSpeaking, AiUserSpeakingEventData>;
-
 @summary("AI warning event")
+@doc("""
+  A non-fatal warning. Two kinds are sent: an oversized system prompt
+  (`error: "Excessive System Prompt.\\n"` with `tokens`), and a variable expression
+  in the prompt or static greeting that resolved to nothing
+  (`error: "unresolved_variable"` with `field` and `expressions`).
+  """)
 model AiWarningEventData {
   ...CallEventAddress;
 
-  @doc("Human-readable warning message, e.g. an oversized system prompt.")
+  @doc("The warning: `\"Excessive System Prompt.\\n\"` or `\"unresolved_variable\"`.")
   @example("Excessive System Prompt.\n")
   error: string;
 
-  @doc("The prompt token count that triggered the warning.")
+  @doc("The prompt token count that triggered the warning. Present on the oversized-prompt warning.")
   @example(78000)
-  tokens: float64;
+  tokens?: float64;
+
+  @doc("Where the unresolved expressions were found: `prompt` or `static_greeting`. Present on `unresolved_variable` warnings.")
+  @example("prompt")
+  field?: "prompt" | "static_greeting";
+
+  @doc("The expressions that resolved to nothing. Present on `unresolved_variable` warnings.")
+  @example(#["\${global_data.customer_name}"])
+  expressions?: string[];
 }
 
 const callingAiWarning = "calling.ai.warning";
@@ -179,6 +176,13 @@ model AiTransparentBargeEventData {
     """)
   @example("Actually, make that two large pepperoni pizzas.")
   combined_text?: string;
+
+  @doc("""
+    Present and `false` when the barge did not rewrite the conversation — for
+    example, because the assistant's answer had already been delivered.
+    """)
+  @example(false)
+  context_rewritten?: boolean;
 }
 
 const callingAiTransparentBarge = "calling.ai.transparent_barge";

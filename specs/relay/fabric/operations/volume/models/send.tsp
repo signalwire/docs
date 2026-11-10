@@ -14,8 +14,10 @@ model MicrophoneVolumeSetParams {
   @doc("The member whose microphone volume to set — required. Set `target` equal to `self` to act on yourself, or to another member's `{node_id, call_id, member_id}` to act on them.")
   target: Target;
 
-  @doc("The microphone volume to set, in decibels, from -50 to 50.")
+  @doc("The microphone volume to set, in decibels, from -50 to 50. Fractional values are truncated.")
   @example(0)
+  @minValue(-50)
+  @maxValue(50)
   volume: int32;
 }
 
@@ -28,8 +30,10 @@ model MicrophoneSensitivitySetParams {
   @doc("The member whose microphone sensitivity to set — required. Set `target` equal to `self` to act on yourself, or to another member's `{node_id, call_id, member_id}` to act on them.")
   target: Target;
 
-  @doc("The microphone sensitivity to set.")
+  @doc("The microphone sensitivity to set, as an integer from 0 to 100.")
   @example(50)
+  @minValue(0)
+  @maxValue(100)
   sensitivity: int32;
 }
 
@@ -42,7 +46,9 @@ model SpeakerVolumeSetParams {
   @doc("The member whose speaker volume to set — required. Set `target` equal to `self` to act on yourself, or to another member's `{node_id, call_id, member_id}` to act on them.")
   target: Target;
 
-  @doc("The speaker volume to set, in decibels, from -50 to 50.")
+  @doc("The speaker volume to set, in decibels, from -50 to 50. Fractional values are truncated.")
   @example(0)
+  @minValue(-50)
+  @maxValue(50)
   volume: int32;
 }

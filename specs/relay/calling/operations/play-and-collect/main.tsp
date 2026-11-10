@@ -5,6 +5,7 @@ import "@typespec/openapi";
 import "./models/send.tsp";
 import "./models/reply.tsp";
 import "../collect/models/events.tsp";
+import "../play/models/events.tsp";
 
 using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
@@ -21,13 +22,14 @@ model PlayAndCollectRequest is JsonRpcRequest<typeof callingPlayAndCollect, Play
 @doc("""
   Plays media to the caller and collects their input at the same time, so you
   can prompt and gather a response in one step. Collected input arrives
-  asynchronously in `calling.call.collect` events keyed on your `control_id`.
-  Only one play-and-collect can run on a call at a time.
+  asynchronously in `calling.call.collect` events keyed on your `control_id`,
+  and the prompt's progress arrives in `calling.call.play` events with the same
+  `control_id`. Only one play-and-collect can run on a call at a time.
   """)
 @channel(callingPlayAndCollect)
 @summary("Play media and collect input")
 @extension("x-fern-display-name", callingPlayAndCollect)
-op playAndCollect(...PlayAndCollectRequest): PlayAndCollectReply | CallCollectEvent;
+op playAndCollect(...PlayAndCollectRequest): PlayAndCollectReply | CallCollectEvent | CallPlayEvent;
 
 const callingPlayAndCollectStop = "calling.play_and_collect.stop";
 const callingPlayAndCollectStopResponse = "${callingPlayAndCollectStop} response";

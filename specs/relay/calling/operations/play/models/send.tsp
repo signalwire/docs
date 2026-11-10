@@ -30,7 +30,7 @@ model PlayParams {
   @example("listen")
   direction?: "listen" | "speak" | "both" = "listen";
 
-  @doc("HTTPS URL that status events are POSTed to.")
+  @doc("HTTP or HTTPS URL that status events are POSTed to.")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
 

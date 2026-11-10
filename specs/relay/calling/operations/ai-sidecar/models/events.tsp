@@ -77,7 +77,12 @@ model AiSidecarEventBody {
   @doc("Call/channel context (`call_id`, plus caller id fields when available).")
   channel_data: Record<unknown>;
 
-  @doc("Present when `type: ask_answer`. Matches the `ask_id` returned by `calling.ai_sidecar.ask`, correlating this answer with the question you sent.")
+  @doc("""
+    Matches the `ask_id` returned by `calling.ai_sidecar.ask`, correlating this
+    callback with the question you sent. Present on `ask_request` and `ask_answer`,
+    and on `request`, `thought`, `tool_call`, and `tool_result` callbacks produced
+    while answering an ask.
+    """)
   @example("a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   ask_id?: string;
 
@@ -85,11 +90,11 @@ model AiSidecarEventBody {
   @example("The customer's account is past due by 14 days.")
   raw?: string;
 
-  @doc("The end-of-session summary text. Present on `type: final`.")
+  @doc("The end-of-session summary text. Present on `type: final` when a summary was generated.")
   @example("Handled a billing dispute; the account is past due by 14 days and a callback was scheduled for Friday.")
   summary?: string;
 
-  @doc("The reasoning text. Present on `type: thought`.")
+  @doc("The reasoning text on `type: thought`, or the text the sidecar would have spoken on an `action` callback for a `say` action.")
   text?: string;
 
   @doc("The tool (function) name. Present on `type: tool_call` and `tool_result`.")
@@ -103,14 +108,26 @@ model AiSidecarEventBody {
   @example("{\"status\": \"ok\"}")
   response?: string;
 
-  @doc("Why the sidecar took no action this pass. Present on `type: skip`.")
+  @doc("Why the sidecar took no action this pass (`type: skip`), or why a `say` action was not spoken (`type: action`).")
   reason?: string;
 
   @doc("A machine-readable error reason. Present on `type: error`.")
   error_reason?: string;
 
-  @doc("Human-readable error detail. Present on `type: error`.")
+  @doc("Human-readable error detail. Present on some `type: error` callbacks.")
   detail?: string;
+
+  @doc("The SWAIG function whose webhook failed. Present on `type: error` for webhook failures.")
+  function?: string;
+
+  @doc("HTTP status of the failed webhook request. Present on `type: error` for webhook failures.")
+  http_code?: int32;
+
+  @doc("Transport error code of the failed webhook request. Present on `type: error` for webhook failures.")
+  curl_code?: int32;
+
+  @doc("How many malformed tool calls were dropped. Present on `type: error` with `error_reason: malformed_tool_call`.")
+  stripped?: int32;
 
   @doc("How many history entries were dropped. Present on `type: history_pruned`.")
   dropped_count?: int32;
@@ -124,14 +141,99 @@ model AiSidecarEventBody {
   @doc("Token count after pruning. Present on `type: history_pruned`.")
   tokens_after?: int32;
 
-  @doc("The current iteration. Present on the `ask_request`, `ask_answer`, `insight`, and `final` callbacks.")
+  @doc("The current iteration. Present on the `request`, `thought`, `tool_call`, `tool_result`, `insight`, and `ask_answer` callbacks.")
   iter?: int32;
 
-  @doc("The total iterations. Present on the `ask_request`, `ask_answer`, `insight`, and `final` callbacks.")
+  @doc("The total iterations. Present on the `insight` and `ask_answer` callbacks.")
   total_iters?: int32;
 
-  @doc("What triggered this callback. Present on the `ask_request`, `ask_answer`, `insight`, and `final` callbacks.")
+  @doc("""
+    `ask` when the callback was produced while answering a
+    `calling.ai_sidecar.ask` question. Present on `ask_answer`, and on `request`,
+    `thought`, `tool_call`, and `tool_result` callbacks produced by an ask.
+    """)
+  @example("ask")
   triggered_by?: string;
+
+  @doc("The model in use. Present on `type: start`, `request`, and `final`.")
+  @example("gpt-4o-mini")
+  `model`?: string;
+
+  @doc("The session's global data. Present on `type: start` and `final`.")
+  global_data?: Record<unknown>;
+
+  @doc("Names of the SWAIG functions available to the sidecar. Present on `type: start`.")
+  tools?: string[];
+
+  @doc("The new transcript text since the previous turn. Present on `type: turn`.")
+  transcript_delta?: string;
+
+  @doc("The customer's text for this turn. Present on `type: turn`.")
+  customer_text?: string;
+
+  @doc("The agent's text for this turn. Present on `type: turn`.")
+  agent_text?: string;
+
+  @doc("Number of messages sent to the model. Present on `type: request`.")
+  messages_count?: int32;
+
+  @doc("Token count of the messages sent to the model. Present on `type: request`.")
+  messages_token_count?: int32;
+
+  @doc("The tool-choice mode sent to the model. Present on `type: request`.")
+  @example("auto")
+  tool_choice?: string;
+
+  @doc("The SWAIG action item. Present on `type: action`.")
+  action?: unknown;
+
+  @doc("The SWAIG function that returned the action. Present on `type: action` when known.")
+  source_function?: string;
+
+  @doc("Whether the action was applied to the call. Present on `type: action`.")
+  executed?: boolean;
+
+  @doc("Whether the text was spoken. Present (and `false`) on `type: action` for a `say` action.")
+  spoken?: boolean;
+
+  @doc("The global-data key that changed. Present on `type: global_data_change`.")
+  key?: string;
+
+  @doc("The key's previous value. Present on `type: global_data_change` when the key existed.")
+  old_value?: unknown;
+
+  @doc("The key's new value. Present on `type: global_data_change`.")
+  new_value?: unknown;
+
+  @doc("The question you sent. Present on `type: ask_request`.")
+  question?: string;
+
+  @doc("Why the session ended. Present on `type: stop` and `final`.")
+  stop_reason?: string;
+
+  @doc("The sidecar's conversation history. Present on `type: final`.")
+  history?: unknown[];
+
+  @doc("The call transcript. Present on `type: final`.")
+  transcript?: unknown[];
+
+  @doc("The session's event log. Present on `type: final`.")
+  event_log?: unknown[];
+
+  @doc("Session counters (ticks, insights, skips, tool calls, errors, tokens). Present on `type: final`.")
+  stats?: Record<unknown>;
+
+  @doc("Detailed session telemetry. Present on `type: final`.")
+  metrics?: Record<unknown>;
+
+  @doc("When the session started, as a Unix timestamp in microseconds. Present on `type: final`.")
+  started_at?: int64;
+
+  @doc("When the session ended, as a Unix timestamp in microseconds. Present on `type: final`.")
+  ended_at?: int64;
+
+  @doc("Session duration in milliseconds. Present on `type: final`.")
+  duration_ms?: int64;
 }
 
 @summary("AI sidecar event")

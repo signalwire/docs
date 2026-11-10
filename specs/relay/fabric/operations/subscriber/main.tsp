@@ -19,12 +19,12 @@ model SubscriberOfflineParams {}
 const subscriberOnline = "subscriber.online";
 const subscriberOnlineResponse = "${subscriberOnline} response";
 model SubscriberOnlineRequest is JsonRpcRequest<typeof subscriberOnline, SubscriberOnlineParams>;
-model SubscriberOnlineResult { ...FabricResult<"Online">; }
+model SubscriberOnlineResult { ...FabricResult; }
 @extension("x-fern-display-name", subscriberOnlineResponse)
 @reply
 model SubscriberOnlineReply is JsonRpcResponse<SubscriberOnlineResult>;
 
-@doc("Registers the connected subscriber as online so it can receive inbound Call Fabric calls. The subscriber is identified by the Subscriber Access Token on the connection.")
+@doc("Registers the connected subscriber as online so it can receive inbound Call Fabric calls. The subscriber is identified by the Subscriber Access Token on the connection. If registration fails, the response is a JSON-RPC error (`-32603`) instead of a result.")
 @channel(subscriberOnline)
 @summary("Register the subscriber as online")
 @extension("x-fern-display-name", subscriberOnline)
@@ -33,7 +33,7 @@ op online(...SubscriberOnlineRequest): SubscriberOnlineReply;
 const subscriberOffline = "subscriber.offline";
 const subscriberOfflineResponse = "${subscriberOffline} response";
 model SubscriberOfflineRequest is JsonRpcRequest<typeof subscriberOffline, SubscriberOfflineParams>;
-model SubscriberOfflineResult { ...FabricResult<"Offline">; }
+model SubscriberOfflineResult { ...FabricResult; }
 @extension("x-fern-display-name", subscriberOfflineResponse)
 @reply
 model SubscriberOfflineReply is JsonRpcResponse<SubscriberOfflineResult>;

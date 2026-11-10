@@ -8,7 +8,7 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-@doc("The outcome of the room membership change this event reports: the call `joined` the room, `failed` to join, chose to `leave`, `cancel`-led before joining, or was rejected because the room was `locked`.")
+@doc("The outcome of the room membership change this event reports: the call `joined` the room, `failed` to join, chose to `leave`, `cancel`-led before joining, or was rejected because the room was `locked` (a `locked` event is always followed by a `failed` event).")
 union CallRoomJoinStatus {
   "joined",
   "failed",

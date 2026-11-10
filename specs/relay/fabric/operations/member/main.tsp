@@ -28,12 +28,12 @@ const callMemberRemove = "call.member.remove";
 const callMemberRemoveResponse = "${callMemberRemove} response";
 model MemberRemoveRequest
   is JsonRpcRequest<typeof callMemberRemove, MemberRemoveParams>;
-model MemberRemoveResult { ...FabricResult<"Removed">; }
+model MemberRemoveResult { ...FabricResult; }
 @extension("x-fern-display-name", callMemberRemoveResponse)
 @reply
 model MemberRemoveReply is JsonRpcResponse<MemberRemoveResult>;
 
-@doc("Removes one or more members from the room. Fires `member.left` for each removed member.")
+@doc("Removes one or more members from the room. Fires `member.left` for each removed member. If any target cannot be removed, the whole request fails.")
 @channel(callMemberRemove)
 @summary("Remove members from the room")
 @extension("x-fern-display-name", callMemberRemove)
@@ -43,7 +43,7 @@ const callMemberPositionSet = "call.member.position.set";
 const callMemberPositionSetResponse = "${callMemberPositionSet} response";
 model MemberPositionSetRequest
   is JsonRpcRequest<typeof callMemberPositionSet, MemberPositionSetParams>;
-model MemberPositionSetResult { ...FabricResult<"Position set">; }
+model MemberPositionSetResult { ...FabricResult; }
 @extension("x-fern-display-name", callMemberPositionSetResponse)
 @reply
 model MemberPositionSetReply is JsonRpcResponse<MemberPositionSetResult>;

@@ -19,22 +19,24 @@ model AmazonBedrockRequest is JsonRpcRequest<typeof callingAmazonBedrock, Amazon
 @extension("x-fern-display-name", callingAmazonBedrockResponse)
 @reply model AmazonBedrockReply is JsonRpcResponse<AmazonBedrockResult>;
 
-@doc("Connect to an Amazon Bedrock AI agent.")
+@doc("""
+  Connect the call to an Amazon Bedrock AI agent. The request stays open for the
+  whole conversation: the result arrives only after the Bedrock session ends
+  (hangup, error, or stop), and it reports `success` even if the agent failed to
+  run. Watch the `calling.ai.*` events to follow the session.
+  """)
 @channel(callingAmazonBedrock)
 @summary("Connect to an Amazon Bedrock AI agent")
 @extension("x-fern-display-name", callingAmazonBedrock)
-// The Bedrock engine fires a narrower event set than the OpenAI/OART engine: no `calling.call.ai`
-// lifecycle event (that fires only in the `ai` method's completion path), and none of the
-// OpenAI/OART-only events (`response`, `user_speaking`, `warning`, `transparent_barge`,
-// `post_prompt`). Only the events below are reachable on the Bedrock path.
+// The Bedrock engine fires a narrower event set than the `ai` method: no `calling.call.ai`
+// lifecycle event (that fires only in the `ai` method's completion path), no SWAIG
+// (`swaig`, `swaig_action`) events, and none of `response`, `warning`, `transparent_barge`,
+// or `post_prompt`. Only the events below are reachable on the Bedrock path.
 op amazonBedrock(...AmazonBedrockRequest):
   | AmazonBedrockReply
-  | AiStartEvent
   | AiCompletionEvent
   | AiResponseUtteranceEvent
   | AiSpeechDetectEvent
   | AiPartialResultEvent
   | AiBeginSpeakingEvent
-  | AiStopEvent
-  | AiSwaigEvent
-  | AiSwaigActionEvent;
+  | AiStopEvent;

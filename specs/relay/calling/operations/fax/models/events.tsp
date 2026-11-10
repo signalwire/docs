@@ -61,7 +61,8 @@ model FaxFinished extends CallFax {
     @example("https://example.com/my_doc_to_fax.pdf")
     document: string;
 
-    @doc("Document format of the transmitted fax. Currently `pdf`; empty on a failed fax.")
+    @doc("Document format of the fax. Always `pdf`, including on a failed fax.")
+    @example("pdf")
     format: string;
 
     @doc("Total number of pages sent or received.")

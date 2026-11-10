@@ -12,7 +12,7 @@ namespace Relay.Fabric;
 const callRaisehand = "call.raisehand";
 const callRaisehandResponse = "${callRaisehand} response";
 model RaisehandRequest is JsonRpcRequest<typeof callRaisehand, RaisehandParams>;
-model RaisehandResult { ...FabricResult<"Hand raised">; }
+model RaisehandResult { ...FabricResult; }
 @extension("x-fern-display-name", callRaisehandResponse)
 @reply
 model RaisehandReply is JsonRpcResponse<RaisehandResult>;
@@ -26,7 +26,7 @@ op raisehand(...RaisehandRequest): RaisehandReply;
 const callLowerhand = "call.lowerhand";
 const callLowerhandResponse = "${callLowerhand} response";
 model LowerhandRequest is JsonRpcRequest<typeof callLowerhand, LowerhandParams>;
-model LowerhandResult { ...FabricResult<"Hand lowered">; }
+model LowerhandResult { ...FabricResult; }
 @extension("x-fern-display-name", callLowerhandResponse)
 @reply
 model LowerhandReply is JsonRpcResponse<LowerhandResult>;

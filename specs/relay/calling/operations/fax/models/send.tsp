@@ -17,21 +17,17 @@ model SendFaxParams {
   @example("https://example.com/my_doc_to_fax.pdf")
   document: url;
 
-  @doc("Identity to display on the receiving fax. Defaults to your SignalWire phone number.")
+  @doc("Identity to display on the receiving fax. Defaults to the call's `from` number: your SignalWire number on an outbound call, or the caller's number on an inbound call.")
   @example("+15551230001")
   identity?: string;
 
   @doc("""
-    Custom info added to the header of each fax page (alongside identity, date,
-    and page number). `SignalWire` is the default. Set to empty string to
-    disable sending any header.
+    Custom info added to the header of each fax page. Defaults to the
+    destination number; an empty string also uses the destination number, so
+    the header can't be turned off.
     """)
-  @example("SignalWire")
-  header_info?: string = "SignalWire";
-
-  @doc("HTTP(s) URL to POST fax events to.")
-  @example("https://example.com/webhooks/relay")
-  status_url?: url;
+  @example("Acme Corp")
+  header_info?: string;
 }
 
 model SendFaxStopParams {
@@ -48,10 +44,6 @@ model ReceiveFaxParams {
   @doc("Your identifier for this fax. Reuse it to stop the fax (`calling.receive_fax.stop`) and to correlate the `calling.call.fax` events for it.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
-
-  @doc("HTTP(s) URL to POST fax events to.")
-  @example("https://example.com/webhooks/relay")
-  status_url?: url;
 }
 
 model ReceiveFaxStopParams {

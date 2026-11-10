@@ -43,11 +43,11 @@ model PlayPauseRequest is JsonRpcRequest<typeof callingPlayPause, PlayPauseParam
 @extension("x-fern-display-name", callingPlayPauseResponse)
 @reply model PlayPauseReply is JsonRpcResponse<PlayPauseResult>;
 
-@doc("Pauses a play you started with `calling.play`, identified by its `control_id`. Resume it later with `calling.play.resume`.")
+@doc("Pauses a play you started with `calling.play`, identified by its `control_id`. A `calling.call.play` event with state `paused` follows. Resume it later with `calling.play.resume`.")
 @channel(callingPlayPause)
 @summary("Pause an active play")
 @extension("x-fern-display-name", callingPlayPause)
-op playPause(...PlayPauseRequest): PlayPauseReply;
+op playPause(...PlayPauseRequest): PlayPauseReply | CallPlayEvent;
 
 const callingPlayResume = "calling.play.resume";
 const callingPlayResumeResponse = "${callingPlayResume} response";
@@ -57,11 +57,11 @@ model PlayResumeRequest is JsonRpcRequest<typeof callingPlayResume, PlayResumePa
 @extension("x-fern-display-name", callingPlayResumeResponse)
 @reply model PlayResumeReply is JsonRpcResponse<PlayResumeResult>;
 
-@doc("Resumes a play you paused with `calling.play.pause`, identified by its `control_id`.")
+@doc("Resumes a play you paused with `calling.play.pause`, identified by its `control_id`. A `calling.call.play` event with state `playing` follows.")
 @channel(callingPlayResume)
 @summary("Resume a paused play")
 @extension("x-fern-display-name", callingPlayResume)
-op playResume(...PlayResumeRequest): PlayResumeReply;
+op playResume(...PlayResumeRequest): PlayResumeReply | CallPlayEvent;
 
 const callingPlayStop = "calling.play.stop";
 const callingPlayStopResponse = "${callingPlayStop} response";

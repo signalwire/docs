@@ -2,7 +2,9 @@ import "@signalwire/typespec-asyncapi";
 
 // Server connect (project + token auth) + server-only signalwire methods.
 import "./operations/connect/server.tsp";
-// Context subscription (pre-4.0 flat surface). `receive/main.tsp` transitively
+// Credential refresh (project + token).
+import "./operations/reauthenticate/server.tsp";
+// Context subscription (protocol major < 4). `receive/main.tsp` transitively
 // imports `../../models/core.tsp` for `Acknowledgement`.
 import "./operations/receive/main.tsp";
 

@@ -30,17 +30,38 @@ model PlayAndCollectDigits {
 
   @doc("""
     How long to wait, in seconds, for the next key press after one is received
-    before giving up. Defaults to `5.0`.
+    before giving up. Must be at least `1`. Defaults to `5.0`.
     """)
-  @minValueExclusive(0)
+  @minValue(1)
   @example(5.0)
   digit_timeout?: float64 = 5.0;
 }
 
+@doc("Speech recognition model for a `calling.play_and_collect`.")
+union PlayAndCollectSpeechModel {
+  "default",
+  "enhanced",
+  "enhanced.phone_call",
+  "enhanced.video",
+}
+
+@doc("""
+  Settings that control how the caller's speech is recognized for a
+  `calling.play_and_collect`. Same as the `speech` settings of `calling.collect`,
+  except that `model` must be one of the listed values.
+  """)
+model PlayAndCollectSpeech {
+  ...OmitProperties<CollectSpeech, "model">;
+
+  @doc("Recognition model to use. Not set by default.")
+  @example("enhanced.phone_call")
+  `model`?: PlayAndCollectSpeechModel;
+}
+
 @doc("The `collect` settings for a `calling.play_and_collect`, describing what to listen for while the media plays. Provide `digits`, `speech`, or both.")
 model PlayAndCollectCollect {
-  @doc("How long to wait, in seconds, for the caller to start giving input. Defaults to `4.0`.")
-  @minValueExclusive(0)
+  @doc("How long to wait, in seconds, for the caller to start giving input. Must be at least `1`. Defaults to `4.0`.")
+  @minValue(1)
   @example(4.0)
   initial_timeout?: float64 = 4.0;
 
@@ -48,7 +69,7 @@ model PlayAndCollectCollect {
   digits?: PlayAndCollectDigits;
 
   @doc("How to collect spoken input. Provide this, `digits`, or both; at least one is required.")
-  speech?: CollectSpeech;
+  speech?: PlayAndCollectSpeech;
 }
 
 model PlayAndCollectParams {
@@ -72,7 +93,7 @@ model PlayAndCollectParams {
   @doc("What to listen for from the caller while the media plays.")
   collect: PlayAndCollectCollect;
 
-  @doc("HTTPS URL that status events are POSTed to.")
+  @doc("HTTP or HTTPS URL that status events are POSTed to.")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
 }

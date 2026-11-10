@@ -13,7 +13,7 @@ model JoinRoomParams {
   @example("my_room")
   name: string;
 
-  @doc("An `http` or `https` URL to receive room status updates, such as when the call joins or leaves.")
+  @doc("An `http` or `https` URL. Accepted but currently ignored: no room status updates are sent to it. Use `calling.call.room` events to follow the call's room membership.")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
 }

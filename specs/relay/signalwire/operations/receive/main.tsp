@@ -38,10 +38,16 @@ model UnreceiveRequest is JsonRpcRequest<typeof signalwireUnreceive, UnreceivePa
   and `calling.call.state` (under Calling) and `queuing.relay.tasks` (under Tasking).
   The full set isn't repeated here.
 
-  Legacy: `signalwire.receive` is a pre-4.0 method. It is rejected with a
-  version-incompatible error (code `-32001`) for connections at version `4.0` or
-  higher. On `4.0` connections, subscribe by passing `contexts` to
-  `signalwire.connect` — that is the current subscription mechanism.
+  You can also subscribe at connect time by passing `contexts` to
+  `signalwire.connect`.
+
+  Requirements and errors, returned as a JSON-RPC `error`:
+  - The connection must use a protocol `major` version below `4` (the server SDKs
+    send `2.0.0`); otherwise `-32001`.
+  - Supply at least one context; otherwise `-32602`.
+  - Your credentials must carry the `calling`, `messaging`, or `tasking` scope;
+    otherwise `-32003`. You receive events only for the scopes your credentials
+    carry.
   """)
 @channel(signalwireReceive)
 @summary("Subscribe to inbound events on one or more contexts")
@@ -51,10 +57,8 @@ op receive(...ReceiveRequest): ReceiveReply;
 @doc("""
   Unsubscribe from one or more contexts so you stop receiving their inbound events.
 
-  Legacy: `signalwire.unreceive` is a pre-4.0 method. It is rejected with a
-  version-incompatible error (code `-32001`) for connections at version `4.0` or
-  higher. On `4.0` connections, manage subscriptions via the `contexts` you pass to
-  `signalwire.connect` instead.
+  Requires a protocol `major` version below `4` (the server SDKs send `2.0.0`);
+  otherwise the request is rejected with a JSON-RPC `error` (`-32001`).
   """)
 @channel(signalwireUnreceive)
 @summary("Unsubscribe from inbound events on one or more contexts")

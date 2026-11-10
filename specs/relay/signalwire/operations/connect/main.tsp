@@ -24,7 +24,8 @@ model ConnectReply is JsonRpcResponse<ConnectResult>;
 @doc("""
   Receive-only. Delivers your latest authorization state. It arrives right after
   `signalwire.connect`, and again whenever the state changes — after you
-  reauthenticate or perform video/WebRTC operations — independent of any single
+  reauthenticate, perform video/WebRTC operations, or are promoted or demoted in a
+  room — independent of any single
   command. One exception: if you connected by supplying a valid
   `connect.authorization_state`, the state is restored from that token and this event
   is not re-sent immediately on connect. Save the `authorization_state` each time and

@@ -12,8 +12,8 @@ model AiParams {
   ...CallAddress;
 
   @doc("""
-    Your own identifier for this AI session. Reuse it later to control the
-    session — for example, pass it to `calling.ai.stop` to end the agent.
+    Your own identifier for this AI session. It is echoed in the result and on the
+    `calling.call.ai` event, so you can match them to this request.
     """)
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
@@ -21,29 +21,22 @@ model AiParams {
   ...OmitProperties<SWML.Calling.AIObject, "prompt" | "agent">;
 
   @doc("""
-    The UUID of a pre-configured AI agent to run. When set, that agent's saved
-    configuration is applied to the session. Optional here: supply at least one
-    of `agent` or `prompt`. When you reference an `agent`, its saved prompt is
-    used unless you override it with `prompt` here.
-    """)
-  @format("uuid")
-  @example("13ecec00-1210-4de5-97e3-6a4f2f8fa2b0")
-  agent?: string;
-
-  @doc("""
     Defines the AI agent's personality, goals, behaviors, and instructions for
-    handling conversations. Optional here: supply at least one of `agent` or
-    `prompt`. When you reference a pre-configured `agent`, its saved prompt is
-    used unless you override it here.
+    handling conversations. Required: without a `prompt` no agent runs, even though
+    the request still returns `AI started`. Pre-configured agents (`agent`) are not
+    supported on this method; an `agent` key is accepted but has no effect.
     """)
-  prompt?: SWML.Calling.AIPrompt;
+  prompt: SWML.Calling.AIPrompt;
 }
 
 @summary("AI stop params")
 model AiStopParams {
   ...CallAddress;
 
-  @doc("The `control_id` you set when you started the session with `calling.ai`.")
+  @doc("""
+    Optional and ignored: the stop applies to whichever AI session is running on the
+    call. When sent, it is echoed in the result.
+    """)
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
-  control_id: string;
+  control_id?: string;
 }

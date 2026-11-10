@@ -30,21 +30,41 @@ model VertoRequest is JsonRpcRequest<typeof webrtcVerto, VertoParams>;
   `verto.invite`), along with the `node_id` now hosting the call. Capture that
   `node_id` and send it on later frames for the same call. Asynchronous and
   server-initiated Verto frames (an incoming call, the far end hanging up, media
-  updates) arrive separately on the receive-only `webrtc.message` channel.
+  updates) arrive separately as `webrtc.message` events.
 
-  Authentication: this channel is available only to sessions authenticated with a
-  `jwt_token` (the browser/client credential); sessions authenticated with a
-  project + API token are rejected — server-side code should use the `calling`
-  service instead.
+  Authentication: this channel is available only to connections authenticated with
+  a Subscriber Access Token (SAT). Any other credential — a project + API token, or
+  another kind of JWT — is rejected with a JSON-RPC `error` (`-32003`). Server-side
+  code should use the `calling` service instead.
+
+  Other requests rejected with a JSON-RPC `error` before the frame is sent:
+  - `-32003` — a screen-share or additional-device invite sent before the main
+    participant invite, a frame other than `verto.bye` or `verto.subscribe` sent
+    before any invite, or a `verto.answer` without a `node_id`.
+  - `-32603` — the service could not resolve where to route the frame.
   """)
 @channel(webrtcVerto)
 @summary("Send a Verto frame")
 @extension("x-fern-display-name", webrtcVerto)
 op verto(...VertoRequest): VertoReply;
 
+model WebRTCMessageRequest is JsonRpcRequest<typeof webrtcMessage, WebRTCMessageParams>;
+
+@extension("x-fern-display-name", webrtcMessageResponse)
+@reply model WebRTCMessageReply is JsonRpcResponse<WebRTCMessageResult>;
+
 @doc("""
-  Receive-only. Delivers inbound Verto frames from SignalWire on your connection.
-  These include asynchronous responses to your `webrtc.verto` frames, but also
+  Delivers inbound Verto frames from SignalWire on your connection, and — for
+  connections authenticated with a Relay JWT rather than a Subscriber Access Token —
+  lets you send Verto frames with a `webrtc.message` request.
+
+  **Sending.** Pass the Verto frame in `message`. A `verto.invite` needs no
+  `node_id`; every other frame must carry the `node_id` returned for the call,
+  otherwise the reply has `code` `"400"`. Your credentials must carry the `webrtc`
+  scope and a resource; otherwise the request is rejected with a JSON-RPC `error`
+  (`-32003`). Subscriber Access Token connections use `webrtc.verto` instead.
+
+  **Receiving.** These include asynchronous responses to your Verto frames, but also
   frames SignalWire initiates on its own — an incoming `verto.invite`, a
   `verto.bye` when the far end hangs up, `verto.media`/`verto.display` updates, and
   conference/room events on channels you subscribed to — so they arrive without you
@@ -54,6 +74,6 @@ op verto(...VertoRequest): VertoReply;
   whose contents depend on the Verto method it carries.
   """)
 @channel(webrtcMessage)
-@summary("Receive inbound Verto frames")
+@summary("Send and receive Verto frames")
 @extension("x-fern-display-name", webrtcMessage)
-op receiveMessage(): MessageEvent;
+op message(...WebRTCMessageRequest): WebRTCMessageReply | MessageEvent;

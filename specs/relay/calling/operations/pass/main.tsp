@@ -18,7 +18,7 @@ model PassRequest is JsonRpcRequest<typeof callingPass, PassParams>;
 @extension("x-fern-display-name", callingPassResponse)
 @reply model PassReply is JsonRpcResponse<PassResult>;
 
-@doc("Declines an inbound call offer (a `calling.call.receive` event) without answering it, returning the call to routing so SignalWire can offer it to another application listening for calls. Use it when your app gets a call it shouldn't handle and you want someone else to pick it up.")
+@doc("Declines an inbound call offer (a `calling.call.receive` event) without answering it, returning the call to routing so SignalWire can offer it to another application listening for calls. Use it when your app gets a call it shouldn't handle and you want someone else to pick it up. Fails with `\"409\"` once the offer has expired.")
 @channel(callingPass)
 @summary("Pass the call offer to another application")
 @extension("x-fern-display-name", callingPass)

@@ -9,9 +9,8 @@ namespace Relay.Calling;
 model EchoParams {
   ...CallAddress;
 
-  @doc("How long to keep echoing, in seconds. Effective range 5–120; values outside this range are clamped. Default 60.")
-  @minValue(5)
-  @maxValue(120)
+  @doc("How long to keep echoing, in seconds. Values below 5 are raised to 5 and values above 120 are lowered to 120; fractions are truncated. Default 60.")
+  @minValue(0)
   @example(30)
   timeout?: float64;
 

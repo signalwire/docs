@@ -111,7 +111,7 @@ model CallCollectParams {
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
-  @doc("Where the collection currently stands. `error` means it stopped because something went wrong. Present for partial and continuous collections; a one-shot collect reports its `result` without a `state`.")
+  @doc("Where the collection currently stands. `error` means it stopped because something went wrong. Present only when the collect was started with `continuous: true`; otherwise the event reports its `result` without a `state`.")
   @example("finished")
   state?: CallCollectState;
 

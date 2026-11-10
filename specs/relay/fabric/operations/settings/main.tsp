@@ -13,7 +13,7 @@ const callVmutedHideSet = "call.vmuted.hide.set";
 const callVmutedHideSetResponse = "${callVmutedHideSet} response";
 model VmutedHideSetRequest
   is JsonRpcRequest<typeof callVmutedHideSet, VmutedHideSetParams>;
-model VmutedHideSetResult { ...FabricResult<"Updated">; }
+model VmutedHideSetResult { ...FabricResult; }
 @extension("x-fern-display-name", callVmutedHideSetResponse)
 @reply
 model VmutedHideSetReply is JsonRpcResponse<VmutedHideSetResult>;
@@ -27,7 +27,7 @@ op vmutedHideSet(...VmutedHideSetRequest): VmutedHideSetReply;
 const callLock = "call.lock";
 const callLockResponse = "${callLock} response";
 model LockRequest is JsonRpcRequest<typeof callLock, LockParams>;
-model LockResult { ...FabricResult<"Locked">; }
+model LockResult { ...FabricResult; }
 @extension("x-fern-display-name", callLockResponse)
 @reply
 model LockReply is JsonRpcResponse<LockResult>;
@@ -41,7 +41,7 @@ op lock(...LockRequest): LockReply;
 const callUnlock = "call.unlock";
 const callUnlockResponse = "${callUnlock} response";
 model UnlockRequest is JsonRpcRequest<typeof callUnlock, UnlockParams>;
-model UnlockResult { ...FabricResult<"Unlocked">; }
+model UnlockResult { ...FabricResult; }
 @extension("x-fern-display-name", callUnlockResponse)
 @reply
 model UnlockReply is JsonRpcResponse<UnlockResult>;
@@ -56,7 +56,7 @@ const callLowbitrateSet = "call.lowbitrate.set";
 const callLowbitrateSetResponse = "${callLowbitrateSet} response";
 model LowbitrateSetRequest
   is JsonRpcRequest<typeof callLowbitrateSet, LowbitrateSetParams>;
-model LowbitrateSetResult { ...FabricResult<"Updated">; }
+model LowbitrateSetResult { ...FabricResult; }
 @extension("x-fern-display-name", callLowbitrateSetResponse)
 @reply
 model LowbitrateSetReply is JsonRpcResponse<LowbitrateSetResult>;
@@ -71,7 +71,7 @@ const callDenoiseSet = "call.denoise.set";
 const callDenoiseSetResponse = "${callDenoiseSet} response";
 model DenoiseSetRequest
   is JsonRpcRequest<typeof callDenoiseSet, DenoiseSetParams>;
-model DenoiseSetResult { ...FabricResult<"Updated">; }
+model DenoiseSetResult { ...FabricResult; }
 @extension("x-fern-display-name", callDenoiseSetResponse)
 @reply
 model DenoiseSetReply is JsonRpcResponse<DenoiseSetResult>;
@@ -86,12 +86,12 @@ const callAudioflagsSet = "call.audioflags.set";
 const callAudioflagsSetResponse = "${callAudioflagsSet} response";
 model AudioflagsSetRequest
   is JsonRpcRequest<typeof callAudioflagsSet, AudioflagsSetParams>;
-model AudioflagsSetResult { ...FabricResult<"Updated">; }
+model AudioflagsSetResult { ...FabricResult; }
 @extension("x-fern-display-name", callAudioflagsSetResponse)
 @reply
 model AudioflagsSetReply is JsonRpcResponse<AudioflagsSetResult>;
 
-@doc("Sets a member's audio processing flags — echo cancellation, noise suppression, automatic gain. Target yourself with `self` or another member with `target`. A `member.updated` event follows.")
+@doc("Sets a member's audio processing flags — echo cancellation, noise suppression, automatic gain. Send at least one flag. Target yourself with `self` or another member with `target`. A `member.updated` event follows.")
 @channel(callAudioflagsSet)
 @summary("Set a member's audio flags")
 @extension("x-fern-display-name", callAudioflagsSet)

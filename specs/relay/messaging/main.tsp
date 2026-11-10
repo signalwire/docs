@@ -12,7 +12,8 @@ using SignalWire.AsyncAPI;
   handle replies. Messages are grouped by a **context** you choose, so you can
   route events for different parts of your app to different handlers.
   
-  Use this from your server. Browser clients send messages through the REST API
-  instead.
+  Use this from your server, on a connection whose protocol `major` version is below
+  `4` (the server SDKs send `2.0.0`). Browser clients send messages through the REST
+  API instead.
   """)
 namespace Relay.Messaging;

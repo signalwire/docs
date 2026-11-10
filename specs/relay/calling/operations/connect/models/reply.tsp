@@ -10,7 +10,12 @@ namespace Relay.Calling;
 model ConnectResult {
   ...RelayResultBase<"Connecting call">;
 
-  @doc("Per-destination results, present on partial failure — one entry per attempted destination, each with the destination and any `errors`. This is the per-destination breakdown; the top-level `data` array carries the same failures aggregated across devices.")
+  @doc("""
+    Per-destination failures, one entry per destination that could not be connected.
+    Present when some destinations failed even though the request succeeded (`code`
+    `"200"`), and on failures such as `"400"` "No valid devices" (the array may be
+    empty when the request failed before any destination was tried).
+    """)
   message_data?: {
     @doc("The origin used for this destination.")
     from?: string;
@@ -18,7 +23,12 @@ model ConnectResult {
     @doc("The destination attempted.")
     to?: string;
 
-    @doc("Errors encountered connecting this destination.")
-    errors?: unknown[];
+    @doc("""
+      Why this destination failed. Either a string (for example `"Too many devices"`)
+      or an object describing the errors, typically mapping a field name to a list of
+      messages, for example
+      `{"to": ["The configured SIP Endpoint is not registered."]}`.
+      """)
+    errors?: string | Record<unknown>;
   }[];
 }

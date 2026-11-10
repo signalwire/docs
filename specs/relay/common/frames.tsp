@@ -24,9 +24,14 @@ model JsonRpcRequest<Method extends string, Params> {
   A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
   `result` (the method result). If the request fails at the protocol level — an
   incompatible version, failed authentication, insufficient scope, invalid params, or the
-  service being at capacity — the frame carries `error` instead of `result`. (Ordinary
-  backend/application failures are reported the other way: a normal `result` whose own
-  `code` is a non-`200` value, not a JSON-RPC `error`.)
+  service being at capacity — the frame carries `error` instead of `result`. Many
+  method-level failures (for example most Calling failures) are reported the other way: a
+  normal `result` whose own `code` is not `"200"`. Each method documents which form its
+  failures take.
+
+  An `error` returned for `signalwire.connect` is followed by the service closing the
+  WebSocket; open a new connection to try again. Errors on any later request leave the
+  connection open.
   """)
 @summary("JSON-RPC response")
 model JsonRpcResponse<Result> {
@@ -85,8 +90,40 @@ model JsonRpcError {
   code: JsonRpcErrorCode;
 
   @doc("A human-readable description of what went wrong.")
-  @example("Authentication failed")
+  @example("Authentication failed, invalid token")
   message: string;
+
+  @doc("""
+    An echo of the request that failed — the full JSON-RPC frame you sent
+    (`jsonrpc`, `id`, `method`, `params`). Always present.
+    """)
+  @example(#{
+    jsonrpc: "2.0",
+    id: "b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+    method: "signalwire.receive",
+    params: #{ contexts: #["office"] },
+  })
+  original_request: Record<unknown>;
+
+  @doc("The node that sent the failed request. Present only on some routing errors.")
+  @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
+  requester_nodeid?: string;
+
+  @doc("The identity of the requester. Present only on some routing errors; same value as `requester_nodeid`.")
+  @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
+  requester_identity?: string;
+
+  @doc("The node that was handling the request. Present only on some routing errors.")
+  @example("f47ac10b-58cc-4372-a567-0e02b2c3d479")
+  responder_nodeid?: string;
+
+  @doc("The identity of the responder. Present only on some routing errors; same value as `responder_nodeid`.")
+  @example("f47ac10b-58cc-4372-a567-0e02b2c3d479")
+  responder_identity?: string;
+
+  @doc("`true` when the request timed out on its final hop inside SignalWire. Present only on some timeout errors.")
+  @example(true)
+  last_hop_timeout?: boolean;
 }
 
 @doc("""
@@ -98,7 +135,8 @@ model SignalwireEvent<EventType extends string, Data> {
   @doc("JSON-RPC version. Always `2.0`.")
   jsonrpc: "2.0";
 
-  @doc("Event id.")
+  @doc("Event id — a unique UUID generated for each event. Events are notifications: you do not reply to them.")
+  @example("7d1e2f3a-4b5c-4d6e-8f9a-0b1c2d3e4f5a")
   id: string;
 
   @doc("Always `signalwire.event`.")
@@ -109,21 +147,100 @@ model SignalwireEvent<EventType extends string, Data> {
     @doc("The event type — identifies which event this is.")
     event_type: EventType;
 
-    @doc("The channel the event was delivered on. Always present.")
-    @example("calling")
+    @doc("""
+      The channel the event was delivered on — for Calling events, the `protocol`
+      string your connection received from `signalwire.connect`.
+      """)
+    @example("signalwire_c1d2e3f4a5b6")
     event_channel: string;
 
     @doc("When the event was emitted, as a Unix timestamp in seconds. Always present.")
     @example(1712345678.842)
     timestamp: float64;
 
-    @doc("Your project ID. Always present.")
+    @doc("Your project ID. Present on Calling events and most Call Fabric events; absent on `call.joined`, `call.left`, `member.joined`, and `member.left`.")
+    @example("b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e")
+    project_id?: string;
+
+    @doc("Your space ID. Present on Calling events and most Call Fabric events; absent on `call.joined`, `call.left`, `member.joined`, and `member.left`.")
+    @example("c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f")
+    space_id?: string;
+
+    @doc("The event-specific payload.")
+    params: Data;
+  };
+}
+
+@doc("""
+  A server-pushed `signalwire.event` frame for an inbound event routed by **context**
+  (for example `calling.call.receive`). Same nesting as `SignalwireEvent` (`Data` at
+  `params.params`), but the envelope carries the `context` the event was routed to, and
+  `event_channel` is not guaranteed.
+  """)
+@summary("Relay context event frame")
+model SignalwireContextEvent<EventType extends string, Data> {
+  @doc("JSON-RPC version. Always `2.0`.")
+  jsonrpc: "2.0";
+
+  @doc("Event id — a unique UUID generated for each event. Events are notifications: you do not reply to them.")
+  @example("7d1e2f3a-4b5c-4d6e-8f9a-0b1c2d3e4f5a")
+  id: string;
+
+  @doc("Always `signalwire.event`.")
+  method: "signalwire.event";
+
+  @doc("The event envelope.")
+  params: {
+    @doc("The event type — identifies which event this is.")
+    event_type: EventType;
+
+    @doc("The context the event was routed to — one of the contexts you subscribed to.")
+    @example("office")
+    context: string;
+
+    @doc("The channel the event was delivered on, when set.")
+    @example("signalwire_c1d2e3f4a5b6")
+    event_channel?: string;
+
+    @doc("When the event was emitted, as a Unix timestamp in seconds.")
+    @example(1712345678.842)
+    timestamp: float64;
+
+    @doc("Your project ID.")
     @example("b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e")
     project_id: string;
 
-    @doc("Your space ID. Always present.")
+    @doc("Your space ID.")
     @example("c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f")
     space_id: string;
+
+    @doc("The event-specific payload.")
+    params: Data;
+  };
+}
+
+@doc("""
+  A minimal server-pushed `signalwire.event` frame generated by the connection itself
+  (for example `signalwire.authorization.state`). The envelope carries only
+  `event_type` and `params` — no `event_channel`, `timestamp`, `project_id`, or
+  `space_id`.
+  """)
+@summary("Connection event frame")
+model SignalwireConnectionEvent<EventType extends string, Data> {
+  @doc("JSON-RPC version. Always `2.0`.")
+  jsonrpc: "2.0";
+
+  @doc("Event id — a unique UUID generated for each event. Events are notifications: you do not reply to them.")
+  @example("7d1e2f3a-4b5c-4d6e-8f9a-0b1c2d3e4f5a")
+  id: string;
+
+  @doc("Always `signalwire.event`.")
+  method: "signalwire.event";
+
+  @doc("The event envelope.")
+  params: {
+    @doc("The event type — identifies which event this is.")
+    event_type: EventType;
 
     @doc("The event-specific payload.")
     params: Data;
@@ -141,7 +258,8 @@ model MessagingEvent<EventType extends string, Data> {
   @doc("JSON-RPC version. Always `2.0`.")
   jsonrpc: "2.0";
 
-  @doc("Event id.")
+  @doc("Event id — a unique UUID generated for each event. Events are notifications: you do not reply to them.")
+  @example("7d1e2f3a-4b5c-4d6e-8f9a-0b1c2d3e4f5a")
   id: string;
 
   @doc("Always `signalwire.event`.")
@@ -184,7 +302,8 @@ model TaskingEvent<EventType extends string> {
   @doc("JSON-RPC version. Always `2.0`.")
   jsonrpc: "2.0";
 
-  @doc("Event id.")
+  @doc("Event id — a unique UUID generated for each event. Events are notifications: you do not reply to them.")
+  @example("7d1e2f3a-4b5c-4d6e-8f9a-0b1c2d3e4f5a")
   id: string;
 
   @doc("Always `signalwire.event`.")
@@ -199,8 +318,14 @@ model TaskingEvent<EventType extends string> {
     @example("office")
     context: string;
 
-    @doc("The message payload, exactly as the sender passed it to the Tasking REST endpoint. Arbitrary JSON — no fixed structure.")
-    message: Record<unknown>;
+    @doc("""
+      The message payload, exactly as the sender passed it to the Tasking REST
+      endpoint. Any non-empty JSON value — usually an object, but an array, string,
+      number, or `true` is delivered as-is. The sender is limited to 2000 characters of
+      serialized JSON.
+      """)
+    @example(#{ action: "call", number: "+15551230002" })
+    message: unknown;
 
     @doc("When the event was emitted, as a Unix timestamp in seconds (integer).")
     @example(1712345678)
@@ -226,7 +351,8 @@ model WebRTCEvent<EventType extends string, Data> {
   @doc("JSON-RPC version. Always `2.0`.")
   jsonrpc: "2.0";
 
-  @doc("Event id.")
+  @doc("Event id — a unique UUID generated for each event. Events are notifications: you do not reply to them.")
+  @example("7d1e2f3a-4b5c-4d6e-8f9a-0b1c2d3e4f5a")
   id: string;
 
   @doc("Always `signalwire.event`.")
@@ -284,7 +410,8 @@ model ConversationEvent<
   @doc("JSON-RPC version. Always `2.0`.")
   jsonrpc: "2.0";
 
-  @doc("Event id.")
+  @doc("Event id — a unique UUID generated for each event. Events are notifications: you do not reply to them.")
+  @example("7d1e2f3a-4b5c-4d6e-8f9a-0b1c2d3e4f5a")
   id: string;
 
   @doc("Always `signalwire.event`.")
@@ -298,8 +425,13 @@ model ConversationEvent<
     @doc("The subscriber's Conversation stream this event was delivered on.")
     event_channel: string;
 
-    @doc("When the event was emitted, as a string-encoded epoch timestamp.")
-    @example("1712345678842")
+    @doc("""
+      When the event was emitted, as a string-encoded epoch timestamp. The unit
+      differs by event: `conversation.message` and `conversation.joined` send
+      fractional seconds (e.g. `"1712345678.842113"`); `conversation.message.updated`
+      and `conversation.broadcast` send milliseconds (e.g. `"1712345678842"`).
+      """)
+    @example("1712345678.842113")
     timestamp: string;
 
     // Envelope-level extras carried alongside `params` — e.g. `is_author` on the

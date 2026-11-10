@@ -1,6 +1,6 @@
 import "@signalwire/typespec-asyncapi";
 
-import "./operations/configure/main.tsp";
+import "./operations/provision/main.tsp";
 
 using SignalWire.AsyncAPI;
 
@@ -13,7 +13,7 @@ using SignalWire.AsyncAPI;
   `relay_connector_id` a connector reports is the ID of the connector you set up
   on your own SignalWire account — your own value, not an opaque one you need to
   obtain elsewhere.
-  The service exposes a single method, `provisioning.configure`, and sends no
+  The service exposes a single method, `signalwire.provision`, and sends no
   events. The only connector type supported today is `freeswitch`, which returns
   a SIP profile.
   """)

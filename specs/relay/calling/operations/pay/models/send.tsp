@@ -131,7 +131,8 @@ model PayPrompt {
   @doc("""
     Media to play for this prompt as an ordered list of audio, TTS, silence, or
     ringtone elements (the same shape as `calling.play`). When set, it replaces
-    `actions` for this prompt.
+    `actions` for this prompt. TTS elements that don't set a voice or language
+    use the request's `voice` and `language`.
     """)
   play?: PlayMedia[];
 }
@@ -161,19 +162,19 @@ model PayParams {
 
   @doc("""
     Seconds the Pay IVR waits for the next digit before validating the captured
-    digits, passed as a string, e.g. `"6"`. Default `"5"`.
+    digits, as a number or numeric string (e.g. `6` or `"6"`). Values outside
+    3–65535 are ignored and the default is used. Default `5`.
     """)
-  @pattern("^[0-9]+$")
   @example("6")
-  timeout?: string = "5";
+  timeout?: int32 | string = 5;
 
   @doc("""
-    Number of times the Pay IVR retries when collecting card details, passed as a
-    string, e.g. `"3"`. Default `"1"`.
+    Number of times the Pay IVR retries when collecting card details, as a number
+    or numeric string (e.g. `3` or `"3"`). Values outside 1–3 are ignored and the
+    default is used. Default `1`.
     """)
-  @pattern("^[0-9]+$")
   @example("3")
-  max_attempts?: string = "1";
+  max_attempts?: int32 | string = 1;
 
   @doc("""
     Whether to prompt for the card security code, passed as a string boolean
@@ -191,12 +192,12 @@ model PayParams {
   postal_code?: string = "true";
 
   @doc("""
-    Minimum number of digits a caller must enter for the postal code, passed as a
-    string, e.g. `"6"`. Default `"0"`.
+    Minimum number of digits a caller must enter for the postal code, as a number
+    or numeric string (e.g. `6` or `"6"`). Only 1–255 is applied; other values
+    are ignored. Default `0` (no minimum).
     """)
-  @pattern("^[0-9]+$")
   @example("6")
-  min_postal_code_length?: string = "0";
+  min_postal_code_length?: int32 | string = 0;
 
   @doc("URL that collected payment details are POSTed to upon completion. Must be an `https://` URL.")
   @example("https://example.com/accept-payment")
@@ -227,10 +228,6 @@ model PayParams {
     """)
   @example("polly.Sally")
   voice?: string = "woman";
-
-  @doc("Fallback text-to-speech voice for prompts, used when `voice` is not set.")
-  @example("woman")
-  say_voice?: string;
 
   @doc("Custom description of the payment.")
   @example("book")

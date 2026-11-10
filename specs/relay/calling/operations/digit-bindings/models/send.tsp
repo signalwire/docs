@@ -13,11 +13,14 @@ model BindDigitParams {
   @example("*1")
   digits: string;
 
-  @doc("The call method to run when the digits are pressed, e.g. `calling.play`.")
-  @example("calling.play")
+  @doc("""
+    The call method to run when the digits are pressed, as the bare method name
+    without the `calling.` prefix, e.g. `play`. `play_and_collect` can't be bound.
+    """)
+  @example("play")
   bind_method: string;
 
-  @doc("Parameters to pass to `bind_method` when it runs. Use the same shape that method expects for its parameters.")
+  @doc("Parameters to pass to `bind_method` when it runs. Use the same shape that method expects, but leave out `call_id` and `node_id`; the call is filled in for you.")
   params?: Record<unknown>;
 
   @doc("A label that groups this binding with others, so you can clear them together later. Defaults to `\"default\"`.")

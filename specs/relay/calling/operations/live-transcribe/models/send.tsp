@@ -192,6 +192,34 @@ model LiveTranslateStart {
     """)
   @example("classic")
   mode?: LiveTranslateMode = "classic";
+
+  @doc("""
+    The model that translates each utterance. An unsupported value falls back to the
+    default `gpt-4.1-nano`. Ignored in `realtime` mode.
+    """)
+  @example("gpt-4.1-nano")
+  translation_model?: string = "gpt-4.1-nano";
+
+  @doc("""
+    Request parameters for the translation model, such as `temperature` or `top_p`,
+    applied over the defaults. Keys the model does not support are dropped.
+    """)
+  @example(#{ temperature: 0.2 })
+  translation_model_params?: Record<unknown>;
+
+  @doc("""
+    Engine-specific tuning for `from_voice`, such as
+    `{"eleven_labs_stability": 0.4}`.
+    """)
+  @example(#{ eleven_labs_stability: 0.4 })
+  from_voice_params?: Record<unknown>;
+
+  @doc("""
+    Engine-specific tuning for `to_voice`, such as
+    `{"eleven_labs_stability": 0.4}`.
+    """)
+  @example(#{ eleven_labs_stability: 0.4 })
+  to_voice_params?: Record<unknown>;
 }
 
 @summary("Summarize settings")

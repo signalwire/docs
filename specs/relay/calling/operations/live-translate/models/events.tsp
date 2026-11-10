@@ -35,7 +35,7 @@ model TranslateLegData {
   @example("josh")
   to_voice: string;
 
-  @doc("Which side of the call this entry describes — the same value as its key: `local-caller` (the inbound leg) or `remote-caller` (the outbound leg).")
+  @doc("Which side of the call this entry describes — in the keyed map, the same value as its key: `local-caller` (the inbound leg) or `remote-caller` (the outbound leg).")
   @example("local-caller")
   role: "local-caller" | "remote-caller";
 
@@ -51,9 +51,9 @@ model TranslateLegData {
 @doc("""
   A live-translation delta delivered while the call is in progress. Carries the
   incremental source text (`input_utterance`) and/or the translated text
-  (`output_utterance`) as the call proceeds. Realtime delivery of these deltas is
-  gated: you must start `calling.live_translate` with `live_events` enabled and a
-  `webhook` URL configured — otherwise the incremental deltas are not emitted.
+  (`output_utterance`) as the call proceeds. Sent only in `realtime` mode, and only
+  when you start `calling.live_translate` with `live_events` enabled and a `webhook`
+  URL configured.
   """)
 @summary("Live translate transcript delta event")
 model TranslateTranscriptDeltaEventData {
@@ -73,7 +73,7 @@ model TranslateTranscriptDeltaEventData {
 }
 
 const callingAiTranslateTranscriptDelta = "calling.ai.translate.transcript_delta";
-@doc("Streams an incremental translation delta during a `calling.live_translate` session.")
+@doc("Streams an incremental translation delta during a `realtime`-mode `calling.live_translate` session.")
 @summary(callingAiTranslateTranscriptDelta)
 @extension("x-fern-display-name", callingAiTranslateTranscriptDelta)
 model TranslateTranscriptDeltaEvent
@@ -139,8 +139,13 @@ model TranslateConversationLogEventData {
   @doc("An AI-generated summary of the translated side. Present only when the session was started with AI summary enabled.")
   secondary_conversation_summary?: string;
 
-  @doc("Per-leg translation settings, keyed by leg role (`local-caller` = the inbound leg, `remote-caller` = the outbound leg).")
-  translate_data: Record<TranslateLegData>;
+  @doc("""
+    Translation settings. The shape depends on how the session was started: with
+    `ai_summary`, a single `TranslateLegData` object for this leg; otherwise a map
+    keyed by leg role (`local-caller` = the inbound leg, `remote-caller` = the
+    outbound leg), or `null` if nothing was translated.
+    """)
+  translate_data: TranslateLegData | Record<TranslateLegData> | null;
 
   @doc("Call/session context for this delivery.")
   call_info: AiCallInfo;

@@ -13,7 +13,11 @@ model AiResult {
 }
 
 @summary("AI stop result")
-@doc("Confirmation that the AI session was stopped.")
+@doc("""
+  Confirmation that the AI session was stopped. `message` is the raw status line,
+  including the trailing newline (`"+OK\\n"`). On failure `code` is `"400"` and
+  `message` carries the error text, e.g. `"-ERR call does not exist\\n"`.
+  """)
 model AiStopResult {
-  ...RelayResult<"+OK">;
+  ...RelayResult<"+OK\n">;
 }

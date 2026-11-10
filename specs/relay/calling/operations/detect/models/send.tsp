@@ -6,40 +6,42 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-@doc("Which fax tone to listen for on the far end: `CED` (the answering fax's tone) or `CNG` (the calling fax's tone). Default `CED`.")
+@doc("Which fax tone to listen for on the far end: `CED` (the answering fax's tone) or `CNG` (the calling fax's tone). Case-insensitive. Default `CED`.")
 union DetectFaxTone {
   "CED",
   "CNG",
+  "ced",
+  "cng",
 }
 
 @doc("Configuration for the answering-machine (voicemail) detector.")
 @summary("Answering-machine detector settings")
 model DetectMachineParams {
-  @doc("How many seconds to wait for initial voice before giving up. Must be greater than 0. Default `4.5`.")
-  @minValueExclusive(0)
+  @doc("How many seconds to wait for initial voice before giving up. Must be at least `1`. Default `4.5`.")
+  @minValue(1)
   @example(5.0)
   initial_timeout?: float64;
 
-  @doc("How many seconds to wait for voice to finish. Must be greater than 0. Default `1.0`.")
-  @minValueExclusive(0)
+  @doc("How many seconds to wait for voice to finish. Must be at least `1`. Default `1.0`.")
+  @minValue(1)
   @example(1.0)
   end_silence_timeout?: float64;
 
   @doc("""
     How many seconds to wait for voice to finish before firing the READY
-    event. Must be greater than 0. Defaults to `end_silence_timeout`.
+    event. Must be at least `1`. Defaults to `end_silence_timeout`.
     """)
-  @minValueExclusive(0)
+  @minValue(1)
   @example(1.0)
   machine_ready_timeout?: float64;
 
-  @doc("How many seconds of continuous voice are required before the result is reported as MACHINE. Default `1.25`.")
-  @minValueExclusive(0)
+  @doc("How many seconds of continuous voice are required before the result is reported as MACHINE. Must be at least `1`. Default `1.25`.")
+  @minValue(1)
   @example(1.25)
   machine_voice_threshold?: float64;
 
-  @doc("How many words must be counted before the result is reported as MACHINE. Default `6`.")
-  @minValueExclusive(0)
+  @doc("How many words must be counted before the result is reported as MACHINE. Must be at least `1`. Default `6`.")
+  @minValue(1)
   @example(6)
   machine_words_threshold?: int32;
 
@@ -62,7 +64,7 @@ model DetectMachineParams {
 @doc("Configuration for the fax-tone detector.")
 @summary("Fax-tone detector settings")
 model DetectFaxParams {
-  @doc("Fax detector only. Which fax tone to listen for on the far end. Default `CED`.")
+  @doc("Which fax tone to listen for on the far end. Default `CED`.")
   @example("CED")
   tone?: DetectFaxTone;
 }
@@ -70,41 +72,58 @@ model DetectFaxParams {
 @doc("Configuration for the digit detector.")
 @summary("Digit detector settings")
 model DetectDigitParams {
-  @doc("Digit detector only. Digits to detect. Default `0123456789#*`.")
+  @doc("Digits to detect. Default `0123456789#*`.")
   @example("0123456789#*")
   digits?: string;
 }
 
 @doc("""
-  Optional tuning for the detector selected by `type`. Every field is optional and a
-  sensible default applies when omitted. Which fields take effect depends on `type`:
-  the `*_timeout`, `machine_*`, and `detect_*` fields tune the **machine** detector,
-  `tone` applies to the **fax** detector, and `digits` applies to the **digit**
-  detector.
+  Run the answering-machine (voicemail) detector. This is the default when `type`
+  is omitted.
   """)
-@summary("Detector settings")
-model DetectorParams {
-  ...DetectMachineParams;
-  ...DetectFaxParams;
-  ...DetectDigitParams;
+@summary("Machine detector")
+model DetectConfigMachine {
+  @doc("`machine` (answering machine / voicemail). Optional — omitting `type` selects this detector.")
+  @example("machine")
+  type?: "machine" = "machine";
+
+  @doc("Optional tuning for the machine detector. Every field is optional and defaults are used when omitted.")
+  params?: DetectMachineParams;
+}
+
+@doc("Run the fax-tone detector.")
+@summary("Fax detector")
+model DetectConfigFax {
+  @doc("`fax` (fax tone).")
+  @example("fax")
+  type: "fax";
+
+  @doc("Optional tuning for the fax detector. Only `tone` is accepted.")
+  params?: DetectFaxParams;
+}
+
+@doc("Run the DTMF digit detector.")
+@summary("Digit detector")
+model DetectConfigDigit {
+  @doc("`digit` (DTMF).")
+  @example("digit")
+  type: "digit";
+
+  @doc("Optional tuning for the digit detector. Only `digits` is accepted.")
+  params?: DetectDigitParams;
 }
 
 @doc("""
   The detector to start and its optional tuning. Set `type` to `machine`, `fax`, or
-  `digit`, then supply that detector's settings in `params`. `type` is optional — omit
-  it to default to `machine` (answering-machine detection).
+  `digit` (omit it for `machine`), then supply that detector's settings in `params`.
+  When `type` is set, `params` accepts only that detector's fields; a field that
+  belongs to another detector is rejected with a `400`.
   """)
 @summary("Detector config")
-model DetectConfig {
-  @doc("""
-    Which detector to run: `machine` (answering machine / voicemail), `fax` (fax tone),
-    or `digit` (DTMF). Optional — defaults to `machine` when omitted.
-    """)
-  @example("machine")
-  type?: "machine" | "fax" | "digit" = "machine";
-
-  @doc("Optional per-detector tuning. Which fields apply depends on `type`; every field is optional and defaults are used when omitted.")
-  params?: DetectorParams;
+union DetectConfig {
+  machine: DetectConfigMachine,
+  fax: DetectConfigFax,
+  digit: DetectConfigDigit,
 }
 
 model DetectParams {

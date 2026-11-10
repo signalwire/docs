@@ -4,6 +4,7 @@ import "./models/devices.tsp";
 import "./models/media.tsp";
 import "./operations/dial/main.tsp";
 import "./operations/answer/main.tsp";
+import "./operations/ring/main.tsp";
 import "./operations/end/main.tsp";
 import "./operations/connect/main.tsp";
 import "./operations/disconnect/main.tsp";
@@ -34,6 +35,7 @@ import "./operations/ai-sidecar/main.tsp";
 import "./operations/amazon-bedrock/main.tsp";
 import "./operations/ai-message/main.tsp";
 import "./operations/ai-hold/main.tsp";
+import "./operations/ai-adjust/main.tsp";
 import "./operations/user-event/main.tsp";
 import "./operations/call-events/main.tsp";
 import "./events/shared.tsp";
@@ -46,7 +48,12 @@ using SignalWire.AsyncAPI;
   AI, and react to the `calling.call.*` events that report call and leg state as it
   changes.
 
-  Use it from your backend — it's available in the server SDKs (Python, Node, Java,
-  Ruby). To place a call directly from a browser, use the WebRTC service instead.
+  Use it from your backend — it's available in the server SDKs. To place a call
+  directly from a browser, use the WebRTC service instead.
+
+  Calling events are delivered only on connections whose protocol `major` version is
+  below `4`. Connect with `version: {major: 2, minor: 0, revision: 0}`, as the server
+  SDKs do; on a `4.0.0` connection, Calling events are not delivered as documented
+  here.
   """)
 namespace Relay.Calling;

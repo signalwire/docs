@@ -6,7 +6,7 @@ namespace Relay.Signalwire;
 
 @doc("A `{code, message}` acknowledgement returned by `signalwire.receive` and `signalwire.unreceive`.")
 model Acknowledgement {
-  @doc("The result code as a string. `\"200\"` means success; `\"402\"` means payment required.")
+  @doc("The result code as a string. Always `\"200\"` — failures arrive as a JSON-RPC `error` instead.")
   @example("200")
   code: string;
 

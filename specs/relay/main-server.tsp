@@ -28,6 +28,14 @@ using SignalWire.AsyncAPI;
   the connection is governed by the scopes granted to your credentials. Every later
   request reuses the authenticated connection.
 
+  ## Protocol version
+
+  Send `version: {major: 2, minor: 0, revision: 0}` on `signalwire.connect` — the
+  version the server SDKs use. Calling events, `messaging.send`, `signalwire.provision`,
+  and `signalwire.receive` all require a `major` below `4`: on a connection at `4.0.0`,
+  Calling events are not delivered as documented here and those methods are rejected
+  with `-32001`. Version `4.0.0` is for browser and Call Fabric clients.
+
   Building a browser or mobile client instead? See the **Client** reference for the
   Call Fabric (`call.*`, `subscriber.*`) and WebRTC (`webrtc.*`) surface.
   """)

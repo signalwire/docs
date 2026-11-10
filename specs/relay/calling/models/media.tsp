@@ -54,8 +54,8 @@ model PlayMediaSilence extends PlayMedia {
   type: "silence";
 
   params: {
-    @doc("Seconds of silence to play.")
-    @minValueExclusive(0)
+    @doc("Seconds of silence to play. Must be at least `1`; values below `1` are rejected.")
+    @minValue(1)
     @example(2.5)
     duration: float64;
   };
@@ -71,8 +71,8 @@ model PlayMediaRingtone extends PlayMedia {
     @example("us")
     name: ToneName;
 
-    @doc("Seconds of ringtone to play.")
-    @minValueExclusive(0)
+    @doc("Seconds of ringtone to play. Must be at least `1`; values below `1` are rejected.")
+    @minValue(1)
     @example(5)
     duration?: float64;
   };

@@ -10,9 +10,14 @@ namespace Relay.Calling;
 model AiHoldParams {
   ...CallAddress;
 
-  @doc("How long to stay on hold. Accepts a duration string such as `\"5m\"` or a number of seconds such as `\"60\"`. Defaults to 300 seconds; values of `0` or below, or above 300, are clamped to 300.")
+  @doc("""
+    How long to stay on hold, in seconds: a number (`60`), a numeric string
+    (`"60"`), or a `"m:ss"` / `"h:mm:ss"` string (`"1:30"`). Unit suffixes are not
+    supported (`"5m"` means 5 seconds). Range 1–300; a value of `0` or below, above
+    300, or one that cannot be parsed falls back to the default of 300.
+    """)
   @example("60")
-  timeout?: string;
+  timeout?: string | int32 = 300;
 
   @doc("""
     An instruction the AI agent uses to tell the caller you're putting them on
@@ -27,4 +32,12 @@ model AiHoldParams {
 @summary("AI unhold params")
 model AiUnholdParams {
   ...CallAddress;
+
+  @doc("""
+    An instruction the AI agent uses when taking the caller off hold. It's added to
+    the conversation as a system message. Default:
+    `"The user has been taken off hold."`
+    """)
+  @example("Thank the caller for holding and continue where you left off.")
+  prompt?: string;
 }

@@ -55,3 +55,26 @@ model VertoParams {
   @example(#["member.joined", "member.left", "room.ended"])
   subscribe?: string[];
 }
+
+@doc("The parameters for a `webrtc.message` request: the Verto frame to send and the `node_id` hosting the call.")
+@summary("WebRTC message request parameters")
+model WebRTCMessageParams {
+  @doc("""
+    The Verto frame to send — a JSON-RPC 2.0 object `{ jsonrpc, id, method, params }`,
+    passed through as-is. See `webrtc.verto` for the frame format.
+    """)
+  @example(#{
+    jsonrpc: "2.0",
+    id: "6c413717-7595-4c86-9586-506bcc3abd7a",
+    method: "verto.bye",
+    params: #{ dialogParams: #{ callID: "2689709c-5c02-4db3-9df9-81cdd9005209" } },
+  })
+  message: Record<unknown>;
+
+  @doc("""
+    The node hosting the call. Omit it on a `verto.invite`; required on every other
+    frame — use the `node_id` from the invite's reply or a later event.
+    """)
+  @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
+  node_id?: string;
+}

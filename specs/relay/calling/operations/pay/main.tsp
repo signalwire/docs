@@ -26,9 +26,11 @@ model PayRequest is JsonRpcRequest<typeof callingPay, PayParams>;
   the payment connector at `payment_connector_url` for processing. Use this to
   take card payments over the phone without handling raw card data yourself.
 
-  The immediate result confirms the request was accepted; the outcome of the
-  payment (and progress updates) arrives asynchronously via `calling.call.pay`
-  events keyed on your `control_id`, and at `status_url` if you set one.
+  The immediate result confirms the request was accepted; progress updates and
+  the outcome of the payment arrive asynchronously via `calling.call.pay` events
+  keyed on your `control_id`. If you set `status_url`, progress updates
+  (including the `payment-completed`, `payment-failed`, and `payment-canceled`
+  markers) are also sent there.
   """)
 @channel(callingPay)
 @summary("Collect a card payment over the phone")
