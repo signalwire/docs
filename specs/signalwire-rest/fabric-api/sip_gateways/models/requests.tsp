@@ -13,7 +13,7 @@ model SipGatewayRequest {
   @example("My SIP Gateway")
   name: string;
 
-  @doc("External SIP URI, including the `sip:` or `sips:` scheme. Must be unique within the project.")
+  @doc("External SIP URI, including the `sip:` or `sips:` scheme. Must be unique within the project. SignalWire dials the URI exactly as configured, with one exception: when a call to one of your phone numbers routes to this gateway and the URI has no user part, SignalWire adds the dialed number, without the leading `+`, as the user part.")
   @example("sip:user2@domain.com")
   uri: string;
 
