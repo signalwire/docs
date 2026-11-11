@@ -17,8 +17,10 @@ max-toc-depth: 3
 [getdocument]: /docs/server-sdks/reference/python/agents/swml-service/get-document
 [manualsetproxyurl]: /docs/server-sdks/reference/python/agents/swml-service/manual-set-proxy-url
 [onrequest]: /docs/server-sdks/reference/python/agents/swml-service/on-request
+[definetool]: /docs/server-sdks/reference/python/agents/swml-service/define-tool
 [extractsipusername]: /docs/server-sdks/reference/python/agents/swml-service/register-routing-callback
 [registerroutingcallback]: /docs/server-sdks/reference/python/agents/swml-service/register-routing-callback
+[registerswaigfunction]: /docs/server-sdks/reference/python/agents/swml-service/register-swaig-function
 [registerverbhandler]: /docs/server-sdks/reference/python/agents/swml-service/register-verb-handler
 [renderdocument]: /docs/server-sdks/reference/python/agents/swml-service/render-document
 [resetdocument]: /docs/server-sdks/reference/python/agents/swml-service/reset-document
@@ -41,13 +43,13 @@ SWMLService generates and serves [SWML][swml] documents over HTTP.
 See the [SWML reference][swml-reference] for the full document specification.
 </Info>
 
-<Note>
-SWMLService also hosts SWAIG tools directly. It owns a tool registry (via `ToolMixin`)
-and serves a `/swaig` endpoint, so SWAIG functions can be registered and dispatched
-without subclassing [`AgentBase`][agentbase]. The tool-registration and dispatch methods
-(for example `define_tool` and `on_function_call`) are documented under
-[`AgentBase`][agentbase], which inherits them.
-</Note>
+SWMLService also hosts SWAIG tools directly. It keeps its own tool registry and serves
+a `/swaig` endpoint under its route, so you can register and dispatch SWAIG functions
+without subclassing [`AgentBase`][agentbase]. Register tools with
+[`define_tool()`][definetool], [`register_swaig_function()`][registerswaigfunction],
+or the [`@tool` decorator](#tool). Unlike `AgentBase`, SWMLService doesn't add
+registered tools to the SWML document: reference them yourself from the verb that
+uses them.
 
 ## **Properties**
 
@@ -116,6 +118,46 @@ after initialization. Use `get_basic_auth_credentials()` to retrieve auth creden
 and `full_validation_enabled` to check validation status.
 </Note>
 
+## **Decorators**
+
+### tool
+
+```python {5}
+from signalwire import SWMLService
+from signalwire.core.function_result import FunctionResult
+
+class MyService(SWMLService):
+    @SWMLService.tool(name=None, description=None, parameters=None, secure=True, fillers=None, webhook_url=None, required=None)
+    def my_tool(self, args, raw_data=None):
+        return FunctionResult("Done.")
+```
+
+Use `@SWMLService.tool()` on a method inside a subclass to define a SWAIG function.
+Decorated methods are registered when the service is created.
+
+<Warning title="No instance decorator on SWMLService">
+The instance form, `@service.tool()`, works only on [`AgentBase`][agentbase]. On a
+SWMLService instance it registers nothing. To add a tool to an existing instance,
+call [`define_tool()`][definetool].
+</Warning>
+
+<Markdown src="/snippets/server-sdks/python/tool-mixin/tool-decorator.mdx" />
+
+#### Example
+
+```python {5}
+from signalwire import SWMLService
+from signalwire.core.function_result import FunctionResult
+
+class PricingService(SWMLService):
+    @SWMLService.tool(description="Look up a competitor's pricing by company name")
+    def lookup_competitor(self, competitor: str):
+        return FunctionResult(f"{competitor} charges $99 per seat.")
+
+service = PricingService(name="pricing", route="/pricing")
+service.serve()
+```
+
 ## **Methods**
 
 <CardGroup cols={3}>
@@ -130,6 +172,12 @@ and `full_validation_enabled` to check validation status.
   </Card>
   <Card title="as_router" href="/docs/server-sdks/reference/python/agents/swml-service/as-router">
     Create a FastAPI APIRouter for mounting the service into an existing application.
+  </Card>
+  <Card title="define_tool" href="/docs/server-sdks/reference/python/agents/swml-service/define-tool">
+    Programmatically define a SWAIG tool that the AI can invoke during conversations.
+  </Card>
+  <Card title="define_tools" href="/docs/server-sdks/reference/python/agents/swml-service/define-tools">
+    Return the list of SWAIG tools registered on the service.
   </Card>
   <Card title="extract_sip_username" href="/docs/server-sdks/reference/python/agents/swml-service/register-routing-callback">
     Static utility to extract the SIP username from request body data.
@@ -146,11 +194,17 @@ and `full_validation_enabled` to check validation status.
   <Card title="manual_set_proxy_url" href="/docs/server-sdks/reference/python/agents/swml-service/manual-set-proxy-url">
     Manually set the proxy URL base for webhook callback generation.
   </Card>
+  <Card title="on_function_call" href="/docs/server-sdks/reference/python/agents/swml-service/on-function-call">
+    Override hook called when a SWAIG function is invoked during a conversation.
+  </Card>
   <Card title="on_request" href="/docs/server-sdks/reference/python/agents/swml-service/on-request">
     Request handling hook for customizing SWML output per request.
   </Card>
   <Card title="register_routing_callback" href="/docs/server-sdks/reference/python/agents/swml-service/register-routing-callback">
     Register routing callbacks for dynamic request handling and SIP routing.
+  </Card>
+  <Card title="register_swaig_function" href="/docs/server-sdks/reference/python/agents/swml-service/register-swaig-function">
+    Register a raw SWAIG function dictionary, typically from a DataMap.
   </Card>
   <Card title="register_verb_handler" href="/docs/server-sdks/reference/python/agents/swml-service/register-verb-handler">
     Register custom verb handlers for specialized SWML verb processing.
