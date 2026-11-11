@@ -30,6 +30,8 @@ model SWAIG {
 
   @doc("""
     An array of JSON objects to define functions that can be executed during the interaction with the AI. Default is not set.
+    Each function needs a `web_hook_url`, set on the function or inherited from `defaults.web_hook_url`, or a `data_map`.
+    A function with none of these is not added to the agent.
     """)
   functions?: SWAIGFunction[];
 

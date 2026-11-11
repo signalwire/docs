@@ -2,8 +2,8 @@ import "@typespec/http";
 import "@typespec/openapi";
 import "./models/core.tsp";
 import "./models/requests.tsp";
-import "./models/responses.tsp";
 import "./models/errors.tsp";
+import "../models/responses.tsp";
 import "../../../types";
 import "../../tags.tsp";
 import "../../../../_shared/alias/token-permissions.tsp";
@@ -32,8 +32,8 @@ namespace SignalWireAPI.Fabric.SipEndpoint.Resource {
       @body request: ResourceSipEndpointAssignRequest,
     ):
       | {
-          @statusCode statusCode: 200;
-          @body sip_endpoint: ResourceSipEndpointResponse;
+          @statusCode statusCode: 201;
+          @body sip_endpoint: FabricSipEndpointResponse;
         }
       | StatusCode401
       | StatusCode404

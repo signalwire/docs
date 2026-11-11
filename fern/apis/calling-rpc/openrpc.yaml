@@ -42,10 +42,12 @@ methods:
         schema:
           type: string
       - name: swml
-        description: Inline SWML passed as a string containing instructions for handling the call. Either `url` or `swml` must be provided.
+        description: Inline SWML containing instructions for handling the call, as a JSON object or as a JSON or YAML string. Either `url` or `swml` must be provided.
         required: false
         schema:
-          type: string
+          oneOf:
+            - type: object
+            - type: string
       - name: caller_id
         description: The number in E.164 format or identifier of the caller.
         required: false
@@ -62,19 +64,20 @@ methods:
         schema:
           type: string
       - name: status_events
-        description: The call events that will be monitored and sent to the status_url.
+        description: The call states that are delivered to the status_url. Defaults to `ended`.
         required: false
         schema:
           type: array
           items:
             type: string
             enum:
-              - answered
-              - queued
-              - initiated
+              - created
               - ringing
+              - answered
               - ending
               - ended
+          default:
+            - ended
     result:
       name: call
       description: The created call object with status and metadata
@@ -140,10 +143,8 @@ methods:
     summary: Update an existing call
     paramStructure: by-name
     description: |
-      Modifies an active call's properties in real-time. Update call parameters such as
-      routing, recording settings, or other call-specific configurations.
-
-      You must provide either `url` (webhook returning SWML) or inline `swml` instructions.
+      Modifies an active call in real-time. Send `status` on its own to cancel or end the call,
+      or provide either `url` (webhook returning SWML) or inline `swml` instructions to redirect it.
     params:
       - name: id
         description: The unique identifying ID of the existing call to update.
@@ -151,15 +152,17 @@ methods:
         schema:
           type: string
       - name: url
-        description: The URL to handle the call with new SWML instructions. Either `url` or `swml` must be provided.
+        description: The URL to handle the call with new SWML instructions.
         required: false
         schema:
           type: string
       - name: swml
-        description: Inline SWML with new instructions for handling the call. Either `url` or `swml` must be provided.
+        description: Inline SWML with new instructions for handling the call, as a JSON object or as a JSON or YAML string.
         required: false
         schema:
-          type: string
+          oneOf:
+            - type: object
+            - type: string
       - name: fallback_url
         description: The fallback URL to handle the call if the primary URL fails.
         required: false
@@ -215,7 +218,11 @@ methods:
           type: string
           enum:
             - hangup
+            - cancel
             - busy
+            - noAnswer
+            - decline
+            - error
     result:
       name: call
       description: The terminated call object
@@ -252,11 +259,13 @@ methods:
         schema:
           type: string
       - name: timeout
-        description: The duration to hold the caller in seconds. Maximum is 300 seconds.
+        description: 'How long to hold the caller, in seconds. Accepts an integer, a string of digits such as "120", or an "M:SS" or "H:MM:SS" string, where "1:30" is 90 seconds. Unit suffixes aren''t supported: the letters "h", "m", and "s" are dropped and the remaining digits are read as seconds, so "5m" is 5 seconds and "1h30m" is 130 seconds. Any other letter, or a letter mixed with ":", makes the string unparseable. Maximum and default is 300 seconds: a value above 300, a value of 0 or less, or a string that can''t be parsed holds for 300 seconds.'
         required: false
         schema:
-          type: integer
-          maximum: 300
+          oneOf:
+            - type: integer
+              maximum: 300
+            - type: string
           default: 300
       - name: prompt
         description: A system message the AI will speak before placing the caller on hold.
@@ -349,7 +358,7 @@ methods:
           - `system`: Inject instructions or context that modify the AI's behavior
           - `user`: Inject a message as if the caller said it
           - `assistant`: Inject a message as if the AI said it
-        required: true
+        required: false
         schema:
           type: string
           enum:
@@ -358,7 +367,7 @@ methods:
             - assistant
       - name: message_text
         description: The text content that will be sent to the AI.
-        required: true
+        required: false
         schema:
           type: string
     result:

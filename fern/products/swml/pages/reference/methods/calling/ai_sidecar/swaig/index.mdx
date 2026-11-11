@@ -13,6 +13,8 @@ SWAIG (SignalWire AI Gateway) is SignalWire's function-calling system for AI. It
 
 While the sidecar watches the call, the model can call a function whenever it needs to look something up or take an action — look up an account, flag a sales signal, update the agent's screen, and so on. When it does, the sidecar sends a request to that function's webhook (`web_hook_url`), your server runs the function and returns a result, and the model uses that result in its next response.
 
+The request is signed with your project's signing key, so your endpoint can confirm it came from SignalWire. See [Verify SWML request signatures](/docs/swml/guides/webhook-security).
+
 You define these functions under `functions`. You can also connect external MCP (Model Context Protocol) servers under `mcp_servers`, and their tools become available to the model the same way.
 
 ## **Properties**
@@ -62,7 +64,9 @@ You define these functions under `functions`. You can also connect external MCP 
 </ParamField>
 
 <ParamField path="functions[].parameters" type="object" toc={true}>
-  The JSON-Schema object describing the function's arguments: `type: object` with a `properties` map and an optional `required` array. Each property allows only `type`, `description`, `enum`, and `default` — additional validation keywords such as `pattern`, `minimum`, and `maximum` are not accepted; express those constraints in the property `description` and validate them server-side. When omitted, the function takes no arguments.
+  The JSON-Schema object describing the function's arguments: `type: object` with a `properties` map and an optional `required` array. Each property sets a `type` and an optional `description`: `string`, `integer`, and `number` properties also accept `enum` and `default`, `boolean` properties accept `default`, `array` properties need an `items` schema, and `object` properties accept nested `properties` and `required`, at any depth. Other validation keywords such as `pattern`, `minimum`, and `maximum` are not supported; express those constraints in the property `description`. When omitted, the function takes no arguments.
+
+  The sidecar sends this schema to the model but does not check the model's arguments against it, and does not fill in a property's `default` when the model leaves it out. Validate the arguments, and apply defaults, in your webhook.
 </ParamField>
 
 <ParamField path="functions[].web_hook_url" type="string" toc={true}>

@@ -77,15 +77,13 @@ namespace SignalWireAPI.Fabric.CallFlows {
         parameters: #{
           request: #{
             title: "Welcome Call Flow",
-            flow_data: #{},
-            relayml: SWML_CONTENTS_EXAMPLE,
           },
         },
         returnType: #{ statusCode: 201, call_flow: CALL_FLOW_RESPONSE_EXAMPLE },
       },
       #{
         title: "Welcome Call Flow",
-        description: "Create a Call Flow that plays a single audio file.",
+        description: "Create a Call Flow from the starter flow, ready to edit in Call Flow Builder.",
       }
     )
     @post
@@ -102,7 +100,7 @@ namespace SignalWireAPI.Fabric.CallFlows {
     @operationId("update_call_flow")
     @summary("Update call flow")
     @doc("""
-      Saves a new editable revision of a Call Flow in your SignalWire project. Supply the next required `document_version`, then make the saved revision live with [Deploy call flow version](/docs/apis/rest/call-flows/deploy-call-flow-version). Directly authored SWML belongs in [Update SWML Script](/docs/apis/rest/swml-scripts/update-swml-script).
+      Saves a new editable revision of a Call Flow in your SignalWire project. Supply the next required `document_version` and a new `title`: an update that omits `title` or resends the Call Flow's current name is rejected. Omit `flow_data` or `relayml` to keep its current value. Then make the saved revision live with [Deploy call flow version](/docs/apis/rest/call-flows/deploy-call-flow-version). Directly authored SWML belongs in [Update SWML Script](/docs/apis/rest/swml-scripts/update-swml-script).
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -113,15 +111,16 @@ namespace SignalWireAPI.Fabric.CallFlows {
           request: #{
             title: "Updated Welcome Call Flow",
             document_version: 2,
-            flow_data: #{},
-            relayml: SWML_CONTENTS_EXAMPLE,
           },
         },
-        returnType: #{ statusCode: 200, call_flow: CALL_FLOW_RESPONSE_EXAMPLE },
+        returnType: #{
+          statusCode: 200,
+          call_flow: CALL_FLOW_UPDATED_RESPONSE_EXAMPLE,
+        },
       },
       #{
         title: "Update a Call Flow",
-        description: "Update a Call Flow with its next document revision.",
+        description: "Rename a Call Flow in its next document revision, keeping its current flow and SWML document.",
       }
     )
     @put

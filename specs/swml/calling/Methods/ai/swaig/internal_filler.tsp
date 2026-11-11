@@ -3,16 +3,16 @@ import "../_shared/fillers.tsp";
 namespace SWML.Calling;
 
 model SWAIGInternalFiller {
-  @doc("Filler phrases played when the AI Agent is checking the time.")
+  @doc("Filler phrases played when the AI Agent is checking the time. Used only when `check_time` is listed in [`SWAIG.native_functions`](/docs/swml/reference/calling/ai/swaig#swaignative_functions).")
   check_time?: FunctionFillers;
 
-  @doc("Filler phrases played when the AI Agent is waiting for user input.")
+  @doc("Filler phrases played when the AI Agent is waiting for user input. Used only when `wait_for_user` is listed in [`SWAIG.native_functions`](/docs/swml/reference/calling/ai/swaig#swaignative_functions).")
   wait_for_user?: FunctionFillers;
 
-  @doc("Filler phrases played during deliberate pauses or wait periods.")
+  @doc("Filler phrases played during deliberate pauses or wait periods. Used only when `wait_seconds` is listed in [`SWAIG.native_functions`](/docs/swml/reference/calling/ai/swaig#swaignative_functions).")
   wait_seconds?: FunctionFillers;
 
-  @doc("Filler phrases played when the AI Agent is adjusting response timing.")
+  @doc("Filler phrases played when the AI Agent is adjusting response timing. Used only when `adjust_response_latency` is listed in [`SWAIG.native_functions`](/docs/swml/reference/calling/ai/swaig#swaignative_functions).")
   adjust_response_latency?: FunctionFillers;
 
   @doc("Filler phrases played when transitioning between conversation steps when utilizing `prompt.contexts`.")

@@ -14,6 +14,9 @@ import "./toggle_functions.tsp";
 import "./unset_global_data.tsp";
 import "./unset_meta_data.tsp";
 import "./user_input.tsp";
+import "./transfer.tsp";
+import "./settings.tsp";
+import "./user_event.tsp";
 
 namespace SWML.Calling;
 
@@ -35,4 +38,7 @@ union Action {
   UnsetGlobalDataAction,
   UnsetMetaDataAction,
   UserInputAction,
+  TransferAction,
+  SettingsAction,
+  UserEventAction,
 }

@@ -10,7 +10,7 @@ using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
-@route("/resources/conference_room/{id}/addresses")
+@route("/resources/conference_rooms/{id}/addresses")
 namespace SignalWireAPI.Fabric.ConferenceRoom.Addresses {
   @tag(CONFERENCE_ROOM_TAG)
   interface ConferenceRoomAddresses {

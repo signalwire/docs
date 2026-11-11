@@ -41,7 +41,7 @@ model SWAIGFunctionBase {
 
   @doc("Whether the function is active. **Default:** `true`.")
   @example(true)
-  active?: boolean | SWMLVar = true;
+  active?: boolean = true;
 
   @doc("""
     A powerful and flexible environmental variable which can accept arbitrary data that is set initially in the SWML script or from the SWML set_meta_data action.
@@ -78,7 +78,7 @@ model SWAIGFunctionBase {
     **Default:** `false`.
     """)
   @example(true)
-  skip_fillers?: boolean | SWMLVar = false;
+  skip_fillers?: boolean = false;
 
   @doc("Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`.")
   @example("https://username:password@example.com")
@@ -96,7 +96,7 @@ model SWAIGFunctionBase {
   @doc("""
     Password for basic auth on this function's webhook.
     Deprecated. Use `web_hook_auth_password` instead.
-    This alias is read on individual functions only. The `ai` SWAIG `defaults` object does not accept it.
+    The alias is used only when `web_hook_auth_password` is not set.
     """)
   web_hook_auth_pass?: string;
 
@@ -110,7 +110,7 @@ model SWAIGFunctionBase {
 
   @doc("Whether to wait for fillers to finish playing before continuing with the function. **Default:** `false`.")
   @example(true)
-  wait_for_fillers?: boolean | SWMLVar = false;
+  wait_for_fillers?: boolean = false;
 }
 
 @summary("SWAIG Function")
@@ -125,13 +125,13 @@ model UserSWAIGFunction is SWAIGFunctionBase {
 
 @summary("startup_hook Function")
 model StartUpHookSWAIGFunction is SWAIGFunctionBase {
-  @doc("${functionDescription} For the start_hook function, the function name is 'start_hook'.")
+  @doc("${functionDescription} The reserved `startup_hook` function runs when the conversation starts.")
   function: "startup_hook";
 }
 
 @summary("hangup_hook Function")
 model HangUpHookSWAIGFunction is SWAIGFunctionBase {
-  @doc("${functionDescription} For the stop_hook function, the function name is 'stop_hook'.")
+  @doc("${functionDescription} The reserved `hangup_hook` function runs when the conversation ends.")
   function: "hangup_hook";
 }
 
