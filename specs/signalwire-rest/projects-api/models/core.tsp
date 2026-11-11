@@ -73,7 +73,7 @@ model ProjectWithSigningKey is Project {
     The project's signing key. Only returned on create and signing-key rotation responses;
     it cannot be retrieved through the API afterward.
     """)
-  @example("PSK_4d8c2b1a9f3e7c6d5b4a3e2f1d0c9b8a")
+  @example("swpsk_0123456789ab0123456789ab0123456789ab")
   signing_key: string;
 }
 
