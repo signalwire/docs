@@ -489,7 +489,7 @@ model CallCreateParamsBase {
   @example("sip:from-sip@example-112233445566.sip.signalwire.com")
   from: string;
 
-  @doc("Destination address. Accepts E.164 (`+xxxxxxxxxxx`), SIP URI (`sip:` / `sips:`), Verto URI (`verto:`), client address (`client:`), or a fabric address. Required unless `to_script` is provided.")
+  @doc("Destination address. Accepts E.164 (`+xxxxxxxxxxx`), SIP URI (`sip:` / `sips:`), Verto URI (`verto:`), client address (`client:`), or a [resource address](/docs/platform/addresses) such as `/public/support`. Required unless `to_script` is provided.")
   @example("sip:from-sip@example-112233445567.sip.signalwire.com")
   to?: string;
 
@@ -514,13 +514,20 @@ model CallCreateParamsBase {
   @example(CallFallbackURLExample)
   fallback_url?: string;
 
-  @doc("HTTP or HTTPS URL that receives [call state callbacks](/docs/apis/rest/webhooks/call-state-status-callback) for the states listed in `status_events`.")
+  @doc("HTTP or HTTPS URL that receives [call state callbacks](/docs/apis/rest/webhooks/call-state-status-callback) for the states listed in `status_events`. A call that is never placed sends no callback; see `status_events`.")
   @example("https://example.com/status_callback")
   status_url?: url;
 
   @doc("""
     Call states that are delivered to `status_url` as [call state callbacks](/docs/apis/rest/webhooks/call-state-status-callback).
     Each value matches the `call_state` of the callback it selects.
+
+    The `ended` callback is sent however the call ended, including when the destination was busy,
+    didn't answer, or declined, and when you canceled a ringing call. Read its `end_reason` for the cause.
+
+    A call that is never placed sends no callback at all, whatever you list here. That covers a
+    call whose status becomes `failed`, and a call you cancel or complete with the `update` command
+    while it is still `queued`.
     """)
   @example(#["answered", "ended"])
   status_events?: (
@@ -579,7 +586,7 @@ model CallCreateParamsBase {
   @maxLength(98)
   send_digits?: string;
 
-  @doc("Preferred FreeSWITCH region(s) for call routing. Must be drawn from the project's available regions. Accepts a single region or a priority-ordered array.")
+  @doc("Preferred region(s) for routing the call. Must be drawn from the project's available regions. Accepts a single region or a priority-ordered array.")
   @example(#["us-east-1", "us-west-2"])
   region?: string | string[];
 
@@ -675,10 +682,12 @@ model CallUpdateParamsURL is CallUpdateParamsBase {
  * To redirect the call, send `url` or `swml` with the new SWML.
  *
  * State-transition rules:
- * - `status: canceled` is only valid while the leg is `queued` or `ringing`.
- * - `status: completed` is only valid while the leg is `answered` (or in-progress).
- * - Supplying `url` or `swml` (redirect) is only valid while the leg is `answered`.
- * - Calls in terminal states (`busy`, `failed`, `no-answer`, `canceled`, `completed`) cannot be updated.
+ * - `status: canceled` is only valid while the call is `queued` or `ringing`.
+ * - Canceling or completing a `queued` call stops it before it is placed: its status becomes
+ *   `canceled` or `completed`, and no call state callback is sent. Canceling a `ringing` call, or
+ *   completing a call that has been placed, hangs it up, and the call ends with status `ended`.
+ * - Supplying `url` or `swml` (redirect) is only valid while the call is `answered`.
+ * - A call whose status is `failed`, `canceled`, or `completed` cannot be updated.
  */
 @summary("update")
 model CallUpdateCurrentCallRequest {

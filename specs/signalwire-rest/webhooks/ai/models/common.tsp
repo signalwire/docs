@@ -162,8 +162,9 @@ model AISemanticGateRecord {
     - `timeout`: the check ran out of time (`semantic_gate_timeout_ms`).
     - `provider_error`: the decision model refused or failed.
     - `invalid_response`: the decision model's answer could not be used.
-    - `invalid_arguments`: the agent's arguments for the function were missing or not a valid JSON
-      object.
+    - `invalid_arguments`: the agent's arguments for the function weren't exactly one JSON object:
+      missing, not valid JSON, followed by other text, repeating a key, or holding a `\\u0000`
+      escape.
     - `config_error`: the check could not be set up, for example a request too large to send.
     - `aborted`: the call ended during the check.
 
@@ -297,10 +298,31 @@ model AIResponseTiming {
 }
 
 @doc("""
-  One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
-  detail applies to it, such as recognition confidence on a caller turn or timings on a reply.
+  Wall-clock moments in one turn, each a Unix timestamp in microseconds on the same clock as the
+  entry's `timestamp`, so subtracting one from another gives the time between them. Each stamp is
+  omitted when it is not known for the turn, and other stamps can appear.
   """)
-model AICallLogEntry is Record<unknown> {
+model AICallLogTimestamps is Record<int64> {
+  @doc("""
+    When the caller's last word ended, for the caller turn this entry responds to. Omitted on entries
+    that don't respond to caller speech, such as the greeting and filler phrases.
+    """)
+  @example(1694541296412000)
+  last_word_end?: int64;
+
+  @doc("When the first audio of this reply was sent to the caller.")
+  @example(1694541297722000)
+  first_audio?: int64;
+}
+
+// The fields every conversation entry carries, shared by the voice agent's call log
+// (AICallLogEntry below) and AI Chat's chat_log (AI.ChatLogEntry). Only the voice log carries the
+// per-turn recognition, latency, and interruption fields, so those live on AICallLogEntry alone.
+@doc("""
+  One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
+  detail applies to it.
+  """)
+model AIConversationEntryCore is Record<unknown> {
   @doc("""
     Who produced the entry. Common roles include `system`, `user`, `assistant`, and `tool`. Other
     roles may appear, so filter to the roles your application uses rather than assuming a fixed set.
@@ -318,4 +340,153 @@ model AICallLogEntry is Record<unknown> {
 
   @doc("The tool calls the agent made on this turn. Present only on a turn that made any.")
   tool_calls?: Record<unknown>[];
+}
+
+@doc("""
+  One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
+  detail applies to it, such as recognition confidence on a caller turn (`user`), timings on a reply
+  (`assistant`, or `assistant-manual` for a filler phrase), or function timings on a function result
+  (`tool`). Unlisted keys can also appear.
+
+  The interruption fields (`barged`, `barge_elapsed_ms`, `text_spoken_total`, and
+  `text_heard_approx`) and `merge_count` are recorded on one copy of the conversation, so any of them
+  can be missing from either `call_log` or `raw_call_log`. Check both. A standard agent records no
+  interruption fields on a reply that
+  [`transparent_barge`](/docs/swml/reference/calling/ai/params#paramstransparent_barge) removed from
+  the conversation.
+  """)
+model AICallLogEntry is Record<unknown> {
+  ...AIConversationEntryCore;
+
+  // Caller turns (`user`)
+
+  @doc("""
+    How confident speech recognition was in the text, from 0 to 1. On a merged entry, the average
+    across the merged speech, weighted by text length. Caller turns only.
+    """)
+  @example(0.94)
+  confidence?: float;
+
+  @doc("How the caller gave this input: `Detected Speech` or `DTMF` (keypad digits). Caller turns only.")
+  @example("Detected Speech")
+  content_type?: string;
+
+  @doc("""
+    Time from when the caller started speaking until turn detection decided they had finished, in
+    milliseconds. Omitted when the caller's turn ended without a turn-detection decision.
+    """)
+  @example(2140)
+  speaking_to_turn_detection?: integer;
+
+  @doc("""
+    Time from turn detection deciding the caller had finished until the final recognition result
+    arrived, in milliseconds. Present alongside `speaking_to_turn_detection`.
+    """)
+  @example(180)
+  turn_detection_to_final_event?: integer;
+
+  @doc("""
+    How many caller entries were combined into this one the last time the platform merged
+    consecutive caller speech, for example words the caller added after interrupting the agent. An
+    entry that was already merged counts as one. Appears on caller entries once merging has run.
+    """)
+  @example(2)
+  merge_count?: integer;
+
+  // Replies (`assistant`, and `assistant-manual` for filler phrases)
+
+  @doc("""
+    Time from when the agent started its request to the model until the first token came back, in
+    milliseconds. The request starts once the caller's speech is final, or once a function returns.
+    On a standard agent, if any of `latency`, `utterance_latency`, and `audio_latency` couldn't be
+    measured for a reply, all three are `0`, as on the greeting. A speech-to-speech agent measures
+    from when the reply started instead. On a function result (`tool`), this is the first-token
+    latency of the model request that called the function. If any of the three couldn't be measured
+    there, all three are omitted instead of sent as `0`, and they're always omitted for a function
+    called by the post-prompt.
+    """)
+  @example(612)
+  latency?: integer;
+
+  @doc("""
+    Time from when the agent started its request to the model until the first part of the reply was
+    ready to speak, in milliseconds. On a function result (`tool`), this repeats `function_latency`.
+    """)
+  @example(745)
+  utterance_latency?: integer;
+
+  @doc("""
+    Time from when the agent started its request to the model until the first audio of the reply
+    played, in milliseconds. It does not include detecting that the caller had finished speaking. On
+    a function result (`tool`), this repeats `execution_latency`.
+    """)
+  @example(1020)
+  audio_latency?: integer;
+
+  @doc("""
+    Time from the end of the caller's last word until the first audio of the reply, in milliseconds:
+    the silence the caller heard. `null` when it could not be measured, such as on the greeting. A
+    speech-to-speech agent reports `0` instead of `null` when it could not measure this.
+    """)
+  @example(1310)
+  acoustic_latency?: integer | null;
+
+  @doc("""
+    Time from the end of the caller's last word until their final speech result was ready, in
+    milliseconds: how long it took to detect that the caller had finished. `null` when it could not be
+    measured, and always `null` on a filler phrase.
+    """)
+  @example(290)
+  eos_to_push_latency?: integer | null;
+
+  @doc("""
+    Wall-clock timestamps for the turn. Subtract `last_word_end` from `first_audio` for the silence the
+    caller heard. Present on replies when any timestamp is known.
+    """)
+  @example(#{ last_word_end: 1694541296412000, first_audio: 1694541297722000 })
+  stamps_us?: AICallLogTimestamps;
+
+  // Interrupted replies
+
+  @doc("Always `true` when present, meaning the caller interrupted this reply.")
+  @example(true)
+  barged?: boolean;
+
+  @doc("How long the reply had been playing when the caller interrupted, in milliseconds.")
+  @example(1240)
+  barge_elapsed_ms?: integer;
+
+  @doc("""
+    The full text of the reply. Present on a reply the caller interrupted, and on every reply from a
+    speech-to-speech agent.
+    """)
+  @example("Your ride is booked for 6pm. The driver will call when they arrive.")
+  text_spoken_total?: string;
+
+  @doc("""
+    An estimate of how much of the reply the caller heard before interrupting: the start of
+    `text_spoken_total`, ending at a word boundary, based on how long the reply had played. Present on
+    a reply the caller interrupted.
+    """)
+  @example("Your ride is booked for 6pm.")
+  text_heard_approx?: string;
+
+  // Function results (`tool`)
+
+  @doc("""
+    Time from when the agent started its request to the model until the model called this function,
+    or until the agent had a first reply ready to speak if that was sooner, in milliseconds. Omitted
+    when not measured, such as for a function called by the post-prompt. On a speech-to-speech agent
+    this carries reply timing rather than function timing.
+    """)
+  @example(830)
+  function_latency?: integer;
+
+  @doc("""
+    Time from when the agent started its request to the model until this function returned, in
+    milliseconds, so it includes the function's own run time. Omitted when `function_latency` is. On a
+    speech-to-speech agent this carries reply timing rather than function timing.
+    """)
+  @example(1460)
+  execution_latency?: integer;
 }
