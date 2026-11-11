@@ -1,0 +1,65 @@
+---
+title: "gateDefinitions"
+slug: reference/typescript/agents/semantic-gate/gate-definitions
+description: Check a function's semantic gates by the platform's rules and return them as plain objects.
+max-toc-depth: 3
+---
+
+[semantic-gate]: /docs/server-sdks/reference/typescript/agents/semantic-gate
+[constants]: /docs/server-sdks/reference/typescript/agents/semantic-gate/constants
+[swml-gates]: /docs/swml/reference/calling/ai/swaig/functions/gates
+
+Return a function's gates as the objects sent in its definition, after checking
+each one by the platform's rules. The platform refuses a whole function when any of
+its gates is invalid, so this throws instead of returning gates the platform would
+drop. Every way to define a tool runs its gates through this check.
+
+## Parameters
+
+<ParamField path="gates" type="ReadonlyArray<SemanticGate | Record<string, unknown>>" required={true} toc={true}>
+  The function's gates, 1 to 8 (see [`MAX_GATES`][constants]). Each is a
+  [`SemanticGate`][semantic-gate] or a plain object in the shape of the SWML
+  [gate object][swml-gates].
+</ParamField>
+
+<ParamField path="functionName" type="string" required={true} toc={true}>
+  The function's name. Gates on a hook or built-in function name are refused; see
+  [`RESERVED_FUNCTION_NAMES`][constants].
+</ParamField>
+
+## Returns
+
+`Record<string, unknown>[]` -- Each gate as a plain object, deep-copied, in the
+order given.
+
+Throws `Error` for anything that would make the platform refuse the function, with
+the platform's reason. The message starts with the function name and, for a single
+gate, the gate's position, such as `cancel_account: gate 2: ...`. Causes include a
+reserved function name, a list that isn't 1 to 8 gates, a gate that isn't an
+object or has an unknown key, a missing or oversized `question`, a `threshold` that
+isn't above 0 and at most 1, a missing or oversized `on_fail`, oversized
+`criteria`, an invalid `visual_input` or `id`, and a duplicate `id`. A gate with no
+`id` is counted as `gate_1`, `gate_2`, and so on, by position.
+
+## Examples
+
+```typescript {10}
+import { SemanticGate, gateDefinitions } from '@signalwire/sdk';
+
+const gate = new SemanticGate(
+  'Has the caller explicitly asked to cancel their account in `conversation`?',
+  0.95,
+  'cancel_account was not run. Ask the caller to confirm that they want to cancel.',
+  { id: 'explicit_request' },
+);
+
+const definitions = gateDefinitions([gate], 'cancel_account');
+console.log(definitions[0].id); // 'explicit_request'
+
+// A plain object works too, and an invalid gate throws.
+try {
+  gateDefinitions([{ question: 'Is it urgent?', threshold: 2, on_fail: 'Not run.' }], 'cancel_account');
+} catch (error) {
+  console.log((error as Error).message);
+}
+```
