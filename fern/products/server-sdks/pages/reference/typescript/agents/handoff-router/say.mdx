@@ -1,0 +1,56 @@
+---
+title: "say"
+slug: reference/typescript/agents/handoff-router/say
+description: Deliver typed text into the live call a nonce names.
+max-toc-depth: 3
+---
+
+[handoffrouter]: /docs/server-sdks/reference/typescript/agents/handoff-router
+[register]: /docs/server-sdks/reference/typescript/agents/handoff-router/register
+[redeem]: /docs/server-sdks/reference/typescript/agents/handoff-router/redeem
+
+Delivers typed text into the call the nonce names, through your `sendMessage` callback. It doesn't
+use up the nonce: typing works until [`redeem()`][redeem] uses it or `nonceTtl` seconds pass from
+its registration, even if the call is still live. The `/say` route calls this method.
+
+The call is found by nonce, never by a browser-supplied call id, and no other request field is
+forwarded. Surrounding whitespace is removed from the text. Each delivered message takes one of the
+call's `maxMessagesPerCall` slots; a delivery that throws or returns `false` gives its slot back.
+
+## Parameters
+
+<ParamField path="nonce" type="string" required={true} toc={true}>
+  The nonce the browser presented, registered earlier with [`register()`][register].
+</ParamField>
+
+<ParamField path="text" type="string" required={true} toc={true}>
+  The typed text. Text over 8 KiB of UTF-8 (`MAX_MESSAGE_BYTES`), or empty after trimming, isn't
+  delivered.
+</ParamField>
+
+## Returns
+
+`Promise<boolean>` -- `true` when the text was delivered, meaning `sendMessage` neither threw nor
+returned `false`. `false` when typing is off (no `sendMessage`), the text is empty or too large, the
+nonce is unknown, expired, or used, the registration has no call id, or the call has reached
+`maxMessagesPerCall`.
+
+## Examples
+
+```typescript
+import { ChatGateway, HandoffRouter } from '@signalwire/sdk';
+
+const gateway = new ChatGateway({ configUrl: 'https://bayview-taxi.example.com/dispatch' });
+const handoff = new HandoffRouter({
+  gateway,
+  maxMessagesPerCall: 50,
+  sendMessage: async (callId, text) => {
+    console.log(`to ${callId}: ${text}`);
+    return true;
+  },
+});
+handoff.register('n_7f3a91c2', { conversationId: 'chat-8f21', callId: 'call-1' });
+
+const delivered = await handoff.say('n_7f3a91c2', 'My pickup is 123 Gough Street.');
+console.log(delivered ? 'Delivered' : 'Not delivered');
+```

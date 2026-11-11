@@ -1,0 +1,60 @@
+---
+title: "onCallEnd"
+slug: reference/typescript/agents/agent-base/on-call-end
+description: Register a handler that receives the conversation transcript when a call ends.
+max-toc-depth: 3
+---
+
+[on-summary]: /docs/server-sdks/reference/typescript/agents/agent-base/on-summary
+[on-call-start]: /docs/server-sdks/reference/typescript/agents/agent-base/on-call-start
+[post-prompt]: /docs/server-sdks/reference/typescript/core/post-prompt/normalize-post-prompt
+
+Register a handler that runs when the call ends, with the transcript. Handlers
+run in registration order.
+
+The SDK registers the platform's reserved `hangup_hook` function for you. It
+fires on hangup and is never offered to the model, so it can't be called early
+or skipped. Registering the first handler also turns on the
+`swaig_post_conversation` parameter. Without it the hook still fires but
+carries no transcript, and the handler would receive an empty list with nothing
+to say why. If you have explicitly set that parameter to `false`, the SDK leaves
+it alone and logs a warning.
+
+A handler's return value is ignored, since the call is over. An exception is
+logged, not raised, so a failing handler doesn't stop the others. For the
+post-prompt summary, see [`onSummary()`][on-summary]; for the start of the
+call, see [`onCallStart()`][on-call-start].
+
+## Parameters
+
+<ParamField path="handler" type="(callLog: Record<string, unknown>[], rawData: SwaigRequest) => void | Promise<void>" required={true} toc={true}>
+  Called as `handler(callLog, rawData)`. May be async.
+
+  - `callLog` -- the conversation as the platform recorded it.
+  - `rawData` -- the complete SWAIG request, including `global_data` and
+    `call_id`.
+</ParamField>
+
+## Returns
+
+The handler, unchanged.
+
+## Example
+
+```typescript {6-10}
+import { AgentBase } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'dispatch', route: '/dispatch' });
+agent.setPromptText('You are Ada, the dispatcher for Bayview Taxi.');
+
+agent.onCallEnd((callLog, rawData) => {
+  const conversationId = rawData.global_data?.['conversation_id'];
+  // Write the transcript to your system of record.
+  console.log(conversationId, callLog.length, 'turns');
+});
+
+await agent.serve();
+```
+
+To handle voice and chat transcripts with one shape, pass `rawData` through
+[`normalizePostPrompt()`][post-prompt].
