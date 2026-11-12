@@ -1,21 +1,17 @@
 ---
 title: "validateBasicAuth"
 slug: reference/typescript/agents/agent-base/validate-basic-auth
-description: Override to add custom basic-auth validation logic.
+description: Check a request's basic-auth credentials, or override it to check them another way.
 max-toc-depth: 3
 ---
 
-Lifecycle hook for custom basic-auth validation. The default implementation
-returns `true`. Subclasses can override this to add secondary validation logic
-(e.g., database lookups, external identity providers).
+Check a request's basic-auth credentials. Every route that requires basic auth
+calls it. The default compares them with the agent's credentials in constant time
+and returns `false` when the agent has no credentials. Override it to check
+credentials another way, such as a database lookup or an external identity
+provider.
 
-<Warning>
-This hook is defined but **not yet called** by the built-in Hono `basicAuth`
-middleware. The middleware currently validates credentials directly against the
-stored username/password pair. Overriding this method will have no effect on
-request authentication in the current SDK version. It is reserved for future
-integration.
-</Warning>
+An override replaces the comparison. Call `super.validateBasicAuth()` to keep it.
 
 ## **Parameters**
 
@@ -47,7 +43,8 @@ class SecureAgent extends AgentBase {
     username: string,
     password: string,
   ): Promise<boolean> {
-    // Custom validation against an external user store
+    if (await super.validateBasicAuth(username, password)) return true;
+    // Fall back to an external user store
     const response = await fetch('https://auth.example.com/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
