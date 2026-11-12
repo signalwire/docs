@@ -10,6 +10,7 @@ max-toc-depth: 3
 [vapi-sip-guide]: https://docs.vapi.ai/advanced/sip/sip-trunk
 [vapi-test-guide]: https://docs.vapi.ai/advanced/sip/sip-trunk#test-your-sip-trunk
 [sw-firewall-guide]: /docs/platform/allow-signalwire-ips-through-your-firewall
+[sw-firewall-lookup]: /docs/platform/allow-signalwire-ips-through-your-firewall#look-up-the-current-addresses
 [resources]: https://my.signalwire.com?page=resources
 [addresses-guide]: /docs/platform/addresses
 [swml-guide]: /docs/swml
@@ -39,42 +40,38 @@ number with it, and then route the number to VAPI with a SWML script.
 
 ### Create the inbound SIP trunk in VAPI
 
-Run the API call below to create the trunk, making sure to replace `YOUR_VAPI_PRIVATE_KEY` with your actual API key.
+The trunk lists every IP address VAPI should accept calls from. SignalWire sends SIP calls from the
+addresses of `sip.signalwire.com`, and that set changes over time, so the commands below look the
+addresses up when you run them. They need `dig` and `curl`.
 
-Save the `id` from the response - you'll need this credential ID for the next step.
-
-<Warning title="Monitor SignalWire IP ranges">
-These IP addresses are current as of this guide's publication, but SignalWire IPs can change and should be programmatically monitored to avoid any impact on calls. You can gather SignalWire's latest IPs by performing a DIG or nslookup of `sip.signalwire.com`.
-
-See our guide on [allowing SignalWire IPs through firewalls][sw-firewall-guide] for more details.
-</Warning>
+Replace `YOUR_VAPI_PRIVATE_KEY` with your actual API key, then run both commands in the same shell:
 
 ```bash
+# Build one gateway entry for each address SignalWire sends SIP calls from.
+gateways=$(dig +short A sip.signalwire.com \
+  | grep -E '^[0-9]+(\.[0-9]+){3}$' | sort -u \
+  | sed 's/.*/{ "ip": "&", "inboundEnabled": true }/' | paste -sd, -)
+
 curl -X POST "https://api.vapi.ai/credential" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_VAPI_PRIVATE_KEY" \
-  -d '{
-    "provider": "byo-sip-trunk",
-    "name": "SignalWire Inbound Trunk",
-    "gateways": [
-      { "ip": "170.64.128.96", "inboundEnabled": true },
-      { "ip": "198.13.56.186", "inboundEnabled": true },
-      { "ip": "104.248.176.184", "inboundEnabled": true },
-      { "ip": "152.42.144.114", "inboundEnabled": true },
-      { "ip": "104.248.150.114", "inboundEnabled": true },
-      { "ip": "138.68.125.160", "inboundEnabled": true },
-      { "ip": "159.65.244.171", "inboundEnabled": true },
-      { "ip": "167.99.198.84", "inboundEnabled": true },
-      { "ip": "13.245.35.235", "inboundEnabled": true },
-      { "ip": "108.61.169.31", "inboundEnabled": true },
-      { "ip": "137.184.4.155", "inboundEnabled": true },
-      { "ip": "188.166.126.7", "inboundEnabled": true },
-      { "ip": "139.59.34.94", "inboundEnabled": true },
-      { "ip": "165.232.186.228", "inboundEnabled": true },
-      { "ip": "157.175.131.128", "inboundEnabled": true }
-    ]
-  }'
+  -d "{
+    \"provider\": \"byo-sip-trunk\",
+    \"name\": \"SignalWire Inbound Trunk\",
+    \"gateways\": [ $gateways ]
+  }"
 ```
+
+Save the `id` from the response - you'll need this credential ID for the next step.
+
+<Warning title="Keep the trunk's IP addresses current">
+
+VAPI stores the addresses as they were when you created the trunk. When SignalWire starts sending
+calls from an address that isn't on the trunk, VAPI rejects those calls while others still connect.
+Repeat the lookup on a schedule and update the trunk's gateways when the result differs. See
+[Allow SignalWire SIP traffic through your firewall][sw-firewall-guide].
+
+</Warning>
 
 ### Register your SignalWire phone number
 
@@ -262,8 +259,10 @@ format (`+1234567890`) with no spaces or special characters.
 
 ### VAPI can't connect on inbound calls
 
-Make sure all SignalWire IP addresses are in your VAPI inbound trunk. If SignalWire has added new
-IP addresses since you created the trunk, you'll need to update it.
+Compare the gateways on your VAPI inbound trunk with the current addresses of `sip.signalwire.com`.
+If the lookup returns an address the trunk doesn't have, update the trunk. Calls that fail only
+some of the time point to the same cause. See
+[Look up the current addresses][sw-firewall-lookup].
 
 ### Outbound calls from VAPI fail to authenticate
 

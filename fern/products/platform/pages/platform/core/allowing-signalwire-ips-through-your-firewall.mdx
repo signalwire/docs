@@ -1,21 +1,157 @@
 ---
-id: de6d8042-ace0-466a-8d5b-01ee4fd67789
-title: Allow SignalWire IPs through your firewall
+title: Allow SignalWire SIP traffic through your firewall
+sidebar-title: Allow SIP traffic through your firewall
 slug: allow-signalwire-ips-through-your-firewall
-x-custom:
-  ported_from_readme: true
+description: Look up the IP addresses SignalWire sends SIP calls from, allow them on your firewall or SIP provider, and keep the list current as the addresses change.
+max-toc-depth: 3
 ---
 
-SignalWire does not publish a static list of IP addresses. Customers should periodically resolve the following domains and update their firewall rules accordingly:
+[webhook-signature]: /docs/platform/webhooks#verify-webhook-signature
 
-```bash
-dig sip.signalwire.com | egrep ^sip | awk '{ print $5 }' | xargs -n1 -I{} iptables -A INPUT -s {} -j ACCEPT
+A firewall that blocks unknown sources drops the calls SignalWire sends to your SIP endpoint unless
+it recognizes where they come from. SignalWire doesn't publish a fixed list of IP addresses.
+The current addresses are the DNS records of `sip.signalwire.com`, and they change over time.
+Look the addresses up, allow them, and repeat the lookup on a schedule.
 
-dig relay.signalwire.com | egrep ^relay | awk '{ print $5 }' | xargs -n1 -I{} iptables -A INPUT -s {} -j ACCEPT
+## Decide whether you need this
 
-dig firewall.signalwire.com | egrep ^firewall | awk '{ print $5 }' | xargs -n1 -I{} iptables -A INPUT -s {} -j ACCEPT
+This guide is for anyone who runs or configures a SIP endpoint that receives calls from SignalWire
+and accepts traffic only from known IP addresses:
+
+- A private branch exchange (PBX) such as FreeSWITCH, Asterisk, or FusionPBX behind a firewall
+- A session border controller (SBC) with an access control list
+- A hosted SIP provider that asks for the IP addresses of the trunk it should trust
+
+Webhooks are a different case. To confirm that an HTTP request came from SignalWire, check its
+signature instead of its source address. See [Verify webhook signature][webhook-signature].
+
+## What to allow
+
+A SIP call has two kinds of traffic, and a firewall treats them differently.
+
+| Traffic | What it carries | Rule |
+|---|---|---|
+| Signaling | The SIP messages that set up, ring, and end a call | Allow the addresses of `sip.signalwire.com` to reach your SIP port |
+| Media | The call audio | Allow any source to reach your endpoint's media ports |
+
+<Warning title="Don't filter call audio by source address">
+
+Call audio comes from many locations, and they aren't predictable from the signaling addresses.
+A rule that limits your media ports to the `sip.signalwire.com` addresses produces calls that
+connect with no audio in one or both directions.
+
+</Warning>
+
+## Look up the current addresses
+
+The A records of `sip.signalwire.com` are the addresses to allow. Each line of output is one IPv4
+address.
+
+<CodeBlocks>
+
+```bash title="macOS and Linux"
+dig +short A sip.signalwire.com
 ```
 
-<Warning>
-Use domain-based authorization rather than hardcoded IPs — addresses are subject to change. Media originates from a wide variety of locations and is non-deterministic.
-</Warning>
+```powershell title="Windows"
+nslookup -type=A sip.signalwire.com
+```
+
+</CodeBlocks>
+
+Allow each address individually. On a firewall that takes CIDR notation, add each one as a `/32`.
+
+## Keep your firewall in sync
+
+Addresses hardcoded once go stale. A new address that your firewall doesn't know yet has its calls
+dropped while calls from the older addresses still arrive, which looks like an intermittent fault.
+Run the lookup on a schedule and replace the whole list each time, so retired addresses also
+leave your rules.
+
+The script below does that on Linux with `ipset` and `iptables`. It keeps the addresses in a named
+set, builds a fresh set on every run, and swaps it in with a single command, so there's no moment
+when the set is empty. The `iptables` rule points at the set and is added only once.
+
+```bash title="signalwire-sip-allow.sh"
+#!/usr/bin/env bash
+# Requires dig, ipset, and iptables. Run as root.
+set -euo pipefail
+
+SET="signalwire-sip"
+
+ips=$(dig +short A sip.signalwire.com | grep -E '^[0-9]+(\.[0-9]+){3}$' | sort -u || true)
+
+# Keep the existing rules if the lookup fails or returns nothing.
+if [ -z "$ips" ]; then
+  echo "sip.signalwire.com returned no addresses; rules left unchanged" >&2
+  exit 1
+fi
+
+ipset create -exist "$SET" hash:ip
+ipset create -exist "$SET-new" hash:ip
+ipset flush "$SET-new"
+for ip in $ips; do
+  ipset add "$SET-new" "$ip"
+done
+ipset swap "$SET-new" "$SET"
+ipset destroy "$SET-new"
+
+# Add the rule that references the set, unless it's already there.
+iptables -C INPUT -m set --match-set "$SET" src -j ACCEPT 2>/dev/null ||
+  iptables -I INPUT -m set --match-set "$SET" src -j ACCEPT
+```
+
+The rule accepts all traffic from the listed addresses. To accept only SIP signaling, add your
+endpoint's protocol and port to both `iptables` commands, such as `-p udp --dport 5060`.
+
+Schedule the script with cron or a systemd timer. This crontab entry runs it once an hour:
+
+```bash title="/etc/cron.d/signalwire-sip-allow"
+0 * * * * root /usr/local/sbin/signalwire-sip-allow.sh
+```
+
+### Update a hosted SIP provider
+
+A hosted provider that stores a fixed list of trusted addresses can't run the script. Enter every
+address from the lookup when you create the trunk, then repeat the lookup on a schedule and edit
+the provider's list when the result differs.
+
+## Confirm that calls arrive
+
+List the set and compare it with a fresh lookup. The two lists match:
+
+```bash
+ipset list signalwire-sip
+```
+
+Then place a call that SignalWire routes to your SIP endpoint. The endpoint rings and both sides
+hear each other.
+
+If the test fails, the symptom shows which rule is wrong:
+
+- **The endpoint never rings, or only some calls arrive.** The call came from an address your
+  firewall doesn't allow. Run the lookup again and compare it with your rules.
+- **The call connects with no audio, or audio in one direction.** Your media ports are closed or
+  limited by source address. Open them to any source.
+
+## Next steps
+
+<CardGroup cols={2}>
+
+<Card title="SIP" href="/docs/platform/voice/sip" icon="regular phone-office">
+  Connect SIP devices and systems to SignalWire.
+</Card>
+
+<Card title="SIP trunking" href="/docs/platform/voice/sip/trunking" icon="regular network-wired">
+  Send calls between SignalWire and your PBX.
+</Card>
+
+<Card title="Bring your own carrier" href="/docs/platform/voice/sip/bring-your-own-carrier" icon="regular tower-cell">
+  Restrict a SIP Address to your carrier's IP addresses, the same control in the other direction.
+</Card>
+
+<Card title="Verify webhook signature" href="/docs/platform/webhooks#verify-webhook-signature" icon="regular signature">
+  Confirm that an HTTP request came from SignalWire without relying on its source address.
+</Card>
+
+</CardGroup>
