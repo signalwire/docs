@@ -1,0 +1,47 @@
+---
+title: "gateFillers"
+slug: reference/typescript/agents/data-map/gate-fillers
+description: Set what the AI says while the DataMap function's semantic gates are checked.
+max-toc-depth: 3
+---
+
+[ref-datamap]: /docs/server-sdks/reference/typescript/agents/data-map
+[gate]: /docs/server-sdks/reference/typescript/agents/data-map/gate
+[to-swaig-function]: /docs/server-sdks/reference/typescript/agents/data-map/to-swaig-function
+
+Set what the AI says while this function's semantic gates are checked. Only for a
+function with gates: [`toSwaigFunction()`][to-swaig-function] throws when gate
+fillers are set and no [`gate()`][gate] was added.
+
+## Parameters
+
+<ParamField path="fillers" type="FillerPhrases" required={true} toc={true}>
+  Phrases keyed by language code (`'en-US'`), `'auto'` (translated into the call's
+  language on first use), or `'default'`. Shaped like a function's `fillers`: each
+  entry is a phrase, or a list of phrases spoken one at a time while the call
+  waits. `FillerPhrases` is exported from `@signalwire/sdk`.
+</ParamField>
+
+## Returns
+
+[`DataMap`][ref-datamap] -- Self for method chaining.
+
+## Examples
+
+```typescript {13}
+import { DataMap, FunctionResult, SemanticGate } from '@signalwire/sdk';
+
+const cancelOrder = new DataMap('cancel_order')
+  .purpose("Cancel one of the caller's open orders")
+  .parameter('order_id', 'string', 'The order number', { required: true })
+  .gate(
+    new SemanticGate(
+      'Has the caller asked in `conversation` to cancel the order in `proposed_function`?',
+      0.9,
+      'cancel_order was not run. Ask the caller which order to cancel.',
+    ),
+  )
+  .gateFillers({ 'en-US': ['Let me check that.', 'One moment.'] })
+  .webhook('POST', 'https://api.example.com/orders/${enc:args.order_id}/cancel')
+  .output(new FunctionResult('The order is cancelled. Tell the caller.'));
+```

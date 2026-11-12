@@ -155,10 +155,11 @@ model AiSwaigToolWebhookPayload {
 
   @doc("""
     The kind of conversation the agent is running: a call, or a text conversation held over the
-    [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods).
+    [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods). Not included on function calls made
+    during a call.
     """)
-  @example("voice")
-  conversation_type: "voice" | "chat";
+  @example("chat")
+  conversation_type?: "voice" | "chat";
 
   @doc("Your project ID, when available.")
   @example("4d0d6f16-5881-4fcc-92a4-02c51a91954d")
@@ -185,6 +186,48 @@ model AiSwaigToolWebhookPayload {
 
   @doc("The full, unredacted conversation so far. Included when you enable `swaig_post_conversation`.")
   raw_call_log?: AICallLogEntry[];
+
+  @doc("""
+    The caller's newest video frames, oldest first, up to the function's
+    [`visual_input`](/docs/swml/reference/calling/ai/swaig/functions#functionsvisual_input) count.
+    Included only for a function that sets `visual_input`; an empty array when the call has no video,
+    and for functions called after the call ends. On a gated function, the frames are taken when its
+    gates are checked, never later.
+    """)
+  visual_input?: AIVisualInputFrame[];
+
+  @doc("""
+    The `evaluation_id` of the semantic gate check that judged the frames in `visual_input`. Included
+    when one of the function's gates looked at them.
+    """)
+  @example("d7b5c0f2-6a1e-4c8b-9f3d-2b7e1a0c5d44")
+  visual_input_evaluation_id?: string;
+}
+
+@doc("""
+  One video frame from the caller, as a JPEG at most 640 pixels on its longer side. Frames are taken
+  at most one per second, and none is older than 8 seconds.
+  """)
+model AIVisualInputFrame {
+  @doc("The frame's media type.")
+  @example("image/jpeg")
+  mime: string;
+
+  @doc("The frame's width, in pixels.")
+  @example(640)
+  width: integer;
+
+  @doc("The frame's height, in pixels.")
+  @example(360)
+  height: integer;
+
+  @doc("When the frame was captured, as a Unix timestamp in microseconds.")
+  @example(1694541297950440)
+  captured_at: int64;
+
+  @doc("The image, base64-encoded.")
+  @example("/9j/4AAQSkZJRgABAQAAAQABAAD...")
+  data: string;
 }
 
 model BedrockSwaigToolWebhookPayload {

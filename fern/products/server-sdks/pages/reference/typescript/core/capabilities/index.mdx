@@ -1,0 +1,76 @@
+---
+title: "Client capabilities"
+slug: reference/typescript/core/capabilities
+description: "Read the rendering capabilities a browser client declares in its user variables at dial time."
+max-toc-depth: 3
+---
+
+[set-dynamic-config-callback]: /docs/server-sdks/reference/typescript/agents/agent-base/set-dynamic-config-callback
+
+A browser client such as the SignalWire address widget declares what it can render in the user
+variables it sends at dial time. The capabilities helpers read those declarations so an agent can
+decide what to offer: whether to push content to a screen, whether to advertise a text-handoff tool.
+
+```json
+{
+  "vars": {
+    "userVariables": {
+      "capabilities": {
+        "display_content": true,
+        "transcript": true,
+        "chat_handoff": false
+      }
+    }
+  }
+}
+```
+
+<Warning title="Declarations, not grants">
+A capability says what the client can render. It is never permission to do anything privileged,
+because a caller controls its own user variables. Use these values as hints for what to offer.
+</Warning>
+
+Absence means no. Every function resolves errors and missing data to "not declared", because
+offering a caller something they can't reach is worse than never mentioning it: a phone caller has no
+screen. There is no fixed list of capability names; a client can declare a name this SDK has never
+seen and your application can act on it.
+
+```typescript
+import { userVariables, declaredCapabilities, hasCapability } from '@signalwire/sdk';
+```
+
+## Functions
+
+<CardGroup cols={3}>
+  <Card title="userVariables" href="/docs/server-sdks/reference/typescript/core/capabilities/user-variables">
+    Return the user variables from a SWML request body.
+  </Card>
+  <Card title="declaredCapabilities" href="/docs/server-sdks/reference/typescript/core/capabilities/declared-capabilities">
+    Return the capability names the client declared as truthy.
+  </Card>
+  <Card title="hasCapability" href="/docs/server-sdks/reference/typescript/core/capabilities/has-capability">
+    Whether the client declared one named capability.
+  </Card>
+</CardGroup>
+
+## Examples
+
+Offer a screen-only prompt section to callers who can render it. The request body is the third
+argument of the [`setDynamicConfigCallback()`][set-dynamic-config-callback] callback:
+
+```typescript {6-10}
+import { AgentBase, hasCapability } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'dispatch', route: '/dispatch' });
+agent.setPromptText('You are Ada, the dispatcher for Bayview Taxi.');
+
+agent.setDynamicConfigCallback((_queryParams, bodyParams, _headers, agentCopy) => {
+  if (hasCapability(bodyParams, 'display_content')) {
+    agentCopy.promptAddSection('Screen', {
+      body: 'The caller can see a screen. Offer to show the fare breakdown there.',
+    });
+  }
+});
+
+await agent.serve();
+```

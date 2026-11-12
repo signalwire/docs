@@ -117,9 +117,35 @@ of your [SignalWire Dashboard](https://my.signalwire.com/resources/sips).
 
 For app-specific setup steps, refer to your softphone's official documentation.
 
+### From header on outbound calls [#outbound-from-header]
+
+Your softphone, phone, or PBX must place outbound calls from your SIP Credential's address, `username@your-space.sip.signalwire.com`, in the SIP `From` header.
+SignalWire identifies the SIP Credential from that header, so a call with any other `From` value fails before it starts and no call log is created.
+
+| `From` header sent | Result | Fix |
+|--------------------|--------|-----|
+| Your device's IP address or hostname | `404 Domain unavailable` | Set the device's From domain to your SIP Credential domain. |
+| `anonymous@anonymous.invalid` | `404 Domain unavailable` | Turn off caller ID blocking (anonymous calling) on the device. |
+| A phone number instead of your username | `407 Proxy Authentication Required` on every attempt | Set the device's From user to your SIP Credential username. |
+
+The `From` header doesn't set the caller ID on calls to phone numbers.
+See [Set caller ID for SIP credentials](/docs/platform/voice/how-to-set-caller-id-or-cnam#set-caller-id-for-sip-credentials).
+
 ## SIP gateways
 
 A SIP gateway is a [Resource](/docs/platform/resources) that forwards calls to external SIP addresses. When you assign a phone number or other [Address](/docs/platform/addresses) to a SIP gateway, incoming calls are seamlessly routed to the configured destination with support for configurable encryption and codec settings.
 
 SIP gateways are distinct from [SIP Credentials and Resource SIP Addresses](/docs/platform/voice/sip/sip-credentials): a SIP Credential registers your SIP devices to SignalWire, while a Resource SIP Address routes inbound calls to one of your Resources. You can create and manage SIP gateways through the SignalWire Dashboard or programmatically via the [SIP Gateway REST API endpoint](/docs/apis/rest/sip-gateway/list-sip-gateways).
+
+### How SignalWire dials the gateway URI
+
+SignalWire dials the gateway URI exactly as you configured it, with one exception for phone numbers. When a call to one of your phone numbers routes to the gateway and the URI has no user part, SignalWire adds the dialed number without the leading `+`. With the URI `sip:pbx.example.com`, a call to `+15551234567` goes to `sip:15551234567@pbx.example.com`.
+
+SignalWire never changes a URI that has a user part, such as `sip:support@pbx.example.com`. Set a user part when your destination routes calls on it, for example by a project ID or an agent name.
+
+Calls that reach the gateway through a [Resource SIP Address](/docs/platform/voice/sip/sip-credentials#resource-sip-addresses), or through a dial to the gateway's [Resource Address](/docs/platform/glossary#resource-address), always use the URI as configured. If that URI has no user part, the call goes out with no user part.
+
+## Transfer SIP calls with REFER
+
+SignalWire can transfer a SIP call by sending a REFER request to the device or PBX on the other end, which then calls the new destination itself. [Transfer calls with SIP REFER](/docs/platform/voice/sip-refer) covers the device requirements, with examples in SWML, Relay, and REST.
 

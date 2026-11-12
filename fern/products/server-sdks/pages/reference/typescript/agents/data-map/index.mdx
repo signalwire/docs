@@ -52,14 +52,23 @@ full specification.
 
 ## **Variable Substitution Patterns**
 
+What a template can read depends on where it is. A webhook's `url` and `params`,
+the top-level expressions, and the fallback output read the call data, where an
+argument is `${args.city}`. A webhook's `output`, `expressions`, and `foreach` read
+that webhook's response instead: a JSON object's fields from the root (`${temp}`),
+a JSON array under `array` (`${array[0].joke}`), and the call data under `input`,
+so an argument there is `${input.args.city}`; `${args.city}` expands to nothing.
+Header values are sent as written, with no templates expanded.
+
 | Pattern | Description |
 |---------|-------------|
-| `${args.param}` | Function argument value |
+| `${args.param}` | Function argument value, in a webhook's `url` and `params`, top-level expressions, and the fallback output |
+| `${input.args.param}` | Function argument value, in a webhook's `output`, `expressions`, and `foreach` |
 | `${enc:args.param}` | URL-encoded argument (use in webhook URLs) |
 | `${lc:args.param}` | Lowercase argument value |
 | `${fmt_ph:args.phone}` | Format as phone number |
-| `${response.field}` | API response field |
-| `${response.arr[0]}` | Array element in response |
+| `${field}` | Field of the webhook's JSON response, read from the root |
+| `${array[0].field}` | Element of a webhook response that is a JSON array |
 | `${global_data.key}` | Global session data |
 | `${meta_data.key}` | Call metadata |
 | `${this.field}` | Current item in foreach |
@@ -81,6 +90,12 @@ then URL-encodes.
   </Card>
   <Card title="foreach" href="/docs/server-sdks/reference/typescript/agents/data-map/foreach">
     Process an array from the webhook response.
+  </Card>
+  <Card title="gate" href="/docs/server-sdks/reference/typescript/agents/data-map/gate">
+    Add a semantic gate that must pass before the function runs.
+  </Card>
+  <Card title="gateFillers" href="/docs/server-sdks/reference/typescript/agents/data-map/gate-fillers">
+    Set what the AI says while the function's semantic gates are checked.
   </Card>
   <Card title="Helper Functions" href="/docs/server-sdks/reference/typescript/agents/data-map/helper-functions">
     Convenience functions for creating common DataMap patterns.
@@ -107,13 +122,13 @@ then URL-encodes.
     Alias for purpose -- set the function description.
   </Card>
   <Card title="params" href="/docs/server-sdks/reference/typescript/agents/data-map/params">
-    Set query or form parameters for a webhook.
+    Set the JSON request body for a webhook.
   </Card>
   <Card title="fallbackOutput" href="/docs/server-sdks/reference/typescript/agents/data-map/fallback-output">
     Set the fallback output when no webhook or expression matches.
   </Card>
   <Card title="globalErrorKeys" href="/docs/server-sdks/reference/typescript/agents/data-map/global-error-keys">
-    Set top-level error detection keys.
+    Set error keys on the DataMap object, where no request reads them.
   </Card>
   <Card title="enableEnvExpansion" href="/docs/server-sdks/reference/typescript/agents/data-map/enable-env-expansion">
     Enable environment variable expansion.
@@ -139,7 +154,7 @@ const dm = new DataMap('get_weather');
 dm.purpose('Look up current weather for a location');
 dm.parameter('city', 'string', 'City name', { required: true });
 dm.webhook('GET', 'https://api.weather.com/v1/current?q=${args.city}');
-dm.output(new FunctionResult('Weather in ${args.city}: ${response.current.condition.text}, ${response.current.temp_f}F'));
+dm.output(new FunctionResult('Weather in ${input.args.city}: ${current.condition.text}, ${current.temp_f}F'));
 ```
 
 ### Expression-based control

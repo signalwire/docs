@@ -1,0 +1,64 @@
+---
+title: "normalizePostPrompt"
+slug: reference/typescript/core/post-prompt/normalize-post-prompt
+description: "Normalize a post-prompt body from the voice or chat engine into one shape."
+max-toc-depth: 3
+---
+
+[ref-post-prompt]: /docs/server-sdks/reference/typescript/core/post-prompt
+[parse]: /docs/server-sdks/reference/typescript/core/post-prompt/parse-post-prompt-data
+[dialogue]: /docs/server-sdks/reference/typescript/core/post-prompt/dialogue-turns
+
+Normalize a post-prompt body from either engine. Parses `post_prompt_data` with
+[`parsePostPromptData()`][parse], reads the log from the first non-empty of `call_log`,
+`raw_call_log`, or `raw_messages`, and extracts the dialogue with [`dialogueTurns()`][dialogue],
+dropping the chat engine's summary echo by comparing against the raw summary string.
+
+```typescript {1}
+normalizePostPrompt(body: unknown): NormalizedPostPrompt
+```
+
+## Parameters
+
+<ParamField path="body" type="unknown" required={true} toc={true}>
+  The complete post-prompt request body.
+</ParamField>
+
+## Returns
+
+[`NormalizedPostPrompt`][ref-post-prompt] -- A frozen instance. Never throws: a body the function
+can't make sense of yields one with empty fields.
+
+## Examples
+
+A chat conversation, with the summary echoed as the last assistant turn:
+
+```typescript {16}
+import { normalizePostPrompt } from '@signalwire/sdk';
+
+const body = {
+  conversation_type: 'chat',
+  conversation_id: 'conv-1042',
+  call_id: 'call-7',
+  post_prompt_data: { raw: '```json\n{"intent":"book_ride","resolved":true}\n```' },
+  call_log: [
+    { role: 'system', content: 'You are Ada, the dispatcher for Bayview Taxi.' },
+    { role: 'user', content: 'I need a cab to the ferry building.' },
+    { role: 'assistant', content: 'Booked. Your driver arrives in 6 minutes.' },
+    { role: 'assistant', content: '```json\n{"intent":"book_ride","resolved":true}\n```' },
+  ],
+};
+
+const leg = normalizePostPrompt(body);
+console.log(leg.medium, leg.conversationId, leg.callId);
+// chat conv-1042 call-7
+console.log(leg.summary);
+// { intent: 'book_ride', resolved: true }
+console.log(leg.dialogue);
+// [
+//   { role: 'user', content: 'I need a cab to the ferry building.' },
+//   { role: 'assistant', content: 'Booked. Your driver arrives in 6 minutes.' }
+// ]
+```
+
+Part of the [post-prompt normalization][ref-post-prompt] helpers.

@@ -8,6 +8,19 @@ max-toc-depth: 3
 
 The SignalWire AI Gateway Interface. Allows you to create user-defined functions that can be executed during the dialogue.
 
+<Warning title="Protect the SWML document">
+Webhook credentials set here, in a `web_hook_url` or in `web_hook_auth_password`, are part of the SWML
+document. Anyone who can fetch the document can read them. Serve it over HTTPS and verify that each
+request for it comes from SignalWire, as described in
+[Verify SWML request signatures](/docs/swml/guides/webhook-security).
+</Warning>
+
+A function that fails while the call runs, such as a webhook that errors, times out, or returns no
+usable response, doesn't produce a [SWML error](/docs/swml/reference/errors) code and doesn't set
+`script_error`. To trace function failures, use the `swaig_log` in the
+[post-prompt report](/docs/swml/reference/calling/ai#post_prompt_url-callback) or the live
+[debug webhook](/docs/swml/reference/calling/ai/params#debug_webhook_url-callback).
+
 ## **Properties**
 
 <ParamField path="ai.SWAIG" type="object" toc={true}>
@@ -49,6 +62,11 @@ The SignalWire AI Gateway Interface. Allows you to create user-defined functions
   The default scoping token for `meta_data`, for functions that don't set their own `meta_data_token`.
 </ParamField>
 
+
+<ParamField path="defaults.fillers_at_gates" type="boolean" default="true" toc={true}>
+  The default [`fillers_at_gates`](/docs/swml/reference/calling/ai/swaig/functions#functionsfillers_at_gates) for gated functions that don't set their own: whether a gated function's `fillers` play while its [semantic gates](/docs/swml/reference/calling/ai/swaig/functions/gates) are checked (`true`), or only after they pass (`false`).
+</ParamField>
+
 </Indent>
 
 
@@ -75,19 +93,19 @@ The SignalWire AI Gateway Interface. Allows you to create user-defined functions
 <Indent>
 
 <ParamField path="internal_fillers.check_time" type="object" toc={true}>
-  Filler phrases played when the AI Agent is checking the time.
+  Filler phrases played when the AI Agent is checking the time. Used only when `check_time` is listed in [`SWAIG.native_functions`](#swaignative_functions).
 </ParamField>
 
 <ParamField path="internal_fillers.wait_for_user" type="object" toc={true}>
-  Filler phrases played when the AI Agent is waiting for user input.
+  Filler phrases played when the AI Agent is waiting for user input. Used only when `wait_for_user` is listed in [`SWAIG.native_functions`](#swaignative_functions).
 </ParamField>
 
 <ParamField path="internal_fillers.wait_seconds" type="object" toc={true}>
-  Filler phrases played during deliberate pauses or wait periods.
+  Filler phrases played during deliberate pauses or wait periods. Used only when `wait_seconds` is listed in [`SWAIG.native_functions`](#swaignative_functions).
 </ParamField>
 
 <ParamField path="internal_fillers.adjust_response_latency" type="object" toc={true}>
-  Filler phrases played when the AI Agent is adjusting response timing.
+  Filler phrases played when the AI Agent is adjusting response timing. Used only when `adjust_response_latency` is listed in [`SWAIG.native_functions`](#swaignative_functions).
 </ParamField>
 
 <ParamField path="internal_fillers.next_step" type="object" toc={true}>
@@ -124,7 +142,7 @@ The SignalWire AI Gateway Interface. Allows you to create user-defined functions
 
   Accepted values:
   - `adjust_response_latency` - Adjust how long the agent will wait for the user to stop talking.
-  - `check_time` - Returns the current time for the time zone set in `ai.local_tz`.
+  - `check_time` - Returns the current time for the time zone set in [`ai.params.local_tz`](/docs/swml/reference/calling/ai/params#paramslocal_tz).
   - `wait_for_user` - Causes the AI to wait until the user speaks again. Use when the user asks to wait or hold on.
   - `wait_seconds` - Waits for the given amount of time.
 </ParamField>
@@ -141,7 +159,7 @@ The SignalWire AI Gateway Interface. Allows you to create user-defined functions
 </ParamField>
 
 <ParamField path="mcp_servers[].headers" type="object" toc={true}>
-  HTTP headers sent to the MCP server. Authorization tokens go here — there is no separate auth field. Header values support variable expansion (e.g. `Bearer ${global_data.token}`).
+  HTTP headers sent to the MCP server. Authorization tokens go here — there is no separate auth field. Header values are sent exactly as written; variables such as `${global_data.token}` are not expanded.
 </ParamField>
 
 <ParamField path="mcp_servers[].resources" type="boolean" default="false" toc={true}>
@@ -149,7 +167,7 @@ The SignalWire AI Gateway Interface. Allows you to create user-defined functions
 </ParamField>
 
 <ParamField path="mcp_servers[].resource_vars" type="object" toc={true}>
-  Template variables passed to the MCP server when fetching resources. Used only when `resources` is enabled.
+  Values for `{name}` placeholders in the URI templates of the server's resources. When a resource URI contains `{customer_id}`, the value of the `customer_id` key replaces it. Values are used exactly as written; variables such as `${global_data.customer_id}` are not expanded. A placeholder with no matching key is left as it is. Used only when `resources` is enabled.
 </ParamField>
 
 </Indent>
@@ -159,7 +177,7 @@ The SignalWire AI Gateway Interface. Allows you to create user-defined functions
 
 ### Filler language codes
 
-Several SWAIG properties accept filler phrases keyed by language code, including [`internal_fillers`](#internal_fillers) and per-function [`fillers`](/docs/swml/reference/calling/ai/swaig/functions#fillers). Every one of them resolves the same way: the agent looks for an entry matching the language being spoken, then `auto`, then `default`, and plays nothing when none of the three is set.
+Several SWAIG properties accept filler phrases keyed by language code, including [`internal_fillers`](#internal_fillers) and per-function [`fillers`](/docs/swml/reference/calling/ai/swaig/functions#fillers). Every one of them resolves the same way: the agent looks for an entry matching the language being spoken, then `auto`, then `default` (`auto` is skipped while the code is `multi`), and plays nothing when none of the three is set. A phrase is picked at random, never the same one twice in a row.
 
 The codes below are the ones in common use, not a closed list. Under [`ai.multilingual`](/docs/swml/reference/calling/ai/multilingual) the key is whichever code the engine reports for the turn, so any code it returns works. Under [`ai.languages`](/docs/swml/reference/calling/ai/languages) the key has to match the `code` set on the entry.
 
@@ -227,10 +245,10 @@ SWAIG:
   mcp_servers:
     - url: "https://crm.example.com/mcp"
       headers:
-        Authorization: "Bearer ${global_data.crm_token}"
+        Authorization: "Bearer YOUR_CRM_TOKEN"
       resources: true
       resource_vars:
-        customer_id: "${global_data.customer_id}"
+        customer_id: "cust_12345"
 ```
 </CodeBlock>
 <CodeBlock title="JSON">
@@ -241,11 +259,11 @@ SWAIG:
       {
         "url": "https://crm.example.com/mcp",
         "headers": {
-          "Authorization": "Bearer ${global_data.crm_token}"
+          "Authorization": "Bearer YOUR_CRM_TOKEN"
         },
         "resources": true,
         "resource_vars": {
-          "customer_id": "${global_data.customer_id}"
+          "customer_id": "cust_12345"
         }
       }
     ]
