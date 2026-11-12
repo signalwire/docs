@@ -67,11 +67,11 @@ model RoomRequestProperties {
 
 @doc("Request body for creating a room.")
 model CreateRoomRequest {
-  @doc("A named unique identifier for the room. Allowed characters: `A-Za-z0-9_-`. Maximum of 100 characters.")
+  @doc("A named unique identifier for the room. Allowed characters: `A-Za-z0-9_-`. Maximum of 100 characters. If omitted, a random 20-character alphanumeric name is generated.")
   @example("my_room")
   @maxLength(100)
   @pattern("^[A-Za-z0-9_\\-]+$")
-  name: string;
+  name?: string;
 
   ...RoomRequestProperties;
 }

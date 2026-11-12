@@ -1,0 +1,59 @@
+---
+title: "readHandle"
+slug: reference/typescript/agents/chat-gateway/read-handle
+description: Verify a handle and return the conversation id inside it.
+max-toc-depth: 3
+---
+
+[chatgateway]: /docs/server-sdks/reference/typescript/agents/chat-gateway
+[minthandle]: /docs/server-sdks/reference/typescript/agents/chat-gateway/mint-handle
+
+Returns the conversation id inside a handle from [`mintHandle()`][minthandle]. The signature is
+checked first and the expiry second, both before the id is used.
+
+## Parameters
+
+<ParamField path="handle" type="string" required={true} toc={true}>
+  A handle this gateway issued.
+</ParamField>
+
+## Returns
+
+`string` -- the conversation id.
+
+## Throws
+
+`GatewayRejection`, with a `status` and a coarse `reason`:
+
+| Status | Reason | Cause |
+|---|---|---|
+| `400` | `malformed handle` | The handle isn't in the expected shape. |
+| `403` | `invalid handle` | The signature doesn't verify. |
+| `403` | `expired handle` | The handle is older than `handleTtl`. |
+
+## Examples
+
+```typescript
+import { ChatGateway, GatewayRejection } from '@signalwire/sdk';
+
+const gateway = new ChatGateway({
+  configUrl: 'https://bayview-taxi.example.com/dispatch',
+  key: '<YOUR_PUBLISHABLE_KEY>',
+  secret: process.env.SIGNALWIRE_CHAT_GATEWAY_SECRET,
+});
+
+function conversationFor(handle: string): string | null {
+  try {
+    return gateway.readHandle(handle);
+  } catch (err) {
+    if (err instanceof GatewayRejection) {
+      console.warn(`handle refused: ${err.status} ${err.reason}`);
+      return null;
+    }
+    throw err;
+  }
+}
+
+console.log(conversationFor(gateway.mintHandle('chat-8f21'))); // chat-8f21
+console.log(conversationFor('not-a-handle')); // null
+```

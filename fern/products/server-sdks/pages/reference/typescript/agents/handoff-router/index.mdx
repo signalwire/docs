@@ -1,0 +1,288 @@
+---
+title: "HandoffRouter"
+slug: reference/typescript/agents/handoff-router
+description: The three routes a browser chat widget calls to move a conversation between text and a phone call.
+max-toc-depth: 3
+---
+
+[chatgateway]: /docs/server-sdks/reference/typescript/agents/chat-gateway
+[register]: /docs/server-sdks/reference/typescript/agents/handoff-router/register
+[redeem]: /docs/server-sdks/reference/typescript/agents/handoff-router/redeem
+[escalate]: /docs/server-sdks/reference/typescript/agents/handoff-router/escalate
+[say]: /docs/server-sdks/reference/typescript/agents/handoff-router/say
+[router]: /docs/server-sdks/reference/typescript/agents/handoff-router/router
+[readhandle]: /docs/server-sdks/reference/typescript/agents/chat-gateway/read-handle
+[dynamicconfig]: /docs/server-sdks/reference/typescript/agents/agent-base/add-per-call-config
+
+[`ChatGateway`][chatgateway] lets a browser hold a text conversation. `HandoffRouter` is the other
+half the SignalWire address widget expects: three routes, served at the same URL prefix as the
+gateway, that move that conversation to a phone call and back, and let a visitor type into a live
+call. Without these routes, a gateway answers the widget's chat requests and returns `404` for the
+rest.
+
+| Route | Body | Effect |
+|---|---|---|
+| `POST {prefix}/handoff` | `{ nonce }` | End the call, wait for its record, return a chat handle for the next leg |
+| `POST {prefix}/escalate` | `{ handle }` | End the chat leg and wait for its record before a call is placed |
+| `POST {prefix}/say` | `{ nonce, text }` | Deliver typed text into the live call |
+
+Every route checks the request origin against the gateway's allowlist. Unknown, expired, and
+already-redeemed nonces all answer `404`, so a caller can't probe whether a given call is live.
+
+This class implements the wire contract: the routes, the nonce, the ordering guarantee, and the
+spend limits. What a conversation is belongs to your application, and arrives as callbacks: where a
+leg's transcript is written, and how a call is ended or spoken into.
+
+<Markdown src="/snippets/server-sdks/npm-install.mdx" />
+
+## How the nonce works
+
+A browser can't be trusted to name a call, since a page-supplied call ID would let anyone inject
+speech into a stranger's call. Instead the browser proves which call it is on. Your application puts
+a random `handoff_nonce` in the user variables of one dial, [registers][register] it against that
+call from a per-call config callback (see [`addPerCallConfig()`][dynamicconfig]), and the
+browser presents it later. The same dial carries the `chat_handle`, so the callback recovers the
+conversation id with [`readHandle()`][readhandle].
+
+Exchanging a nonce for a chat handle works once. Typing is repeatable, up to `maxMessagesPerCall`,
+until `/handoff` uses the nonce or `nonceTtl` seconds pass from its registration, even if the call is
+still live.
+
+## The ordering guarantee
+
+A new medium doesn't start until the one it replaces has ended and its record is written.
+`/handoff` ends the call and waits for your `captureLeg` callback to confirm the capture before it
+issues a handle. `/escalate` waits for the chat leg's capture before it returns. Without the wait,
+the new medium's config fetch can run before the record exists, and the new leg starts with no
+history.
+
+<Warning title="The nonce registry is per process">
+The registry lives in the serving process, like the gateway's caps. A redemption must reach the
+replica that served the dial: run one replica, use sticky routing, or pass a shared `registry`.
+Registering, redeeming, and taking a typing slot each read the table and write it back, so across
+replicas that share a `registry` a nonce can be redeemed once by each, and the typing cap can be
+passed. Use one nonce table, or route each call's requests to one replica.
+</Warning>
+
+## Parameters
+
+The constructor takes one options object, `HandoffRouterOptions`.
+
+<ParamField path="gateway" type="ChatGateway" required={true} toc={true}>
+  The gateway that owns the conversations. Used to issue and read handles and to check origins, so
+  all routes on the URL apply the same origin policy.
+</ParamField>
+
+<ParamField path="captureLeg" type="CaptureLeg" toc={true}>
+  Ends a leg and writes its record: `captureLeg(conversationId, medium)`, where `medium` is `voice`
+  or `chat`. Return `true` only once the record is written. Sync or async. When omitted, nothing
+  waits and the ordering guarantee doesn't hold.
+</ParamField>
+
+<ParamField path="endCall" type="EndCall" toc={true}>
+  Hangs a call up server-side so its teardown hooks run now: `endCall(callId)`.
+</ParamField>
+
+<ParamField path="sendMessage" type="SendMessage" toc={true}>
+  Delivers typed text into a live call as if the caller said it: `sendMessage(callId, text)`. When
+  omitted, typing is off and `/say` returns `404`.
+</ParamField>
+
+<ParamField path="nextConversationId" type="(conversationId: string) => string" toc={true}>
+  Returns the id for the new leg, from the current one. An ended conversation can't be reopened, so
+  each leg needs a new id. Defaults to appending `.1`, or incrementing an existing `.N` suffix: `root`
+  becomes `root.1`, and `root.2` becomes `root.3`. Keep `.` as the separator.
+</ParamField>
+
+<ParamField path="nonceTtl" type="number" default="3600" toc={true}>
+  Seconds a nonce stays usable for `/handoff` and `/say`, from registration.
+</ParamField>
+
+<ParamField path="maxMessagesPerCall" type="number" default="200" toc={true}>
+  Typed messages allowed per call. Each is a billed turn, so this limits spending as well as abuse.
+</ParamField>
+
+<ParamField path="captureTimeout" type="number" default="8" toc={true}>
+  Seconds to wait for `captureLeg`. An upper limit; a capture normally takes under a second. On
+  timeout the next medium starts without this leg's record, and a warning is logged.
+</ParamField>
+
+<ParamField path="registry" type="Map<string, NonceEntry>" toc={true}>
+  The nonce table. Supply one backed by shared storage to run more than one replica. It may return
+  copies of its entries, because the router writes every change back with `set()`.
+</ParamField>
+
+## Properties
+
+`gateway`, `captureLeg`, `endCall`, `sendMessage`, `nextConversationId`, `nonceTtl`,
+`maxMessagesPerCall`, and `captureTimeout` are readable and writable on the instance. `captureLeg`,
+`endCall`, and `sendMessage` are `null` when not set.
+
+## Exports
+
+All of these are importable from `@signalwire/sdk`.
+
+<ParamField path="NonceEntry" type="class" toc={true}>
+  What a registered nonce gives access to.
+</ParamField>
+
+<Indent>
+
+<ParamField path="NonceEntry.conversationId" type="string" toc={true}>
+  The conversation the call belongs to.
+</ParamField>
+
+<ParamField path="NonceEntry.callId" type="string | null" toc={true}>
+  The platform call id, from the request the platform sent.
+</ParamField>
+
+<ParamField path="NonceEntry.issuedAt" type="number" toc={true}>
+  When it was registered, in monotonic seconds, used for expiry.
+</ParamField>
+
+<ParamField path="NonceEntry.messages" type="number" toc={true}>
+  Typed messages delivered so far.
+</ParamField>
+
+<ParamField path="NonceEntry.redeemed" type="boolean" toc={true}>
+  `true` once `/handoff` has used the nonce. The entry stays in the table until it would have
+  expired, so registering the nonce again can't make it usable again.
+</ParamField>
+
+</Indent>
+
+<ParamField path="CaptureLeg" type="(conversationId: string, medium: string) => boolean | Promise<boolean>" toc={true}>
+  The type of `captureLeg`.
+</ParamField>
+
+<ParamField path="EndCall" type="(callId: string) => void | Promise<void>" toc={true}>
+  The type of `endCall`.
+</ParamField>
+
+<ParamField path="SendMessage" type="(callId: string, text: string) => boolean | Promise<boolean>" toc={true}>
+  The type of `sendMessage`.
+</ParamField>
+
+<ParamField path="HandoffRouterOptions" type="interface" toc={true}>
+  The constructor's options object, described under Parameters.
+</ParamField>
+
+`MAX_REQUEST_BODY_BYTES` (64 KiB) and `MAX_MESSAGE_BYTES` (8 KiB of UTF-8) apply to these routes as
+they do to the gateway. A body over the first, or `/say` text over the second, is answered with
+`413`. Both are checked before the nonce is looked up, so the answer says nothing about whether the
+nonce is live.
+
+## Methods
+
+<CardGroup cols={3}>
+  <Card title="register" href="/docs/server-sdks/reference/typescript/agents/handoff-router/register">
+    Record what a nonce gives access to.
+  </Card>
+  <Card title="redeem" href="/docs/server-sdks/reference/typescript/agents/handoff-router/redeem">
+    Exchange a nonce for a chat handle. Single use.
+  </Card>
+  <Card title="escalate" href="/docs/server-sdks/reference/typescript/agents/handoff-router/escalate">
+    End a chat leg and wait for its record.
+  </Card>
+  <Card title="say" href="/docs/server-sdks/reference/typescript/agents/handoff-router/say">
+    Deliver typed text into a live call.
+  </Card>
+  <Card title="router" href="/docs/server-sdks/reference/typescript/agents/handoff-router/router">
+    The Hono app to mount beside the gateway's.
+  </Card>
+</CardGroup>
+
+## Examples
+
+Register the nonce from the per-call config callback of the dial that carried it, reading the call
+id from the platform's request and never from anything the browser sent.
+
+```typescript
+import { AgentBase, ChatGateway, HandoffRouter, userVariables } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'dispatch', route: '/dispatch' });
+agent.setPromptText('You are Ada, the dispatcher for Bayview Taxi.');
+
+const gateway = new ChatGateway({
+  configUrl: 'https://bayview-taxi.example.com/dispatch',
+  key: '<YOUR_PUBLISHABLE_KEY>',
+  allowedOrigins: ['https://bayviewtaxi.example.com'],
+});
+
+const handoff = new HandoffRouter({
+  gateway,
+  // Write the leg's transcript, then return true once it is saved.
+  captureLeg: async (conversationId, medium) => {
+    console.log(`saving ${medium} leg of ${conversationId}`);
+    return true;
+  },
+  // End the call server-side.
+  endCall: async (callId) => {
+    console.log(`hanging up ${callId}`);
+  },
+  // Speak typed text into the call.
+  sendMessage: async (callId, text) => {
+    console.log(`sending to ${callId}: ${text}`);
+    return true;
+  },
+});
+
+agent.addPerCallConfig((_query, body) => {
+  const variables = userVariables(body);
+  const nonce = variables['handoff_nonce'];
+  const chatHandle = variables['chat_handle'];
+  const call = body['call'] as { call_id?: string } | undefined;
+  if (typeof nonce === 'string' && typeof chatHandle === 'string') {
+    handoff.register(nonce, {
+      conversationId: gateway.readHandle(chatHandle),
+      callId: call?.call_id ?? null,
+    });
+  }
+});
+
+agent.mount(gateway.router(), { prefix: '/chat' });
+agent.mount(handoff.router(), { prefix: '/chat' });
+
+await agent.serve();
+```
+
+A `captureLeg`, `endCall`, or `sendMessage` that throws is logged and treated as a failure. A
+`sendMessage` that throws or returns `false` doesn't count against `maxMessagesPerCall`.
+
+The option types and a shared registry:
+
+```typescript
+import { HandoffRouter, NonceEntry, ChatGateway } from '@signalwire/sdk';
+import type { CaptureLeg, EndCall, SendMessage, HandoffRouterOptions } from '@signalwire/sdk';
+
+const gateway = new ChatGateway({ configUrl: 'https://bayview-taxi.example.com/dispatch' });
+
+const captureLeg: CaptureLeg = async (conversationId, medium) => {
+  console.log(conversationId, medium);
+  return true;
+};
+const endCall: EndCall = (callId) => {
+  console.log(callId);
+};
+const sendMessage: SendMessage = (callId, text) => {
+  console.log(callId, text);
+  return true;
+};
+
+// A shared nonce table: any Map<string, NonceEntry> works.
+const registry = new Map<string, NonceEntry>();
+
+const options: HandoffRouterOptions = {
+  gateway,
+  captureLeg,
+  endCall,
+  sendMessage,
+  nextConversationId: (id) => `${id}.next`,
+  nonceTtl: 1800,
+  maxMessagesPerCall: 100,
+  captureTimeout: 5,
+  registry,
+};
+const handoff = new HandoffRouter(options);
+console.log(handoff.nonceTtl, handoff.maxMessagesPerCall, handoff.captureTimeout, new NonceEntry('chat-8f21', 'call-1'));
+```

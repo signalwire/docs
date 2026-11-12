@@ -57,7 +57,7 @@ namespace SignalWireAPI.Fabric.FreeswitchConnectors {
     @post
     create(@body request: FreeswitchConnectorCreateRequest):
       | {
-          @statusCode statusCode: 200;
+          @statusCode statusCode: 201;
           @body freeswitch_connector: FreeswitchConnectorResponse;
         }
       | StatusCode401

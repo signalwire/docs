@@ -12,7 +12,7 @@ using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
-@route("/resources/call_flow/{id}/versions")
+@route("/resources/call_flows/{id}/versions")
 namespace SignalWireAPI.Fabric.CallFlow.Versions {
   @tag(CALL_FLOWS_TAG)
   interface CallFlowVersions {
@@ -28,9 +28,9 @@ namespace SignalWireAPI.Fabric.CallFlow.Versions {
         returnType: #{
           data: #[CALL_FLOW_VERSION_EXAMPLE],
           links: #{
-            self: "https://example.signalwire.com/api/fabric/resources/call_flow/993ed018-9e79-4e50-b97b-984bd5534095/versions?page_number=0&page_size=50",
-            first: "https://example.signalwire.com/api/fabric/resources/call_flow/993ed018-9e79-4e50-b97b-984bd5534095/versions?page_number=0&page_size=50",
-            next: "https://example.signalwire.com/api/fabric/resources/call_flow/993ed018-9e79-4e50-b97b-984bd5534095/versions?page_number=1&page_size=50",
+            self: "https://example.signalwire.com/api/fabric/resources/call_flows/993ed018-9e79-4e50-b97b-984bd5534095/versions?page_number=0&page_size=50",
+            first: "https://example.signalwire.com/api/fabric/resources/call_flows/993ed018-9e79-4e50-b97b-984bd5534095/versions?page_number=0&page_size=50",
+            next: "https://example.signalwire.com/api/fabric/resources/call_flows/993ed018-9e79-4e50-b97b-984bd5534095/versions?page_number=1&page_size=50",
           },
         },
       },

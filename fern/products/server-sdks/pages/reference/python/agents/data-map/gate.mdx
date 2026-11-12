@@ -1,0 +1,56 @@
+---
+title: "gate"
+slug: reference/python/agents/data-map/gate
+description: Add a semantic gate that must pass before the DataMap function runs.
+max-toc-depth: 3
+---
+
+[ref-datamap]: /docs/server-sdks/reference/python/agents/data-map
+[semanticgate]: /docs/server-sdks/reference/python/agents/semantic-gate
+[gate-fillers]: /docs/server-sdks/reference/python/agents/data-map/gate-fillers
+[to-swaig-function]: /docs/server-sdks/reference/python/agents/data-map/to-swaig-function
+
+Add a [semantic gate][semanticgate]: a yes/no question a decision model answers
+about the call right before the function runs. Every gate must pass. When one
+fails, the `data_map` doesn't run, and the AI gets the `on_fail` output of the
+first failing gate.
+
+Call `gate()` once per gate, up to 8. The gates are checked when
+[`to_swaig_function()`][to-swaig-function] builds the function, which raises
+`ValueError` for any gate the platform would refuse. To set what the AI says during
+the check, use [`gate_fillers()`][gate-fillers].
+
+## Parameters
+
+<ParamField path="gate" type="SemanticGate | dict[str, Any]" required={true} toc={true}>
+  A [`SemanticGate`][semanticgate], or a gate dict in the platform's shape
+  (`question`, `threshold`, `on_fail`, and optional `id`, `criteria`,
+  `visual_input`).
+</ParamField>
+
+## Returns
+
+[`DataMap`][ref-datamap] -- Self for method chaining.
+
+## Examples
+
+```python {7-13}
+from signalwire import DataMap, FunctionResult, SemanticGate
+
+cancel_order = (
+    DataMap("cancel_order")
+    .purpose("Cancel one of the caller's open orders")
+    .parameter("order_id", "string", "The order number", required=True)
+    .gate(
+        SemanticGate(
+            "Has the caller asked in `conversation` to cancel the order in `proposed_function`?",
+            threshold=0.9,
+            on_fail="cancel_order was not run. Ask the caller which order to cancel.",
+        )
+    )
+    .webhook("POST", "https://api.example.com/orders/${enc:args.order_id}/cancel")
+    .output(FunctionResult("The order is cancelled. Tell the caller."))
+)
+
+print(cancel_order.to_swaig_function())
+```

@@ -49,7 +49,7 @@ namespace SignalWireAPI.Datasphere.Documents {
 
     @operationId("create_document")
     @doc("""
-      Ingests a document from the supplied URL, applies the selected chunking strategy, and creates its Datasphere record. Use it when adding source material for later semantic retrieval; use [Search documents](/docs/apis/rest/documents/search-documents) after ingestion, or [List documents](/docs/apis/rest/documents/list-documents) to monitor processing status.
+      Ingests a document from the supplied URL, applies the selected chunking strategy, and creates its Datasphere record. Datasphere accepts PDF, plain text, and Markdown files up to 10 MB. Use it when adding source material for later semantic retrieval; use [Search documents](/docs/apis/rest/documents/search-documents) after ingestion, or [List documents](/docs/apis/rest/documents/list-documents) to monitor processing status.
       
       ${tokenPermissions<"_DataSphere_">}
       """)
