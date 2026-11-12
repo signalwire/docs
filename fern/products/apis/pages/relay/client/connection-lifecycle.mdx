@@ -1,0 +1,75 @@
+---
+title: Connection lifecycle
+slug: /relay/client/connection-lifecycle
+description: How a browser or mobile Relay connection lives — from connect through token refresh, a graceful server disconnect, and reconnect.
+max-toc-depth: 3
+---
+
+A Relay connection is long-lived: you open one WebSocket, authenticate, and then send commands and receive events over it for as long as it stays up. This page covers that lifecycle — how the connection stays healthy, how to refresh your short-lived token, what happens when the service needs to close it, and how to come back quickly.
+
+## The connection at a glance
+
+1. **Open** the WebSocket to `relay.signalwire.com`.
+2. **Authenticate** with `signalwire.connect` as your first message. See [Authentication](/docs/apis/relay/client/authentication).
+3. **Exchange** commands and events over the open socket. This is the steady state, and it lasts until either side closes the connection.
+4. **Refresh** your token before it expires with `signalwire.reauthenticate`, so a short-lived JWT never drops an active call.
+5. **Reconnect** if the socket drops or the service asks you to, restoring your session with the `authorization_state` you saved.
+
+Keep to **one connection** and reuse it — every command and every event share it. If you use the Browser SDK, it opens the socket, keeps it alive, refreshes the token, and reconnects for you.
+
+## Refreshing your token
+
+Client credentials are short-lived by design. Before the JWT expires, send **`signalwire.reauthenticate`** with a fresh token to extend the session in place — without tearing down the connection or the call:
+
+```json
+{
+  "method": "signalwire.reauthenticate",
+  "params": {
+    "authentication": {
+      "jwt_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...."
+    }
+  }
+}
+```
+
+Your backend issues the new token the same way it issued the first one.
+
+## When the service disconnects you
+
+SignalWire sometimes needs to close your connection — most often during a routine redeploy. Rather than dropping you abruptly, it sends a **`signalwire.disconnect`** message first, so you can finish cleanly:
+
+```json
+{
+  "method": "signalwire.disconnect",
+  "params": { "restart": true }
+}
+```
+
+When you receive it:
+
+1. **Finish what's in flight** and flush anything pending.
+2. **Reply with an empty result** — `{}` — to acknowledge. This should be the last thing you send; the service waits for it (up to a timeout) before closing the socket.
+3. **Reconnect** if `restart` is `true`. A fresh connection is expected — don't try to resume the old one.
+
+<Note>
+`signalwire.disconnect` is **receive-only** — the service sends it to you; you never send it. If you don't acknowledge, the service closes the connection anyway after a short timeout.
+</Note>
+
+## Reconnecting
+
+Right after you connect, and periodically after that, you receive a `signalwire.authorization.state` event carrying an `authorization_state` value. Save the latest one.
+
+If the connection drops — whether the socket failed or the service disconnected you — reconnect by sending `signalwire.connect` again with a valid token, plus that saved `authorization_state` and the `protocol` you were given. This restores your permissions and state on the new connection without re-running your full setup.
+
+Reconnect promptly: the window to restore state is short, so treat a dropped socket as something to re-establish right away. The [Authentication](/docs/apis/relay/client/authentication) page has the full reconnect message.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/docs/apis/relay/client/authentication">
+    The connect message, tokens, and the reconnect flow in full.
+  </Card>
+  <Card title="Events and subscriptions" icon="bell" href="/docs/apis/relay/client/events">
+    How Relay pushes call, member, and room events to you.
+  </Card>
+</CardGroup>

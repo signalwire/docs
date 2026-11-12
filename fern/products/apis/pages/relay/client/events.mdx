@@ -1,0 +1,59 @@
+---
+title: Events and subscriptions
+slug: /relay/client/events
+description: How Relay pushes call, member, and room events to your client, and how to subscribe to a room's event feed.
+max-toc-depth: 3
+---
+
+Relay is event-driven. Once your connection is open, SignalWire pushes events to it as things happen — your call changes state, a member joins or leaves the room, the active speaker changes, the layout updates — so you react to them instead of polling. This page covers the events a client receives and how to subscribe to a room's feed.
+
+## The events you receive
+
+Every event reaches you the same way — pushed over the open socket. As a client, they fall into a few groups:
+
+- **Call state** — `call.state` (and `call.joined` / `call.left`) track the call you placed as it progresses. They carry the `{ node_id, call_id, member_id }` that identify your leg.
+- **Member events** — `member.joined`, `member.left`, `member.updated`, and `member.talking` report who is in the room and what changed for them, including the active speaker.
+- **Room events** — `room.updated` and `layout.changed` report changes to the room itself, such as a new video layout.
+- **Verto signaling** — if you drive calling through the lower-level WebRTC/Verto path, inbound Verto frames (an incoming call, the far end hanging up, media updates) arrive on the receive-only `webrtc.message` channel, passed through as-is; you can also name conference event channels in the `subscribe` list of your `webrtc.verto` request.
+
+<Note>
+Every event is documented on its own receive-only channel in the API reference under this tab — `call.state`, `member.joined`, `room.updated`, `webrtc.message`, and the rest.
+</Note>
+
+## How you receive events
+
+Call Fabric events are **receive-only** — SignalWire pushes them to you as your call and room change state, so there's no separate request to turn them on. Once you place or join a call you receive its `call.state` changes; once you're in a room you receive that room's `member.*` and `room.updated` events. When you join a room, a `room.subscribed` event delivers the room's current state and your member and call identifiers.
+
+## What an event looks like
+
+Each event carries an `event_type` that names it and a `params` payload whose fields depend on the event:
+
+```json
+{
+  "event_type": "call.state",
+  "params": {
+    "call_id": "c1a2b3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+    "call_state": "answered"
+  }
+}
+```
+
+The exact `params` for each event live on that event's page in the API reference. If you use the Browser SDK, you don't parse this shape by hand — the SDK delivers each event as a typed object or a callback.
+
+## Correlate events to your call
+
+Client events carry the identifiers that address your call, so you can tie each one back to the call or member it belongs to:
+
+- **`call_id`** — the call the event is for.
+- **`member_id`** — the specific member (participant) the event is about, on member events.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Connection lifecycle" icon="arrows-rotate" href="/docs/apis/relay/client/connection-lifecycle">
+    Keep the connection healthy, refresh your token, and handle a server-initiated disconnect.
+  </Card>
+  <Card title="Overview" icon="tower-broadcast" href="/docs/apis/relay/client">
+    How a Relay connection works end to end, and what each service does.
+  </Card>
+</CardGroup>

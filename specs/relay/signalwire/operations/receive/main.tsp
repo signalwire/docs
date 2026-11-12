@@ -1,0 +1,66 @@
+import "@signalwire/typespec-asyncapi";
+import "../../../common/frames.tsp";
+import "@typespec/openapi";
+
+import "../../models/core.tsp";
+import "./models/send.tsp";
+
+using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
+
+namespace Relay.Signalwire;
+
+const signalwireReceive = "signalwire.receive";
+const signalwireReceiveResponse = "${signalwireReceive} response";
+
+model ReceiveRequest is JsonRpcRequest<typeof signalwireReceive, ReceiveParams>;
+
+@extension("x-fern-display-name", signalwireReceiveResponse)
+@reply model ReceiveReply is JsonRpcResponse<Acknowledgement>;
+
+const signalwireUnreceive = "signalwire.unreceive";
+const signalwireUnreceiveResponse = "${signalwireUnreceive} response";
+
+model UnreceiveRequest is JsonRpcRequest<typeof signalwireUnreceive, UnreceiveParams>;
+
+@extension("x-fern-display-name", signalwireUnreceiveResponse)
+@reply model UnreceiveReply is JsonRpcResponse<Acknowledgement>;
+
+@doc("""
+  Subscribe to one or more contexts so you start receiving inbound events for
+  them. This is how you ask SignalWire to deliver unsolicited notifications to
+  your connection — most importantly the `calling.call.receive` event for an
+  inbound call, which only reaches clients that have subscribed to the call's
+  context.
+
+  This request only manages the subscription; the events you then receive are each
+  documented on their own receive-only channel — for example `calling.call.receive`
+  and `calling.call.state` (under Calling) and `queuing.relay.tasks` (under Tasking).
+  The full set isn't repeated here.
+
+  You can also subscribe at connect time by passing `contexts` to
+  `signalwire.connect`.
+
+  Requirements and errors, returned as a JSON-RPC `error`:
+  - The connection must use a protocol `major` version below `4` (the server SDKs
+    send `2.0.0`); otherwise `-32001`.
+  - Supply at least one context; otherwise `-32602`.
+  - Your credentials must carry the `calling`, `messaging`, or `tasking` scope;
+    otherwise `-32003`. You receive events only for the scopes your credentials
+    carry.
+  """)
+@channel(signalwireReceive)
+@summary("Subscribe to inbound events on one or more contexts")
+@extension("x-fern-display-name", signalwireReceive)
+op receive(...ReceiveRequest): ReceiveReply;
+
+@doc("""
+  Unsubscribe from one or more contexts so you stop receiving their inbound events.
+
+  Requires a protocol `major` version below `4` (the server SDKs send `2.0.0`);
+  otherwise the request is rejected with a JSON-RPC `error` (`-32001`).
+  """)
+@channel(signalwireUnreceive)
+@summary("Unsubscribe from inbound events on one or more contexts")
+@extension("x-fern-display-name", signalwireUnreceive)
+op unreceive(...UnreceiveRequest): UnreceiveReply;
