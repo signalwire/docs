@@ -5,7 +5,6 @@ import "./models/status-callbacks.tsp";
 import "./models/inbound-message.tsp";
 import "@signalwire/typespec-webhook";
 import "../../../_shared/webhook-ack.tsp";
-import "../../../swml/messaging";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;

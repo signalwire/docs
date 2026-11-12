@@ -1,12 +1,12 @@
 ---
 title: "AgentBase"
-slug: /reference/typescript/agents/agent-base
+slug: reference/typescript/agents/agent-base
 description: The central class for building AI-powered voice agents with SignalWire.
 max-toc-depth: 3
 ---
 
-[ai]: /docs/swml/reference/ai
-[swml-reference]: /docs/swml/reference/ai
+[ai]: /docs/swml/reference/calling/ai
+[swml-reference]: /docs/swml/reference/calling/ai
 [agentserver]: /docs/server-sdks/reference/typescript/agents/agent-server
 [swmlservice]: /docs/server-sdks/reference/typescript/agents/swml-service
 [setnativefunctions]: /docs/server-sdks/reference/typescript/agents/agent-base/native-functions
@@ -64,8 +64,9 @@ const agent = new AgentBase({
 
 <ParamField path="basicAuth" type="[string, string]" toc={true}>
   Explicit `[username, password]` tuple for HTTP Basic Auth on all endpoints. If not
-  set, credentials are read from `SWML_BASIC_AUTH_USER` / `SWML_BASIC_AUTH_PASSWORD`
-  env vars, or auto-generated on startup.
+  set, credentials come from the config file, then the `SWML_BASIC_AUTH_USER` /
+  `SWML_BASIC_AUTH_PASSWORD` env vars, and are otherwise generated on startup. A
+  password set without a user gets the user `signalwire`.
 </ParamField>
 
 <ParamField path="usePom" type="boolean" default="true" toc={true}>
@@ -75,6 +76,14 @@ const agent = new AgentBase({
 
 <ParamField path="tokenExpirySecs" type="number" default="3600" toc={true}>
   Expiration time in seconds for SWAIG function authentication tokens.
+</ParamField>
+
+<ParamField path="swaigSecret" type="string" toc={true}>
+  Secret that signs the agent's per-call SWAIG function tokens. Falls back to the
+  `SIGNALWIRE_SWAIG_SECRET` environment variable. Set the same secret on every
+  replica, and keep it across restarts, so a token issued by one process validates
+  on another. When neither is set, each process generates its own secret. Treat this
+  value as a secret.
 </ParamField>
 
 <ParamField path="autoAnswer" type="boolean" default="true" toc={true}>
@@ -177,6 +186,11 @@ const agent = new AgentBase({
   Unique identifier for this agent instance.
 </ParamField>
 
+<ParamField path="signingKey" type="string | null" toc={true}>
+  The Signing Key used for webhook signature validation, from the constructor
+  option or `SIGNALWIRE_SIGNING_KEY`. `null` when validation is disabled.
+</ParamField>
+
 ## **Static Members**
 
 <ParamField path="PROMPT_SECTIONS" type="Array<{ title: string; body?: string; bullets?: string[]; numbered?: boolean }>" toc={true}>
@@ -272,6 +286,9 @@ await agent.run();
   </Card>
   <Card title="addMcpServer" href="/docs/server-sdks/reference/typescript/agents/agent-base/add-mcp-server">
     Add an external MCP server for tool discovery and invocation.
+  </Card>
+  <Card title="addPerCallConfig" href="/docs/server-sdks/reference/typescript/agents/agent-base/add-per-call-config">
+    Register a per-request configuration callback without replacing the ones already set.
   </Card>
   <Card title="addPatternHint" href="/docs/server-sdks/reference/typescript/agents/agent-base/add-pattern-hint">
     Add a speech recognition hint with pattern matching and replacement.
@@ -390,6 +407,9 @@ await agent.run();
   <Card title="getRegisteredTools" href="/docs/server-sdks/reference/typescript/agents/agent-base/get-registered-tools">
     Get summaries of all registered tools.
   </Card>
+  <Card title="getTools" href="/docs/server-sdks/reference/typescript/agents/agent-base/get-tools">
+    Get the SwaigFunction instances registered on the agent.
+  </Card>
   <Card title="getTool" href="/docs/server-sdks/reference/typescript/agents/agent-base/get-tool">
     Look up a registered tool by name.
   </Card>
@@ -405,11 +425,20 @@ await agent.run();
   <Card title="listSkills" href="/docs/server-sdks/reference/typescript/agents/agent-base/list-skills">
     List all currently loaded skills.
   </Card>
+  <Card title="mount" href="/docs/server-sdks/reference/typescript/agents/agent-base/mount">
+    Serve another Hono app or fetch handler alongside the agent's routes.
+  </Card>
   <Card title="manualSetProxyUrl" href="/docs/server-sdks/reference/typescript/agents/agent-base/manual-set-proxy-url">
     Manually set the proxy URL base for webhook callbacks.
   </Card>
   <Card title="setNativeFunctions" href="/docs/server-sdks/reference/typescript/agents/agent-base/native-functions">
     Set the list of native platform functions.
+  </Card>
+  <Card title="onCallEnd" href="/docs/server-sdks/reference/typescript/agents/agent-base/on-call-end">
+    Run handlers with the transcript when the call ends.
+  </Card>
+  <Card title="onCallStart" href="/docs/server-sdks/reference/typescript/agents/agent-base/on-call-start">
+    Run handlers when the call starts, before the AI's first turn.
   </Card>
   <Card title="onDebugEvent" href="/docs/server-sdks/reference/typescript/agents/agent-base/on-debug-event">
     Lifecycle hook for debug events received at /debug_events.
@@ -448,7 +477,10 @@ await agent.run();
     Render the complete SWML document.
   </Card>
   <Card title="run" href="/docs/server-sdks/reference/typescript/agents/agent-base/run">
-    Start the HTTP server (alias for serve).
+    Start the HTTP server, or handle one serverless invocation.
+  </Card>
+  <Card title="runServerless" href="/docs/server-sdks/reference/typescript/agents/agent-base/run-serverless">
+    Handle one serverless invocation.
   </Card>
   <Card title="serve" href="/docs/server-sdks/reference/typescript/agents/agent-base/serve">
     Start the Hono HTTP server to serve SWML and SWAIG endpoints.
@@ -483,6 +515,9 @@ await agent.run();
   <Card title="setPromptText" href="/docs/server-sdks/reference/typescript/agents/agent-base/set-prompt-text">
     Set the agent's system prompt as raw text.
   </Card>
+  <Card title="setSemanticGates" href="/docs/server-sdks/reference/typescript/agents/agent-base/set-semantic-gates">
+    Set how the call checks the semantic gates on its SWAIG functions.
+  </Card>
   <Card title="setupGracefulShutdown" href="/docs/server-sdks/reference/typescript/agents/agent-base/setup-graceful-shutdown">
     Register signal handlers for graceful shutdown (static method).
   </Card>
@@ -515,5 +550,20 @@ await agent.run();
   </Card>
   <Card title="getLanguageParams" href="/docs/server-sdks/reference/typescript/agents/agent-base/get-language-params">
     Read engine-specific params on an added language.
+  </Card>
+  <Card title="setMultilingual" href="/docs/server-sdks/reference/typescript/agents/agent-base/set-multilingual">
+    Answer in whatever language the caller speaks.
+  </Card>
+  <Card title="onError" href="/docs/server-sdks/reference/typescript/agents/agent-base/on-error">
+    Hook that runs when any tool handler throws.
+  </Card>
+  <Card title="replaceGlobalData" href="/docs/server-sdks/reference/typescript/agents/agent-base/replace-global-data">
+    Replace the global data object, discarding prior keys.
+  </Card>
+  <Card title="registerRoutingCallback" href="/docs/server-sdks/reference/typescript/agents/agent-base/register-routing-callback">
+    Route requests dynamically from the POST body.
+  </Card>
+  <Card title="handleRequest" href="/docs/server-sdks/reference/typescript/agents/agent-base/handle-request">
+    Dispatch a request from plain HTTP primitives.
   </Card>
 </CardGroup>

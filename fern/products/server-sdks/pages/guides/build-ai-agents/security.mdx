@@ -1,7 +1,7 @@
 ---
 title: "Security"
-description: The SDK provides layered security through HTTP Basic Authentication for all requests and optional per-function token validation for sensitive operations.
-slug: /guides/security
+description: The SDK provides layered security through request signature validation, HTTP Basic Authentication for all requests, and optional per-function token validation for sensitive operations.
+slug: guides/security
 max-toc-depth: 3
 ---
 
@@ -17,7 +17,7 @@ Understanding potential threats helps you design appropriate defenses:
 
 | Threat | Description | Mitigation |
 |--------|-------------|------------|
-| **Unauthorized access** | Attacker accesses agent endpoints without credentials | HTTP Basic Auth, function tokens |
+| **Unauthorized access** | Attacker accesses agent endpoints without credentials | Signature validation, HTTP Basic Auth, function tokens |
 | **Social engineering** | Caller manipulates AI to bypass security | Clear prompt boundaries, function restrictions |
 | **Toll fraud** | Unauthorized calls generate charges | Authentication, call limits |
 | **Data exfiltration** | Caller extracts sensitive information | Prompt engineering, function permissions |
@@ -35,15 +35,83 @@ The SignalWire Server SDK implements multiple security layers:
 - TLS encryption in transit
 - Certificate validation
 
-#### Layer 2: HTTP Basic Authentication
+#### Layer 2: Request signature validation
+
+- HMAC signature on the POST requests SignalWire sends to your agent
+- Checked against your project's signing key
+
+#### Layer 3: HTTP Basic Authentication
 
 - Username/password validation
 - Applied to all webhook endpoints
 
-#### Layer 3: Function Token Security (Optional)
+#### Layer 4: Function Token Security (Optional)
 
 - Per-function security tokens
 - Cryptographic validation
+
+### Request signature validation
+
+SignalWire signs the POST requests it sends to your agent: the request for its SWML, each SWAIG
+function call, and the post-prompt summary. Each request carries an `X-Signalwire-Signature` header
+and an `X-Signalwire-SHA256-Signature` header, HMAC digests computed with your project's signing
+key over the request URL and the raw body. There is no setting to enable signing, so the only step
+is giving the agent the key. In the rare case SignalWire can't compute a signature, it sends the
+request unsigned, as described in
+[Plan for unsigned requests, redirects, and retries](/docs/swml/guides/webhook-security#plan-for-unsigned-requests-redirects-and-retries).
+
+With a signing key set, the agent checks the signature on every POST to its SWML, SWAIG, and
+post-prompt endpoints. An unsigned or mis-signed request gets `403 Forbidden` and never reaches your
+code. Without a key, the agent logs a warning at startup and accepts unsigned requests.
+
+Copy the key from the **Signing Key** field on the
+[API Credentials](https://my.signalwire.com?page=credentials) page of your Dashboard. Each project
+has its own key, so use the key belonging to the project that handles the call.
+
+#### Configuring the signing key
+
+**Option 1: Environment variable (recommended)**
+
+```bash
+export SIGNALWIRE_SIGNING_KEY=your_signing_key
+```
+
+**Option 2: Pass it to the agent**
+
+<CodeBlocks>
+<CodeBlock title="Python — Server SDK">
+```python
+from signalwire import AgentBase
+import os
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(
+            name="my-agent",
+            signing_key=os.getenv("SIGNALWIRE_SIGNING_KEY")
+        )
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Server SDK">
+```typescript
+import { AgentBase } from '@signalwire/sdk';
+
+const agent = new AgentBase({
+  name: 'my-agent',
+  signingKey: process.env['SIGNALWIRE_SIGNING_KEY'],
+});
+```
+</CodeBlock>
+</CodeBlocks>
+
+Install the latest Server SDK to get signature validation.
+
+The signature covers the exact URL SignalWire requested. Behind a reverse proxy or a tunnel, set
+`SWML_PROXY_URL_BASE` to your public base URL, as described under HTTPS configuration below, so the
+agent checks the signature against that URL rather than the one the proxy forwarded to it.
+
+For the full list of signed requests, how the signature is computed, and how unsigned and
+redirected requests behave, see [Verify SWML request signatures](/docs/swml/guides/webhook-security).
 
 ### HTTP Basic Authentication
 
@@ -83,6 +151,10 @@ INFO:   Username: signalwire
 INFO:   Password: a7b3x9k2m5n1p8q4  # Use this in SignalWire webhook config
 ```
 
+Use generated credentials only in development. The agent puts its credentials in every webhook URL
+it generates, so when a restart generates a new password, the calls already in progress fail their
+next function call and their post-prompt summary. Set fixed credentials in production.
+
 #### Credentials in Your Agent
 
 <Tabs>
@@ -95,9 +167,11 @@ class MyAgent(AgentBase):
     def __init__(self):
         super().__init__(
             name="my-agent",
-            # Credentials from environment or defaults
-            basic_auth_user=os.getenv("SWML_BASIC_AUTH_USER"),
-            basic_auth_password=os.getenv("SWML_BASIC_AUTH_PASSWORD")
+            # Credentials from the environment
+            basic_auth=(
+                os.environ["SWML_BASIC_AUTH_USER"],
+                os.environ["SWML_BASIC_AUTH_PASSWORD"],
+            ),
         )
 ```
 </Tab>
@@ -107,7 +181,7 @@ import { AgentBase } from '@signalwire/sdk';
 
 const agent = new AgentBase({
   name: 'my-agent',
-  // Credentials from environment or defaults
+  // Credentials from the environment
   basicAuth: [
     process.env['SWML_BASIC_AUTH_USER']!,
     process.env['SWML_BASIC_AUTH_PASSWORD']!,
@@ -132,7 +206,7 @@ For sensitive operations, enable per-function token validation.
 ```json
 "functions": [{
   "function": "transfer_funds",
-  "web_hook_url": "https://agent.com/swaig?token=abc123xyz..."
+  "web_hook_url": "https://agent.com/swaig?__token=abc123xyz..."
 }]
 ```
 
@@ -247,6 +321,53 @@ def generate_function_token(function_name, secret_key, call_context):
     return token
 ```
 
+#### Token secret and lifetime
+
+The agent signs function tokens, and the token on its post-prompt URL, with a secret. If you don't
+set one, each process generates its own at startup. Tokens issued before a restart then stop
+validating, and so do tokens issued by another replica behind the same load balancer, so calls in
+progress fail their next secure function call and their post-prompt summary.
+
+Tokens also expire, one hour after the agent issues them by default. A call that outlasts its tokens
+loses its secure functions and its post-prompt summary.
+
+In production, set a fixed secret, the same on every replica, and a token lifetime longer than your
+longest call:
+
+```bash
+export SIGNALWIRE_SWAIG_SECRET=your_long_random_secret
+```
+
+<CodeBlocks>
+<CodeBlock title="Python — Server SDK">
+```python
+from signalwire import AgentBase
+import os
+
+agent = AgentBase(
+    name="my-agent",
+    swaig_secret=os.environ["SIGNALWIRE_SWAIG_SECRET"],
+    token_expiry_secs=4 * 3600,  # Longer than your longest call
+)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Server SDK">
+```typescript
+import { AgentBase } from '@signalwire/sdk';
+
+const agent = new AgentBase({
+  name: 'my-agent',
+  swaigSecret: process.env['SIGNALWIRE_SWAIG_SECRET'],
+  tokenExpirySecs: 4 * 3600, // Longer than your longest call
+});
+```
+</CodeBlock>
+</CodeBlocks>
+
+The token secret is separate from your project's signing key: the signing key proves a request came
+from SignalWire, and the token secret proves a function call belongs to the call your agent issued
+the token for.
+
 ### HTTPS Configuration
 
 For production, enable HTTPS:
@@ -294,7 +415,8 @@ Most production deployments use a reverse proxy for SSL:
 - Load balancing
 - Additional security headers
 
-Set the proxy URL so your agent generates correct webhook URLs:
+Set the proxy URL so your agent generates correct webhook URLs and checks request signatures against
+the public URL:
 
 ```bash
 export SWML_PROXY_URL_BASE=https://my-agent.example.com
@@ -685,7 +807,10 @@ Before deploying to production:
 #### Infrastructure
 
 - HTTPS enabled with valid certificates
-- Strong Basic Auth credentials (32+ characters)
+- Signing key set, so request signatures are validated
+- Strong, fixed Basic Auth credentials (32+ characters), the same on every replica
+- Fixed function token secret (`SIGNALWIRE_SWAIG_SECRET`), the same on every replica
+- Token lifetime longer than your longest call
 - Reverse proxy configured (nginx, Caddy)
 - Firewall rules limit access
 - Monitoring and alerting configured
@@ -717,6 +842,7 @@ Before deploying to production:
 
 | Security Feature | When to Use | How to Enable |
 |-----------------|-------------|---------------|
+| **Signature validation** | Always | Set `SIGNALWIRE_SIGNING_KEY` |
 | **Basic Auth** | Always | Automatic (set env vars for custom) |
 | **Function Tokens** | Sensitive operations | `secure=True` on define_tool |
 | **HTTPS** | Production | SSL certs or reverse proxy |

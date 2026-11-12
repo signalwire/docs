@@ -19,31 +19,31 @@ model Subscriber {
   @example("johndoe@example.com")
   email: string;
 
-  @doc("First name of the Subscriber.")
+  @doc("First name of the Subscriber, or `null` when not set.")
   @example("John")
-  first_name: string;
+  first_name: string | null;
 
-  @doc("Last name of the Subscriber.")
+  @doc("Last name of the Subscriber, or `null` when not set.")
   @example("Doe")
-  last_name: string;
+  last_name: string | null;
 
-  @doc("Display name of the Subscriber.")
+  @doc("Display name of the Subscriber, or `null` when not set.")
   @example("John Doe")
-  display_name: string;
+  display_name: string | null;
 
-  @doc("Job title of the Subscriber.")
+  @doc("Job title of the Subscriber, or `null` when not set.")
   @example("Software Engineer")
-  job_title: string;
+  job_title: string | null;
 
-  @doc("Timezone of the Subscriber.")
+  @doc("Time zone of the Subscriber. Defaults to `GMT`.")
   @example("America/New_York")
-  timezone: string;
+  time_zone: string;
 
-  @doc("Country of the Subscriber.")
+  @doc("Country of the Subscriber, or `null` when not set.")
   @example("United States")
-  country: string;
+  country: string | null;
 
-  @doc("Company name of the Subscriber.")
+  @doc("Company name of the Subscriber, or `null` when not set.")
   @example("SignalWire")
-  company_name: string;
+  company_name: string | null;
 }

@@ -1,6 +1,6 @@
 ---
 id: a9dd1c03-0b27-4aab-98ab-4d9230d38484
-slug: /reference/calling
+slug: reference/calling
 description: Reference for Calling SWML — document structure, webhook payload, variable expansion, and methods for handling inbound and outbound calls.
 title: Calling SWML overview
 sidebar-title: Overview
@@ -56,7 +56,6 @@ When SignalWire fetches a Calling SWML document from an external URL, it POSTs t
 your server — on the initial inbound fetch and on every fetch triggered by a method that hits
 an external URL (`execute` with a remote URL,
 [`transfer`](/docs/swml/reference/calling/transfer),
-[`join_conference.wait_url`](/docs/swml/reference/calling/join-conference#properties),
 [`enter_queue.wait_url`](/docs/swml/reference/calling/enter-queue#properties), and
 [`connect.confirm`](/docs/swml/reference/calling/connect#properties)). Your server must respond
 with a valid SWML document using one of these content types: `application/json`,
@@ -68,15 +67,32 @@ the script runs, methods also populate the **`vars.*` runtime scope** — those 
 the initial inbound payload, but they are propagated across `transfer` boundaries and delivered
 on subsequent fetches.
 
-<WebhookPayloadSnippet webhook="inboundCallWebhook" />
+<llms-ignore>
+
+<WebhookPayloadSnippet webhook="inbound_call_webhook" />
+
+</llms-ignore>
+
+<llms-only>
+
+See the [SWML inbound call webhook reference](/docs/apis/rest/webhooks/inbound-call-webhook) for the complete request schema. The fields used by SWML are documented below.
+
+</llms-only>
 
 <ParamField path="call" type="object" toc={true}>
-  Information about the current call. Call-specific and read-only. Each call leg (A-leg, B-leg)
-  has its own unique `call` object with different `call_id`, `from`, `to`, etc. When connecting
-  to a new leg, the `call` object is re-initialized with the new leg's data.
+  Information about the current call. Call-specific and read-only. Each call leg has its own
+  `call` object with its own `call_id`, `from`, and `to`. A document that runs on the leg
+  `connect` dialed sees that leg's values. SignalWire clears `call.peer` when the bridge ends,
+  so the document that resumes after `connect` doesn't have it. See
+  [Call legs](/docs/platform/voice/call-legs).
 </ParamField>
 
 <Indent>
+
+  <ParamField path="call.address_id" type="string" toc={true}>
+    ID of the Resource Address the call was placed to. Present on calls a Subscriber places to
+    an Address.
+  </ParamField>
 
   <ParamField path="call.call_id" type="string" toc={true}>
     A unique identifier for the call.
@@ -84,6 +100,11 @@ on subsequent fetches.
 
   <ParamField path="call.call_state" type="string" toc={true}>
     The current state of the call.
+  </ParamField>
+
+  <ParamField path="call.dial_winner" type="string" toc={true}>
+    Set to `"true"` when this call is the leg that answered an outbound dial, including the
+    winning leg of a parallel dial. Omitted otherwise.
   </ParamField>
 
   <ParamField path="call.direction" type="string" toc={true}>
@@ -94,8 +115,14 @@ on subsequent fetches.
     The number/URI that initiated this call.
   </ParamField>
 
+  <ParamField path="call.from_number" type="string" toc={true}>
+    The phone number that initiated this call. Present for phone calls (`type` is `phone`); SIP
+    and WebRTC calls expose the originator through `from` instead.
+  </ParamField>
+
   <ParamField path="call.headers" type="object[]" toc={true}>
-    The headers associated with this call.
+    The headers associated with this call. Present for phone and SIP calls, as an empty array
+    when there are none. WebRTC calls don't include it.
   </ParamField>
 
   <Indent>
@@ -114,6 +141,45 @@ on subsequent fetches.
     A unique identifier for the node handling the call.
   </ParamField>
 
+  <ParamField path="call.parent" type="object" toc={true}>
+    The call that created this call. Present only when this call has a parent, for example a
+    leg created by a `connect`.
+  </ParamField>
+
+  <Indent>
+
+    <ParamField path="call.parent.call_id" type="string" toc={true}>
+      A unique identifier for the parent call.
+    </ParamField>
+
+    <ParamField path="call.parent.device_type" type="string" toc={true}>
+      The device type of the parent call: `phone`, `sip`, or `webrtc`. Present only when this
+      call was created by a `connect`, from either the SWML `connect` method or the Relay
+      `connect` command; omitted for any other parent call.
+    </ParamField>
+
+    <ParamField path="call.parent.node_id" type="string" toc={true}>
+      The same value as this call's own `node_id`, not the parent call's node.
+    </ParamField>
+
+  </Indent>
+
+  <ParamField path="call.peer" type="object" toc={true}>
+    The call this call is bridged to. Present only when this call has a peer.
+  </ParamField>
+
+  <Indent>
+
+    <ParamField path="call.peer.call_id" type="string" toc={true}>
+      A unique identifier for the peer call.
+    </ParamField>
+
+    <ParamField path="call.peer.node_id" type="string" toc={true}>
+      The same value as this call's own `node_id`, not the peer call's node.
+    </ParamField>
+
+  </Indent>
+
   <ParamField path="call.project_id" type="string" toc={true}>
     The Project ID this call belongs to.
   </ParamField>
@@ -126,8 +192,28 @@ on subsequent fetches.
     The Space ID this call belongs to.
   </ParamField>
 
+  <ParamField path="call.subscriber_id" type="string" toc={true}>
+    ID of the Subscriber who placed the call. Present on calls a Subscriber places from the
+    Browser SDK.
+  </ParamField>
+
+  <ParamField path="call.subscriber_name" type="string" toc={true}>
+    Name of the Subscriber who placed the call: their display name, or if that's empty their
+    first name, then their email, then `Subscriber`. Present on calls a Subscriber places to an
+    Address.
+  </ParamField>
+
+  <ParamField path="call.tag" type="string" toc={true}>
+    The tag you assigned to this call when it was created, if any.
+  </ParamField>
+
   <ParamField path="call.to" type="string" toc={true}>
     The number/URI of the destination of this call.
+  </ParamField>
+
+  <ParamField path="call.to_number" type="string" toc={true}>
+    The destination phone number of this call. Present for phone calls (`type` is `phone`); SIP
+    and WebRTC calls expose the destination through `to` instead.
   </ParamField>
 
   <ParamField path="call.type" type="string" toc={true}>
@@ -135,8 +221,9 @@ on subsequent fetches.
   </ParamField>
 
   <ParamField path="call.sip_data" type="object" toc={true}>
-    SIP-specific data for SIP calls. Only present when `call.type` is `sip`. Contains detailed
-    SIP header information.
+    SIP-specific data for SIP calls. Only present when `call.type` is `sip`. Each key is
+    included only when the call's SIP signaling carries a value for it, so a key missing from one
+    call can be present on another.
   </ParamField>
 
   <Indent>
@@ -146,7 +233,9 @@ on subsequent fetches.
     </ParamField>
 
     <ParamField path="call.sip_data.sip_contact_params" type="object" toc={true}>
-      Additional parameters from the SIP Contact header.
+      The URI parameters of the SIP Contact header, as key/value pairs. Present only when that URI
+      carries parameters. Each value is a string. A parameter without a value is left out, so the
+      object can be empty.
     </ParamField>
 
     <ParamField path="call.sip_data.sip_contact_port" type="string" toc={true}>
@@ -165,6 +254,12 @@ on subsequent fetches.
       The host portion of the SIP From header.
     </ParamField>
 
+    <ParamField path="call.sip_data.sip_from_params" type="object" toc={true}>
+      The URI parameters of the SIP From header, as key/value pairs. Present only when that URI
+      carries parameters. Each value is a string. A parameter without a value is left out, so the
+      object can be empty.
+    </ParamField>
+
     <ParamField path="call.sip_data.sip_from_uri" type="string" toc={true}>
       The full URI from the SIP From header.
     </ParamField>
@@ -173,8 +268,19 @@ on subsequent fetches.
       The user portion of the SIP From header.
     </ParamField>
 
+    <ParamField path="call.sip_data.sip_p_asserted_identity" type="string" toc={true}>
+      The P-Asserted-Identity header of the incoming SIP request. Only the first
+      P-Asserted-Identity header is read, and only when its URI has a user part.
+    </ParamField>
+
     <ParamField path="call.sip_data.sip_req_host" type="string" toc={true}>
       The host portion of the SIP request URI.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_req_params" type="object" toc={true}>
+      The URI parameters of the SIP request URI, as key/value pairs. Present only when that URI
+      carries parameters. Each value is a string. A parameter without a value is left out, so the
+      object can be empty.
     </ParamField>
 
     <ParamField path="call.sip_data.sip_req_uri" type="string" toc={true}>
@@ -187,6 +293,12 @@ on subsequent fetches.
 
     <ParamField path="call.sip_data.sip_to_host" type="string" toc={true}>
       The host portion of the SIP To header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_to_params" type="object" toc={true}>
+      The URI parameters of the SIP To header, as key/value pairs. Present only when that URI
+      carries parameters. Each value is a string. A parameter without a value is left out, so the
+      object can be empty.
     </ParamField>
 
     <ParamField path="call.sip_data.sip_to_uri" type="string" toc={true}>
@@ -220,9 +332,10 @@ on subsequent fetches.
 
   **Removed by:** [`unset`](/docs/swml/reference/calling/unset).
 
-  **Scope:** Global within a single call session. Variables persist across all sections and
-  through `execute` calls. Connecting to a new call leg resets the `vars` object to an empty
-  state.
+  **Scope:** One call leg. Variables persist across all sections, through `execute` calls, and
+  through `transfer` to a new document. They don't cross to another leg: a document that runs on
+  the leg `connect` dialed starts with an empty `vars`, and the leg that issued `connect` keeps
+  every variable. See [Call legs](/docs/platform/voice/call-legs).
 
   **Access:** Variables can be accessed with or without the `vars.` prefix. When you reference
   a variable without a scope prefix (e.g., `${my_variable}`), SWML first checks `vars`. If not
@@ -306,7 +419,7 @@ Run background transcription of the call, and reduce noise for clearer audio.
     Stream live translation of the call.
   </Card>
   <Card title="transcribe" href="/docs/swml/reference/calling/transcribe">
-    Transcribe the entire call in the background.
+    Record the call in the background and transcribe it after recording stops.
   </Card>
   <Card title="transcribe_stop" href="/docs/swml/reference/calling/transcribe-stop">
     Stop a background transcription started by `transcribe`.

@@ -1,0 +1,44 @@
+---
+title: "lastActivity"
+slug: reference/typescript/agents/chat-gateway/last-activity
+description: Get the epoch time of the newest message in a conversation.
+max-toc-depth: 3
+---
+
+[chatgateway]: /docs/server-sdks/reference/typescript/agents/chat-gateway
+[visiblemessages]: /docs/server-sdks/reference/typescript/agents/chat-gateway/visible-messages
+[log]: /docs/server-sdks/reference/typescript/agents/ai-chat-client/log
+
+A static method that returns when a conversation last moved, so a browser can restore its idle clock
+after a reload. Without it a widget restarts the clock at zero: a tab closed for 55 minutes of a
+60-minute timeout would wait another hour before warning, while the conversation ends in five.
+
+The service stamps messages in microseconds; this converts to seconds. Every role counts, not only
+the ones [`visibleMessages()`][visiblemessages] keeps, because the service's idle clock moves on any
+write. Messages without a positive integer `timestamp` are skipped.
+
+## Parameters
+
+<ParamField path="messages" type="readonly unknown[] | null | undefined" required={true} toc={true}>
+  Messages as [`log()`][log] returns them in `messages`.
+</ParamField>
+
+## Returns
+
+`number | null` -- epoch seconds of the newest dated message, or `null` when none is dated.
+
+## Examples
+
+```typescript
+import { AIChatClient, ChatGateway } from '@signalwire/sdk';
+
+const client = new AIChatClient({ space: 'your-space' });
+
+const log = await client.log('chat-8f21');
+const last = ChatGateway.lastActivity(log.messages);
+
+if (last !== null) {
+  const idleSeconds = Date.now() / 1000 - last;
+  console.log(`Idle for ${Math.round(idleSeconds)} seconds`);
+}
+```

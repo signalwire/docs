@@ -18,7 +18,7 @@ namespace CompatibilityAPI.Applications {
     @operationId("list_applications")
     @summary("List Applications")
     @doc("""
-      The ability to read all of the applications that are associated with your Account. This will be returned as a list of applications.
+      Lists the account's Applications, which provide reusable voice and messaging routing. These applications are also available as addressable [cXML Applications](/docs/apis/rest/cxml-applications/list-cxml-applications) in the SignalWire REST API. Use this collection for code built around Application SIDs.
       
       ${tokenPermissions<"_Voice_ or _Messaging_ or _Fax_">}
       """)
@@ -56,7 +56,7 @@ namespace CompatibilityAPI.Applications {
     @operationId("create_application")
     @summary("Create an Application")
     @doc("""
-      Create an Application.
+      Creates a reusable voice and messaging routing application in the account. The new Application also becomes an addressable [cXML Application](/docs/apis/rest/cxml-applications/list-cxml-applications). The cXML Applications API manages existing applications but does not create them, so create Applications here.
       
       ${tokenPermissions<"_Voice_ or _Messaging_ or _Fax_">}
       """)
@@ -74,7 +74,7 @@ namespace CompatibilityAPI.Applications {
     @operationId("get_application")
     @summary("Find an Application by ID")
     @doc("""
-      Find an Application by ID.
+      Retrieves one Application by SID so you can inspect its reusable voice and messaging routing. The application can also be read with [Get cXML application](/docs/apis/rest/cxml-applications/get-cxml-application), which addresses it by resource ID rather than SID.
       
       ${tokenPermissions<"_Voice_ or _Messaging_ or _Fax_">}
       """)
@@ -88,7 +88,7 @@ namespace CompatibilityAPI.Applications {
     @operationId("update_application")
     @summary("Update an Application")
     @doc("""
-      Update an Application.
+      Changes how an Application routes voice and messaging requests or status callbacks while preserving its SID. The change is also visible through [Update cXML application](/docs/apis/rest/cxml-applications/update-cxml-application), because both operations manage the same application.
       
       ${tokenPermissions<"_Voice_ or _Messaging_ or _Fax_">}
       """)
@@ -109,7 +109,7 @@ namespace CompatibilityAPI.Applications {
     @operationId("delete_application")
     @summary("Delete an Application")
     @doc("""
-      Delete an Application.
+      Deletes an Application by SID. This also removes its [cXML Application](/docs/apis/rest/cxml-applications/list-cxml-applications) representation and resource addresses, and clears the Application from phone numbers that route through it. Server-backed [cXML Webhooks](/docs/apis/rest/cxml-webhook/list-cxml-webhooks) are separate resources and are not affected.
       
       ${tokenPermissions<"_Voice_ or _Messaging_ or _Fax_">}
       """)

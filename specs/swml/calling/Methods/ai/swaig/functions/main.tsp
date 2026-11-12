@@ -3,6 +3,7 @@ import "./data_map";
 import "../../../../../Shared/Types";
 import "./parameters.tsp";
 import "../../_shared/fillers.tsp";
+import "./gates.tsp";
 
 using TypeSpec.JsonSchema;
 
@@ -40,7 +41,7 @@ model SWAIGFunctionBase {
 
   @doc("Whether the function is active. **Default:** `true`.")
   @example(true)
-  active?: boolean | SWMLVar = true;
+  active?: boolean = true;
 
   @doc("""
     A powerful and flexible environmental variable which can accept arbitrary data that is set initially in the SWML script or from the SWML set_meta_data action.
@@ -77,11 +78,27 @@ model SWAIGFunctionBase {
     **Default:** `false`.
     """)
   @example(true)
-  skip_fillers?: boolean | SWMLVar = false;
+  skip_fillers?: boolean = false;
 
-  @doc("Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`")
-  @example("username:password:https://statuscallback.com")
+  @doc("Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`.")
+  @example("https://username:password@example.com")
   web_hook_url?: string;
+
+  @doc("Username for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_user`.")
+  @example("username")
+  web_hook_auth_user?: string;
+
+  @doc("Password for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_password`.")
+  @example("password")
+  web_hook_auth_password?: string;
+
+  #deprecated "Use `web_hook_auth_password` instead."
+  @doc("""
+    Password for basic auth on this function's webhook.
+    Deprecated. Use `web_hook_auth_password` instead.
+    The alias is used only when `web_hook_auth_password` is not set.
+    """)
+  web_hook_auth_pass?: string;
 
   @doc("A file to play while the function is running. `wait_file_loops` can specify the amount of times that files should continously play. Default is not set.")
   @example("https://cdn.signalwire.com/default-music/welcome.mp3")
@@ -93,7 +110,7 @@ model SWAIGFunctionBase {
 
   @doc("Whether to wait for fillers to finish playing before continuing with the function. **Default:** `false`.")
   @example(true)
-  wait_for_fillers?: boolean | SWMLVar = false;
+  wait_for_fillers?: boolean = false;
 }
 
 @summary("SWAIG Function")
@@ -101,17 +118,20 @@ model UserSWAIGFunction is SWAIGFunctionBase {
   @doc("${functionDescription}")
   @example("get_weather")
   function: string;
+
+  // Gates are refused on the hook names, so they're declared on user functions only.
+  ...SemanticGateFunctionFields;
 }
 
 @summary("startup_hook Function")
 model StartUpHookSWAIGFunction is SWAIGFunctionBase {
-  @doc("${functionDescription} For the start_hook function, the function name is 'start_hook'.")
+  @doc("${functionDescription} The reserved `startup_hook` function runs when the conversation starts.")
   function: "startup_hook";
 }
 
 @summary("hangup_hook Function")
 model HangUpHookSWAIGFunction is SWAIGFunctionBase {
-  @doc("${functionDescription} For the stop_hook function, the function name is 'stop_hook'.")
+  @doc("${functionDescription} The reserved `hangup_hook` function runs when the conversation ends.")
   function: "hangup_hook";
 }
 

@@ -13,9 +13,9 @@ import {
   Select,
   cleanName,
   friendlyLanguage,
+  genderLabel,
   loadBundle,
   modelKeyOf,
-  normalizeGender,
   pageNumbers,
   swmlVoiceString,
   uniq,
@@ -36,6 +36,7 @@ export function VoiceWidget({
   groupBy: initialGroup = "provider",
   pageSize = DEFAULT_PAGE_SIZE,
   provider: lockedProvider,
+  excludeProviders,
   voiceIds,
   filters,
 }: VoiceWidgetProps) {
@@ -46,6 +47,9 @@ export function VoiceWidget({
   const voiceIdsKey = voiceIds && voiceIds.length
     ? voiceIds.map((s) => s.trim().toLowerCase()).filter(Boolean).sort().join("|")
     : "";
+  // Normalized provider denylist, keyed the same way as voiceIdsKey.
+  const excludeKey = excludeProviders?.map((s) => s.trim().toLowerCase()).filter(Boolean).sort().join("|") ?? "";
+  const excluded = useMemo(() => new Set(excludeKey ? excludeKey.split("|") : []), [excludeKey]);
   const idAllowlist = useMemo(
     () => (voiceIdsKey ? new Set(voiceIdsKey.split("|")) : null),
     [voiceIdsKey]
@@ -91,7 +95,7 @@ export function VoiceWidget({
     return () => { alive = false; };
   }, [catalogUrl, manifestUrl]);
 
-  // Static narrowing: the allowlist (voiceIds) and provider lock can't change at runtime, so apply
+  // Static narrowing: the allowlist (voiceIds), provider lock, and denylist can't change at runtime, so apply
   // them once here. Also drops no-preview voices (missing/errored clip) so every visible row is
   // auditionable.
   const baseRows = useMemo(() => {
@@ -103,13 +107,15 @@ export function VoiceWidget({
         idAllowlist.has(r.key.toLowerCase()) ||
         idAllowlist.has(modelKeyOf(r).toLowerCase()) ||
         idAllowlist.has(r.display_name.toLowerCase())) &&
-      (!lock || r.provider.toLowerCase() === lock || r.engine.toLowerCase() === lock));
-  }, [allRows, idAllowlist, lock]);
+      (!lock || r.provider.toLowerCase() === lock || r.engine.toLowerCase() === lock) &&
+      !excluded.has(r.provider.toLowerCase()) && !excluded.has(r.engine.toLowerCase()));
+  }, [allRows, idAllowlist, lock, excluded]);
 
   // Dropdown options derive from the narrowed set, so a provider-locked page lists only that
   // provider's languages.
   const providers = useMemo(() => uniq(baseRows?.map((r) => r.provider)), [baseRows]);
   const languages = useMemo(() => uniq(baseRows?.flatMap((r) => r.languages)), [baseRows]);
+  const genders = useMemo(() => uniq(baseRows?.map((r) => r._gender)), [baseRows]);
 
   const filtered = useMemo(() => {
     if (!baseRows) return [];
@@ -117,7 +123,7 @@ export function VoiceWidget({
     return baseRows.filter((r) =>
       (provider === ALL || r.provider === provider) &&
       (language === ALL || r.languages.includes(language)) &&
-      (gender === ALL || r.gender === gender) &&
+      (gender === ALL || r._gender === gender) &&
       (!needle || r._search.includes(needle)));
   }, [baseRows, deferredQ, provider, language, gender]);
 
@@ -264,8 +270,7 @@ export function VoiceWidget({
           {showProvider && <Select label="Provider" value={provider} onChange={setProvider} opts={providers} />}
           {showFilter("language") && <Select label="Language" value={language} onChange={setLanguage} opts={languages} />}
           {showFilter("gender") && (
-            <Select label="Gender" value={gender} onChange={setGender}
-                    opts={["male", "female", "neutral", "unknown"]} />
+            <Select label="Gender" value={gender} onChange={setGender} opts={genders} />
           )}
           {showFilter("search") && (
             <input className="vw-search" placeholder="Search voices…" value={q}
@@ -360,7 +365,7 @@ const VoiceRowItem = memo(function VoiceRowItem({ r, playing, onPlay, onCopy }: 
   // Display-time cleanup (originals stay in the catalog, the copy payload, and the title/tooltip).
   const name = cleanName(r.display_name);
   const language = friendlyLanguage(r.primary_language);
-  const gender = normalizeGender(r.gender);
+  const gender = genderLabel(r._gender);
   const model = r.model || null;
   const tipId = `vwr-tip-${r._uid}`;
 

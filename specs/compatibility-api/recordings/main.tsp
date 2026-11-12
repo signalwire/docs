@@ -17,7 +17,7 @@ namespace CompatibilityAPI.Recordings {
     @operationId("list_recordings")
     @summary("List all Recordings")
     @doc("""
-      List all recordings. Results are returned as a paginated list ordered by creation date (newest first).
+      Lists saved voice recordings across the account's calls and conferences. Each recording has a SID used to retrieve or delete its media. SignalWire REST [Recordings](/docs/apis/rest/recordings/list-call-recordings) provide JSON operations, while Video [Room Recordings](/docs/apis/rest/video/room-recordings/list-room-recordings) contain video-room media. Results are ordered by creation date, newest first.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -75,51 +75,52 @@ namespace CompatibilityAPI.Recordings {
     @operationId("retrieve_recording")
     @summary("Retrieve a Recording")
     @doc("""
-      Retrieve a single recording media or its metadata.
-      
-      This endpoint supports two different access methods with different authentication requirements:
-      
-      ## Public Access (No Authentication Required)
-      
-      Recording audio files can be accessed directly without authentication. This is useful for external applications
-      to embed recording URLs without exposing SignalWire API credentials. SignalWire recording URLs are long
-      and random, making them difficult to guess or exploit unless you reveal the URL.
-      
-      **Retrieve WAV file**
-      
-      When a recording URI has no extension or a `.wav` extension, the request
-      will return a binary WAV version of the recording file.
-      
-      `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}`
-      
-      `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}.wav`
-      
-      **Retrieve MP3 file**
-      
-      Setting an extension of ".mp3" on the URI returns a binary MP3 version
-      of the recording. For example:
-      
-      `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}.mp3`
-      
-      ## Authenticated Access (Voice Scope Required)
-      
-      **Retrieve Metadata**
-      
-      A recording's metadata, such as duration, cost, time, can be returned by
-      setting the Recording URI's extension to `.json`. This requires authentication
-      with a Voice-scoped API token.
-      
+      Retrieves one voice recording's metadata, such as duration, cost, and status. Use this account-level route for saved call or conference media; Video Room recordings are separate resources.
+
+      Request the recording URI with a `.json` extension to get the metadata.
+
       `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}.json`
-      
-      #### Permissions
-      
-      The API token used to authenticate must have the following scopes enabled to make a successful request: _Voice_.
-      
-      This permission is only required for authenticated requests to retrieve recording metadata (.json extension).
-      
+
+      ## Access
+
+      Access to the recording URI, for metadata and audio alike, follows the project's **Protect Recording Media URLs**
+      setting. New projects have it turned on. See [Media URL protection](/docs/platform/media-protection).
+
+      - **On:** authenticate with your Project ID and an API token that has the _Management_ scope. A request without
+        valid credentials, or with a token that lacks the scope, gets a `401`.
+      - **Off:** anyone with the URI can retrieve the recording without authenticating, which lets external
+        applications embed recording URLs without exposing your API credentials. Recording URIs contain long random
+        IDs, which makes them difficult to guess unless you reveal them.
+
       [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+
+      ## Recording audio
+
+      The same recording URI also returns the recording audio, depending on the extension. Without an extension, the
+      response follows the request's `Accept` header: `application/json` returns the metadata, and a generic value such
+      as `*/*` returns the audio.
+
+      The audio URLs respond with a `302` redirect to the audio file, so your client must follow redirects. When the
+      recording has no audio to return, for example because its `status` isn't `completed`, they respond with `404`
+      and an empty body.
+
+      **Retrieve WAV file**
+
+      When a recording URI has a `.wav` extension, or no extension and a generic `Accept` header, the request
+      redirects to a WAV version of the recording file.
+
+      `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}.wav`
+
+      `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}`
+
+      **Retrieve MP3 file**
+
+      Setting an extension of ".mp3" on the URI redirects to an MP3 version
+      of the recording. For example:
+
+      `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}.mp3`
       """)
-    @route("/{Sid}")
+    @route("/{Sid}.json")
     read(...RecordingsAccountSidPath, ...RecordingSidPath):
       | RecordingResponse
       | CompatibilityStatusCode400
@@ -129,7 +130,7 @@ namespace CompatibilityAPI.Recordings {
     @operationId("delete_recording")
     @summary("Delete a Recording.")
     @doc("""
-      Delete recording. If the delete is successful, a 204 response, with no body, will be returned.
+      Deletes one saved voice recording by SID and returns no body on success. This removes the recording media without deleting its call or conference record. SignalWire REST recordings and Video Room recordings have separate delete operations.
       
       ${tokenPermissions<"_Voice_">}
       """)

@@ -13,7 +13,7 @@ paths:
 ```yaml
 ---
 title: "Tool calling"      # becomes the H1 and the sidebar label
-slug: /ai/tool-calling     # lowercase-kebab, 2–3 segments, no product prefix/extension; independent of folder path
+slug: ai/tool-calling      # lowercase-kebab, 2–3 segments, no leading slash (only the product root page uses `slug: /`); no product prefix/extension; independent of folder path
 description: One concrete sentence — feeds SEO meta AND llms.txt.
 max-toc-depth: 3           # always exactly 3
 ---
@@ -40,6 +40,14 @@ Every page is also served as plain Markdown (append `.md` to its URL to preview)
 - An information-carrying graphic (SVG/PNG diagram) reaches agents only as a link — pair it with an adjacent `<llms-only>` text equivalent. Mermaid needs none; its source is already text.
 - Wrap human-only material in `<llms-ignore>`: UI click-throughs, marketing CTAs, decorative or theme-duplicate images, interactive widgets (`VoiceWidget`). Where a programmatic equivalent exists (CLI/API), give it to agents in a paired `<llms-only>` block — UI steps for humans, commands for agents.
 - `noindex: true` (frontmatter) drops a page from llms.txt and search engines; `hidden: true` (nav yml) also removes it from the sidebar.
+
+Format visibility blocks consistently:
+
+- Put opening and closing tags at column 0, with blank lines around the block and around Markdown inside it.
+- Wrap a complete block component or complete passage, never only an opening tag, caption, or sentence fragment.
+- When a human component contains unique information, put `<llms-ignore>` first and its `<llms-only>` equivalent immediately after it.
+- A standalone `<llms-ignore>` is appropriate when nearby prose already contains the component's meaning, or when the content is decorative, duplicated, or interactive-only.
+- Keep both tags paired rather than self-closing. `<llms-ignore>` changes LLM endpoints, not access control: the content still renders on the site and is available to site search and Ask Fern.
 
 ## Code, links, media
 

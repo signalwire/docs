@@ -1,6 +1,6 @@
 ---
 title: Conversation analytics
-slug: /ai/analytics
+slug: ai/analytics
 description: Use final post-prompt reports to analyze SignalWire AI conversations and live debug webhooks to troubleshoot voice calls.
 max-toc-depth: 3
 ---
@@ -145,7 +145,8 @@ sections:
 </Tabs>
 
 The generated [post-prompt callback documentation][post-prompt-callback] provides request examples
-and documents the callback's core fields. The `conversation_type` field identifies voice or chat
+and documents the callback's core fields, along with the main per-turn timing, recognition, and
+interruption fields on conversation entries. The `conversation_type` field identifies voice or chat
 reports.
 
 ### Understand outcomes
@@ -236,15 +237,16 @@ Recognition metrics apply to voice calls, not AI Chat. Each `user` turn can incl
 
 - `confidence`, from 0 to 1, estimates how confidently speech was recognized
 - `content_type` distinguishes detected speech from inputs such as keypad digits
-- `merge_count` shows how many recognition segments were combined into the utterance
+- `merge_count` shows how many caller entries were combined into this one when the platform merged
+  consecutive caller speech
 
 Confidence is most useful as a way to find patterns, not as a score to average across every call.
 Review the transcript around low-confidence turns and group them by repeated terms. Product names,
 street names, abbreviations, and account identifiers often emerge as the real problem. Add
 [speech hints][speech-hints] for vocabulary that is repeatedly misrecognized.
 
-Use `merge_count` or `timing.segments` as context when a turn spans several recognition segments;
-those turns are not directly comparable to a simple, single-segment utterance.
+Use `merge_count` as context when a turn combines several caller entries; those turns are not
+directly comparable to a single, uninterrupted utterance.
 
 ### Evaluate turn-taking
 
@@ -255,12 +257,13 @@ listened and spoke at the right moments.
 | --- | --- |
 | `speaking_to_turn_detection` | Time from speech onset until the platform identified the end of the user's turn |
 | `turn_detection_to_final_event` | Time from turn detection to the final recognition result |
-| `barged` and `barge_count` | Whether the caller interrupted and the number of recorded interruptions |
+| `barged` | Whether the caller interrupted this response |
 | `barge_elapsed_ms`, `text_spoken_total`, and `text_heard_approx` | When the interruption occurred and how much of the response was likely heard |
 
-The explicit barge fields are carried on interrupted responses in `raw_call_log` and corresponding
-`call_timeline` events; they can be absent from the consolidated `call_log`. Use the raw entry to
-separate the portion the caller likely heard from the portion cut off by the interruption.
+The interruption fields are carried on interrupted responses. Depending on the agent, they appear
+in either `call_log` or `raw_call_log`, so check both. When they're in `raw_call_log`, the matching
+`call_timeline` events carry them too. Use them to separate the portion the caller likely heard
+from the portion cut off by the interruption.
 
 Look at the interruption rate together with response length. Frequent barges often mean the useful
 answer arrives too late, the response includes unnecessary detail, or the agent continues after the
@@ -279,8 +282,13 @@ endpoint, request body, and response. Use it to answer:
 - Did the agent repeat the same function unnecessarily?
 
 Use `swaig_log` for the authoritative function name, arguments, request, and response. For timing,
-pair it with the corresponding `role: "tool"` entry and prefer `execution_latency` or
-`function_latency`. Do not treat the tool entry's generic `latency` value as model response latency.
+pair it with the corresponding `role: "tool"` entry. On a standard agent, its timings all start
+when the agent sent the model request that called the function. `latency` runs to the first token
+of that request, and `function_latency` to when the model called the function or had a reply ready
+to speak, whichever came first. `execution_latency` runs to when the function returned, so it's the
+only one that includes the function's own run time. Use it to spot slow functions. These timings
+are left out of the tool entry when they couldn't be measured, and always for functions the
+post-prompt calls.
 
 Aggregate runtime by function name rather than across all functions. This exposes one slow backend
 behind an otherwise healthy average. Also track calls per conversation: repeated calls to the same

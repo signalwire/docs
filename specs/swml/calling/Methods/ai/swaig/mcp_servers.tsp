@@ -10,7 +10,7 @@ model MCPServer {
   @example("https://mcp.example.com/mcp")
   url: string;
 
-  @doc("HTTP headers sent to the MCP server. Authorization tokens go here — there is no separate auth field. Header values support variable expansion (for example, `Bearer \${global_data.token}`).")
+  @doc("HTTP headers sent to the MCP server. Authorization tokens go here — there is no separate auth field. Header values are sent exactly as written; variables such as `\${global_data.token}` are not expanded.")
   @example(#{ Authorization: "Bearer abc123" })
   headers?: {
     ...TypeSpec.Record<string>;
@@ -18,9 +18,14 @@ model MCPServer {
 
   @doc("Whether to fetch the server's resources into `global_data`, when the server advertises resource support. **Default:** `false`.")
   @example(true)
-  resources?: boolean | SWMLVar = false;
+  resources?: boolean = false;
 
-  @doc("Template variables passed to the MCP server when fetching resources, typically using variable expansion such as `\${global_data.customer_id}`. Used only when `resources` is enabled.")
+  @doc("""
+    Values for `{name}` placeholders in the URI templates of the server's resources. When a resource
+    URI contains `{customer_id}`, the value of the `customer_id` key replaces it. Values are used exactly
+    as written; variables such as `\${global_data.customer_id}` are not expanded. A placeholder with no
+    matching key is left as it is. Used only when `resources` is enabled.
+    """)
   @example(#{ customer_id: "cust_12345" })
   resource_vars?: {
     ...TypeSpec.Record<string>;

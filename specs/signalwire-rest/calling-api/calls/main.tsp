@@ -21,6 +21,8 @@ namespace SignalWireAPI.Calling.Calls {
       Unified JSON-RPC style endpoint for executing call methods through command-based dispatch.
       Send a request with the appropriate `command` field to invoke the desired call operation.
       Only the commands listed below are supported. Most operate on an already-active call; `dial` creates a new one. All commands are sent over HTTP (no persistent WebSocket connection required) and return immediately; operations that continue asynchronously deliver their results to your `status_url` webhooks.
+
+      Use the Calling API for SWML-driven calls and command-based control. Integrations built around form-encoded cXML requests and Call SIDs should use the Compatibility API's [Create a call](/docs/compatibility-api/rest/calls/create-a-call) and [Update a call](/docs/compatibility-api/rest/calls/update-a-call) operations instead.
       
       ## Supported Commands
       
@@ -32,7 +34,7 @@ namespace SignalWireAPI.Calling.Calls {
       | `dial` | Create and initiate a new outbound call |
       | `update` | Modify an active call's dialplan in real-time |
       | `calling.end` | Terminate an active call immediately |
-      | `calling.transfer` | Transfer a call to a new destination (SIP URI, phone number, or inline SWML) |
+      | `calling.transfer` | Transfer a call to a new SWML destination (URL or inline document) |
       | `calling.disconnect` | Disconnect bridged calls without hanging up either leg |
       | `calling.play` | Play audio, TTS, silence, or ringtone to a call |
       | `calling.play.pause` | Pause active playback |

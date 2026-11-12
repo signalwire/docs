@@ -23,12 +23,12 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
     @operationId("list_sip_credentials")
     @summary("List SIP credentials")
     @doc("""
-      A list of SIP Credentials
+      Returns the project's SIP Credential resources. Use it to inventory credentials used by SIP devices that register with SignalWire. Use [Subscriber SIP Credentials](/docs/apis/rest/subscribers/sip-credentials/list-subscriber-sip-credentials) when credentials must belong to one Subscriber, or [SIP Gateways](/docs/apis/rest/sip-gateway/list-sip-gateways) for external SIP destinations that SignalWire dials.
 
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
-      | SipEndpointListResponse[]
+      | FabricSipEndpointListResponse
       | StatusCode401
       | StatusCode404
       | StatusCode500;
@@ -36,14 +36,14 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
     @operationId("get_sip_credential")
     @summary("Get SIP credential")
     @doc("""
-      Returns a SIP Credential by ID
+      Retrieves one project-scoped SIP Credential by resource ID so you can inspect how its device registers and places calls through SignalWire. Use [List SIP credentials](/docs/apis/rest/sip-credentials/list-sip-credentials) to discover IDs, or the Subscriber endpoint for a credential owned by one Subscriber.
 
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     read(...SipEndpointPathID):
       | {
           @statusCode statusCode: 200;
-          @body sip_endpoint: SipEndpointResponse;
+          @body sip_endpoint: FabricSipEndpointResponse;
         }
       | StatusCode401
       | StatusCode404
@@ -52,15 +52,15 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
     @operationId("create_sip_credential")
     @summary("Create SIP credential")
     @doc("""
-      Creates a SIP Credential
+      Creates a project-scoped SIP Credential for a SIP device to register with SignalWire. Use it for a shared or independently managed device; use [Create Subscriber SIP credential](/docs/apis/rest/subscribers/sip-credentials/create-subscriber-sip-credential) when the credential belongs to a specific Subscriber. To attach an already-existing resource as the credential's outbound call handler, use [Assign Resource to SIP credential](/docs/apis/rest/sip-credentials/assign-resource-to-sip-credential) instead.
 
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post
     create(@body request: SipEndpointCreateRequest):
       | {
-          @statusCode statusCode: 200;
-          @body sip_endpoint: SipEndpointResponse;
+          @statusCode statusCode: 201;
+          @body sip_endpoint: FabricSipEndpointResponse;
         }
       | StatusCode401
       | StatusCode404
@@ -70,7 +70,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
     @operationId("update_sip_credential")
     @summary("Update SIP credential")
     @doc("""
-      Updates a SIP Credential by ID
+      Changes how a project-scoped SIP device registers with SignalWire or handles outbound calls. Update a Subscriber-owned credential through [Update Subscriber SIP credential](/docs/apis/rest/subscribers/sip-credentials/update-subscriber-sip-credential).
 
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -78,7 +78,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
     update(...SipEndpointPathID, @body request: SipEndpointUpdateRequest):
       | {
           @statusCode statusCode: 200;
-          @body sip_endpoint: SipEndpointResponse;
+          @body sip_endpoint: FabricSipEndpointResponse;
         }
       | StatusCode401
       | StatusCode404
@@ -88,7 +88,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
     @operationId("delete_sip_credential")
     @summary("Delete SIP credential")
     @doc("""
-      Deletes a SIP Credential by ID
+      Deletes a project-scoped SIP Credential by ID so its device can no longer register with those credentials. Use it for a project-owned credential; delete a Subscriber-owned credential through [Delete Subscriber SIP credential](/docs/apis/rest/subscribers/sip-credentials/delete-subscriber-sip-credential), and delete an outbound SIP Gateway through its own endpoint.
 
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

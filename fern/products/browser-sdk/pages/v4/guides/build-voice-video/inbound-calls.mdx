@@ -1,6 +1,6 @@
 ---
 title: "Inbound Calls"
-slug: /guides/inbound-calls
+slug: guides/inbound-calls
 sidebar-title: "Inbound Calls"
 position: 3
 max-toc-depth: 3
@@ -129,6 +129,10 @@ A ringing call ends one of three ways: the user accepts, the user declines, or t
   Useful for receive-only kiosks, or when the user wants to join on camera with their mic off.
   </Tab>
 </Tabs>
+
+If the mic or camera can't be captured, the call is answered in
+receive-only mode by default and the reason is reported on `errors$` — see
+[`MediaAccessError`](/docs/browser-sdk/v4/reference/errors/media-access-error).
 
 **Decline the call.** `reject()` declines before any media negotiates — the caller sees a normal decline; the session never picks up:
 
@@ -259,7 +263,7 @@ Leave the page open — when the call arrives, the **Caller** line populates and
     <pre id="log"></pre>
 
     <script type="module">
-      import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@dev";
+      import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@4.0.0-rc.5";
 
       const $ = (id) => document.getElementById(id);
       const log = (msg) => ($("log").textContent += msg + "\n");
@@ -275,11 +279,30 @@ Leave the page open — when the call arrives, the **Caller** line populates and
 
         const client = new SignalWire(new StaticCredentialProvider({ token }));
 
+        client.errors$.subscribe((err) =>
+          log("Error: " + (err.name || "Error") + " — " + err.message)
+        );
+
+        // Once online, the client can go offline on its own: SignalWire
+        // refuses to register it again after a reconnect, usually because
+        // the token expired. isRegistered$ emits false when that happens.
+        let online = false;
+        client.isRegistered$.subscribe((registered) => {
+          if (online && !registered) {
+            online = false;
+            client.disconnect(); // so a retry doesn't leave two clients behind
+            log("Offline — paste a fresh token to come back online.");
+            $("online").disabled = false;
+          }
+        });
+
         try {
           await client.register();
+          online = true;
           log("Online — ready for inbound calls.");
         } catch (err) {
           log("Failed: " + (err.name || "Error") + " — " + err.message);
+          client.disconnect();
           $("online").disabled = false;
           return;
         }
@@ -413,7 +436,7 @@ The demo logs the ringing call and enables the **Answer** / **Decline** buttons.
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Outbound Calls" href="/docs/browser-sdk/v4/guides/outbound-calls" icon="fa-regular fa-phone-arrow-up-right">
+  <Card title="Outbound Calls" href="/docs/platform/voice/make-and-receive-calls#place-a-call-from-a-browser" icon="fa-regular fa-phone-arrow-up-right">
     Dial users, rooms, or PSTN destinations with `client.dial()`.
   </Card>
   <Card title="Device Management" href="/docs/browser-sdk/v4/guides/device-management" icon="fa-regular fa-microphone">

@@ -18,7 +18,7 @@ namespace CompatibilityAPI.Accounts {
     @operationId("list_accounts")
     @summary("List Accounts")
     @doc("""
-      This endpoint will return a list that contains Project you are connecting as and any subprojects.
+      Lists the project used to authenticate the request and its subprojects as Account resources. Use it when an integration identifies SignalWire projects by Account SID. For JSON project-management operations, use [List projects](/docs/apis/rest/projects/list-projects).
       
       ${tokenPermissions<"_Management_">}
       """)
@@ -54,7 +54,7 @@ namespace CompatibilityAPI.Accounts {
     @operationId("create_subprojects")
     @summary("Create Subprojects")
     @doc("""
-      This endpoint creates a subproject on the Project you are connecting as.
+      Creates a subproject beneath the project used to authenticate the request and returns it as an Account. Use this route for integrations built around Account SIDs and form-encoded requests; use [Create a subproject](/docs/apis/rest/projects/create-subproject) for a JSON request.
       
       ${tokenPermissions<"_Management_">}
       """)
@@ -71,7 +71,7 @@ namespace CompatibilityAPI.Accounts {
     @operationId("get_account")
     @summary("Find an Account by ID")
     @doc("""
-      Find a Project (also referred to as _Account_) by ID.
+      Retrieves one project as an Account by SID. Use it when an integration identifies projects with Account SIDs; use [Retrieve a project](/docs/apis/rest/projects/get-project) for the SignalWire REST representation.
       
       ${tokenPermissions<"_Management_">}
       """)
@@ -84,7 +84,7 @@ namespace CompatibilityAPI.Accounts {
     @operationId("update_account")
     @summary("Update an Account")
     @doc("""
-      Update a Project (also referred to as _Account_).
+      Renames a project through its Account resource. `FriendlyName` is required and is the only attribute this operation can change; account status cannot be changed here. Use [Update a project](/docs/apis/rest/projects/update-project) for JSON requests and project security settings.
       
       ${tokenPermissions<"_Management_">}
       """)

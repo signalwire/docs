@@ -1,0 +1,67 @@
+---
+title: "setToolResponse"
+slug: reference/typescript/agents/function-result/set-tool-response
+description: Split the response into a factual result and an instruction.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
+[setresponse]: /docs/server-sdks/reference/typescript/agents/function-result/set-response
+
+Set the structured form of the response, separating what the tool did from what
+the model should do next. It replaces any string response, and the response
+becomes an object with up to two keys:
+
+```json
+{
+  "tool_result": "status: on hold",
+  "tool_prompt": "Tell the caller you are placing them on hold."
+}
+```
+
+Splitting them keeps the model from reading a status line aloud, and keeps the
+instruction from being mistaken for data. For a single string, use
+[`setResponse()`][setresponse].
+
+You can also set the structured form when you create the result:
+`new FunctionResult({ tool_result: '...', tool_prompt: '...' })`.
+
+## **Parameters**
+
+<ParamField path="toolResult" type="string" toc={true}>
+  What the tool did or found: facts for the model to reason from, such as
+  `"payment declined"` or `"3 seats left"`. Omit it when there is nothing to
+  report beyond the instruction.
+</ParamField>
+
+<ParamField path="toolPrompt" type="string" toc={true}>
+  What the model should do next, such as `"Tell the caller how many seats are
+  left."`. Omit it for a facts-only result.
+</ParamField>
+
+## **Returns**
+
+[`FunctionResult`][functionresult] -- `this`, for chaining.
+
+## **Example**
+
+```typescript {11-14}
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'my-agent', route: '/agent' });
+agent.setPromptText('You are a helpful assistant.');
+
+agent.defineTool({
+  name: 'check_seats',
+  description: 'Check remaining seats for a showing',
+  handler: () => {
+    const seats = 3; // look this up in your booking system
+    return new FunctionResult().setToolResponse(
+      `seats remaining: ${seats}`,
+      'Tell the caller how many seats are left and ask how many they want.',
+    );
+  },
+});
+
+agent.run();
+```
