@@ -1,0 +1,72 @@
+---
+title: "onCallStart"
+slug: reference/typescript/agents/agent-base/on-call-start
+description: Register a handler that runs when the call starts, before the AI's first turn.
+max-toc-depth: 3
+---
+
+[on-call-end]: /docs/server-sdks/reference/typescript/agents/agent-base/on-call-end
+[function-result]: /docs/server-sdks/reference/typescript/agents/function-result
+[update-global-data]: /docs/server-sdks/reference/typescript/agents/function-result/update-global-data
+[ai-message]: /docs/server-sdks/reference/typescript/rest/calling/ai-message
+
+Register a handler that runs when the call starts, before the AI speaks. It's
+the counterpart of [`onCallEnd()`][on-call-end]. Handlers run in registration
+order.
+
+The SDK registers the platform's reserved `startup_hook` function for you. The
+platform calls it once, after the call is answered and before the AI's first
+turn, and never offers it to the model.
+
+A handler may return a [`FunctionResult`][function-result], or nothing:
+
+- The result's actions run at once, in registration order across handlers. Use
+  [`updateGlobalData()`][update-global-data], for example, to give the call data
+  before the conversation starts.
+- The result's response text is added to the conversation as a system message
+  the model reads before its first turn. The texts of several handlers are
+  joined, one per line. Only a plain string response is used, and OpenAI
+  Realtime agents run the actions without adding the text.
+
+`postProcess` isn't used. A hook whose handlers return no text still adds a
+short placeholder line to the conversation, as any function with an empty reply
+does. An exception is logged, not raised, and that handler's result is dropped,
+so a failing handler can't stop the call from starting or the other handlers
+from running.
+
+<Warning title="Slow handlers delay the greeting">
+The platform waits for the hook before the AI starts, up to 120 seconds, and
+sends the request again after a timeout or a `5xx`. Keep handlers short and safe
+to run twice. Start long work without awaiting it, and send its result into the
+call later with [`calling.aiMessage()`][ai-message] on the REST client.
+</Warning>
+
+## Parameters
+
+<ParamField path="handler" type="(rawData: SwaigRequest) => FunctionResult | null | undefined | void | Promise<FunctionResult | null | undefined | void>" required={true} toc={true}>
+  Called as `handler(rawData)` with the complete SWAIG request: `call_id`,
+  `global_data`, and the caller's details. May be async.
+</ParamField>
+
+## Returns
+
+The handler, unchanged.
+
+## Example
+
+```typescript {6-12}
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'dispatch', route: '/dispatch' });
+agent.setPromptText('You are Ada, the dispatcher for Bayview Taxi.');
+
+agent.onCallStart(async (rawData) => {
+  const caller = String(rawData.caller_id_num ?? '');
+  // Look the caller up in your system of record.
+  const rider = { id: 'rider-1042', name: 'Sam' };
+  return new FunctionResult(`The caller ${caller} is ${rider.name}, a returning rider.`)
+    .updateGlobalData({ rider_id: rider.id });
+});
+
+await agent.serve();
+```

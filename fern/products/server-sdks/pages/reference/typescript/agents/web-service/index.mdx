@@ -1,0 +1,131 @@
+---
+title: "WebService"
+slug: reference/typescript/agents/web-service
+description: "Static file server with HTTP Basic Auth, extension filtering, CORS, and optional HTTPS."
+max-toc-depth: 3
+---
+
+[ssl-config]: /docs/server-sdks/reference/typescript/agents/configuration/ssl-config
+[start]: /docs/server-sdks/reference/typescript/agents/web-service/start
+
+WebService serves static files from one or more local directories, each mounted at a URL route prefix. It supports HTTP Basic Auth, extension allowlists and blocklists, file size limits, CORS, directory browsing, and optional SSL/TLS. Use it when an agent needs to serve supporting assets such as audio files, images, or prompts from the same process.
+
+Every route except `/health` requires HTTP Basic Auth, and [`start()`][start] throws until credentials are configured. Supply them with the `basicAuth` option, the config file's `security.auth.basic`, or the `SWML_BASIC_AUTH_USER` and `SWML_BASIC_AUTH_PASSWORD` environment variables.
+
+## Constructor
+
+<ParamField path="options" type="WebServiceOptions" toc={true}>
+  Configuration object. Every field is optional. Explicit options override values from the config file.
+</ParamField>
+
+<Indent>
+<ParamField path="options.port" type="number" default="8002" toc={true}>
+  Port to bind to.
+</ParamField>
+
+<ParamField path="options.directories" type="Record<string, string>" default="{}" toc={true}>
+  Map of URL route prefixes to local directory paths.
+</ParamField>
+
+<ParamField path="options.basicAuth" type="[string, string]" toc={true}>
+  Basic auth credentials as `[username, password]`. Falls back to the config file's `security.auth.basic`, then to the `SWML_BASIC_AUTH_USER` and `SWML_BASIC_AUTH_PASSWORD` environment variables. Every route except `/health` requires them. If no password is configured from any of these (an empty one doesn't count), the service refuses every request and `start()` throws.
+</ParamField>
+
+<ParamField path="options.configFile" type="string" toc={true}>
+  Path to a JSON config file.
+</ParamField>
+
+<ParamField path="options.enableDirectoryBrowsing" type="boolean" default="false" toc={true}>
+  Serve directory listings and fall back to `index.html`.
+</ParamField>
+
+<ParamField path="options.allowedExtensions" type="string[]" toc={true}>
+  Allowlist of file extensions, for example `['.html', '.css']`. All extensions are allowed when omitted.
+</ParamField>
+
+<ParamField path="options.blockedExtensions" type="string[]" default="['.env', '.git', '.gitignore', '.key', '.pem', '.crt', '.pyc', '__pycache__', '.DS_Store', '.swp']" toc={true}>
+  Blocklist of file extensions or names. An entry is also refused as the name of any directory on the path below the mount. Whatever this holds, a path with a component below the mount that starts with a dot, other than `.well-known`, is never served.
+</ParamField>
+
+<ParamField path="options.maxFileSize" type="number" default="104857600" toc={true}>
+  Maximum file size in bytes (100 MB by default).
+</ParamField>
+
+<ParamField path="options.enableCors" type="boolean" default="true" toc={true}>
+  Enable CORS.
+</ParamField>
+
+<ParamField path="options.ssl" type="SslOptions" toc={true}>
+  SSL/TLS configuration. See [`SslConfig`][ssl-config] for the fields.
+</ParamField>
+</Indent>
+
+## Properties
+
+<ParamField path="port" type="number" toc={true}>
+  Port the service binds to.
+</ParamField>
+
+<ParamField path="enableDirectoryBrowsing" type="boolean" toc={true}>
+  Whether directory listings are enabled.
+</ParamField>
+
+<ParamField path="maxFileSize" type="number" toc={true}>
+  Maximum file size in bytes that will be served.
+</ParamField>
+
+<ParamField path="enableCors" type="boolean" toc={true}>
+  Whether CORS is enabled.
+</ParamField>
+
+<ParamField path="allowedExtensions" type="string[] | null" toc={true}>
+  Allowlist of file extensions, or `null` to allow all (subject to the blocklist).
+</ParamField>
+
+<ParamField path="blockedExtensions" type="string[]" toc={true}>
+  Blocklist of file extensions and file names.
+</ParamField>
+
+<ParamField path="directories" type="Record<string, string>" toc={true}>
+  Map of URL route prefixes to local directory paths.
+</ParamField>
+
+<ParamField path="sslConfig" type="SslConfig" toc={true}>
+  The [`SslConfig`][ssl-config] instance used by this service, for inspecting SSL settings after construction. Read-only.
+</ParamField>
+
+## Methods
+
+<CardGroup cols={3}>
+  <Card title="addDirectory" href="/docs/server-sdks/reference/typescript/agents/web-service/add-directory">
+    Add a directory to serve at a URL route prefix.
+  </Card>
+  <Card title="removeDirectory" href="/docs/server-sdks/reference/typescript/agents/web-service/remove-directory">
+    Stop serving a directory.
+  </Card>
+  <Card title="getApp" href="/docs/server-sdks/reference/typescript/agents/web-service/get-app">
+    Get the Hono app for mounting or testing.
+  </Card>
+  <Card title="start" href="/docs/server-sdks/reference/typescript/agents/web-service/start">
+    Start the HTTP or HTTPS service.
+  </Card>
+  <Card title="stop" href="/docs/server-sdks/reference/typescript/agents/web-service/stop">
+    Stop the service and release resources.
+  </Card>
+</CardGroup>
+
+## Example
+
+```typescript
+import { WebService } from '@signalwire/sdk';
+
+const web = new WebService({
+  port: 8080,
+  directories: { '/audio': './public/audio' },
+  basicAuth: ['audio', process.env['AUDIO_PASSWORD'] ?? ''],
+  allowedExtensions: ['.mp3', '.wav'],
+});
+
+await web.start();
+// GET http://host:8080/audio/greeting.mp3
+```
