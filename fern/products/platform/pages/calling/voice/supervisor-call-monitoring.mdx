@@ -1,0 +1,259 @@
+---
+title: Supervisor call monitoring
+slug: /voice/supervisor-call-monitoring
+description: Listen in on a live call silently, whisper to an agent without the customer hearing, or barge in, using SignalWire conferences from SWML, cXML, REST, or the Server SDKs.
+max-toc-depth: 3
+---
+
+[join-conference]: /docs/swml/reference/calling/join-conference
+[conference-noun]: /docs/compatibility-api/cxml/reference/voice/conference
+[update-participant]: /docs/compatibility-api/rest/conference-participants/update-participant
+[list-participants]: /docs/compatibility-api/rest/conference-participants/list-all-participants
+[call-commands]: /docs/apis/rest/calls/call-commands
+[create-a-call]: /docs/compatibility-api/rest/calls/create-a-call
+[sdk-py-dial]: /docs/server-sdks/reference/python/rest/calling/dial
+[sdk-ts-dial]: /docs/server-sdks/reference/typescript/rest/calling/dial
+[sid]: /docs/platform/what-is-a-sid
+[call-whisper]: /docs/swml/guides/call-whisper
+[ai-params]: /docs/swml/reference/calling/ai/params
+[ai-sidecar]: /docs/swml/reference/calling/ai-sidecar
+[stream]: /docs/swml/reference/calling/stream
+[tap]: /docs/swml/reference/calling/tap
+
+A supervisor on a contact-center floor needs three things from a live call: to hear it without being heard, to coach the agent without the customer hearing, and to step into the conversation outright. SignalWire supports all three on any call that runs inside a conference, and a supervisor console can move between them mid-call with one REST request per switch.
+
+Monitoring works on conference participants only. The agent's call must already be in a SignalWire conference before a supervisor can hear it, so route agent calls through [`join_conference`][join-conference] in SWML or [`<Conference>`][conference-noun] in cXML rather than a plain two-party connect. There is no way to listen to, whisper into, or barge a call that is bridged directly to another call.
+
+## The three modes
+
+Two participant settings drive every mode: `muted` and `coach`. There is no separate listen-in or barge parameter to look for.
+
+| Mode | Supervisor hears | Supervisor is heard by | Settings on the supervisor's call |
+|---|---|---|---|
+| Listen in | Everyone | Nobody | `muted` on |
+| Whisper | Everyone | The agent only | `muted` off, `coach` set to the agent's call ID |
+| Barge | Everyone | Everyone | `muted` off, no `coach` |
+
+The `coach` setting names the participant being coached. The call that carries it becomes the coach: its audio goes to the coached participant alone and stays out of the main conference mix, so the customer never hears it. A muted coach is not heard by anyone, so whisper requires the supervisor to be unmuted.
+
+## Before you start
+
+You need three values, all of them from the agent's side of the call:
+
+- **The conference name** the agent's call joined.
+- **The agent's call ID.** Read it from the conference `join` status callback, or from [List all active Participants][list-participants]. cXML and the Compatibility REST API call this value the call SID; SWML and the Calling API call it the call ID. Each is the [UUID that identifies the call][sid].
+- **The conference SID**, from the same status callback or from the participants list. The REST requests below address the supervisor by conference SID and call ID.
+
+REST requests use a project API token with the Voice scope.
+
+There is no REST request that adds a participant to a conference. To bring a supervisor in, create a call whose instructions join the conference, with [Send call commands][call-commands] on the Calling API for SWML or [Create a call][create-a-call] on the Compatibility API for cXML, or let the supervisor dial a number that runs those instructions.
+
+## Listen in
+
+Join the supervisor's call to the agent's conference with `muted` on. The supervisor hears every unmuted participant and is heard by nobody.
+
+```yaml title="SWML"
+version: 1.0.0
+sections:
+  main:
+    - join_conference:
+        name: support-floor
+        muted: true
+```
+
+Silent monitoring leaves no marker of its own. A muted supervisor looks like any other muted participant in the participant list and in status callbacks, so if you need a record of who listened to which call, write it in your application from the `join` and `leave` events.
+
+## Whisper
+
+Join unmuted and set `coach` to the agent's call ID. The supervisor hears the whole conference, and only the agent hears the supervisor.
+
+```yaml title="SWML"
+version: 1.0.0
+sections:
+  main:
+    - join_conference:
+        name: support-floor
+        coach: b3877ee3-6f3c-4985-8066-6d24e3f65e12
+```
+
+The agent must be in the conference when the supervisor joins. If the call ID in `coach` is not a current participant, the join fails: in cXML, `<Dial>` completes with a `DialCallStatus` of `busy` and control passes to its action URL; in SWML, `join_conference_result` reports the failure and the script continues.
+
+## Barge
+
+Join unmuted with no `coach`, and the supervisor is an ordinary participant that everyone hears. In practice a supervisor rarely joins this way. They start by listening or whispering and barge by changing state, as the next section shows.
+
+## Switch modes during the call
+
+Markup sets a participant's state at join time. Changing it afterward is a cross-call operation, so it belongs to the REST API rather than to the supervisor's own SWML or cXML: [Update a Participant][update-participant] on the Compatibility REST API changes `Muted`, `Coaching`, and `CallSidToCoach` for any participant, whether the conference was joined from SWML or cXML. A supervisor console with three buttons makes one request per press.
+
+| From | To | Request body |
+|---|---|---|
+| Listen in | Whisper | `Muted=false` `Coaching=true` `CallSidToCoach=<agent call ID>` |
+| Listen in | Barge | `Muted=false` |
+| Whisper | Barge | `Coaching=false` |
+| Whisper | Listen in | `Muted=true` `Coaching=false` |
+| Barge | Whisper | `Coaching=true` `CallSidToCoach=<agent call ID>` |
+| Barge | Listen in | `Muted=true` |
+
+The request is form-encoded, addressed by the conference SID and the supervisor's call ID:
+
+```bash title="Listen in to whisper"
+curl -X POST "https://example.signalwire.com/api/laml/2010-04-01/Accounts/$PROJECT_ID/Conferences/$CONFERENCE_SID/Participants/$SUPERVISOR_CALL_ID" \
+  -u "$PROJECT_ID:$API_TOKEN" \
+  --data-urlencode "Muted=false" \
+  --data-urlencode "Coaching=true" \
+  --data-urlencode "CallSidToCoach=$AGENT_CALL_ID"
+```
+
+The only reader this split inconveniences is a supervisor dialing in from a handset with no application behind them. Give that supervisor a console, or a separate number whose instructions join in each mode.
+
+### End to end with the Server SDKs
+
+The Server SDKs place the supervisor's call: [`dial`][sdk-py-dial] on the Calling API accepts inline SWML, so the supervisor leg joins the conference muted without a hosted document. The SDKs have no client for the Compatibility REST API, so the mode switch is one form-encoded HTTP request authenticated with the project ID and API token. The agent's call ID and the conference SID come from the conference's `join` status callback.
+
+<CodeBlocks>
+```python title="Python" {15-22,36,39}
+import requests
+from signalwire.rest import RestClient
+
+PROJECT_ID = "your-project-id"
+API_TOKEN = "your-api-token"
+SPACE = "your-space.signalwire.com"
+
+client = RestClient(project=PROJECT_ID, token=API_TOKEN, host=SPACE)
+
+# Both values arrive on the conference's `join` status callback for the agent's call.
+conference_sid = "e2a5f5c3-0b6d-4d7f-9c2a-1f3b4c5d6e7f"
+agent_call_id = "b3877ee3-6f3c-4985-8066-6d24e3f65e12"
+
+# 1. Bring the supervisor in silently.
+supervisor = client.calling.dial(
+    from_="+15551234567",
+    to="+15559876543",
+    swml={
+        "version": "1.0.0",
+        "sections": {"main": [{"join_conference": {"name": "support-floor", "muted": True}}]},
+    },
+)
+supervisor_call_id = supervisor["id"]
+
+participant_url = (
+    f"https://{SPACE}/api/laml/2010-04-01/Accounts/{PROJECT_ID}"
+    f"/Conferences/{conference_sid}/Participants/{supervisor_call_id}"
+)
+
+def set_mode(**fields):
+    response = requests.post(participant_url, auth=(PROJECT_ID, API_TOKEN), data=fields)
+    response.raise_for_status()
+    return response.json()
+
+# 2. Whisper: unmute and coach the agent in one request.
+set_mode(Muted="false", Coaching="true", CallSidToCoach=agent_call_id)
+
+# 3. Barge: stop coaching, and everyone hears the supervisor.
+set_mode(Coaching="false")
+```
+
+```typescript title="TypeScript" {15-22,43,46}
+// Install: npm install @signalwire/sdk@2.0.5
+import { RestClient } from "@signalwire/sdk";
+
+const PROJECT_ID = "your-project-id";
+const API_TOKEN = "your-api-token";
+const SPACE = "your-space.signalwire.com";
+
+const client = new RestClient({ project: PROJECT_ID, token: API_TOKEN, host: SPACE });
+
+// Both values arrive on the conference's `join` status callback for the agent's call.
+const conferenceSid = "e2a5f5c3-0b6d-4d7f-9c2a-1f3b4c5d6e7f";
+const agentCallId = "b3877ee3-6f3c-4985-8066-6d24e3f65e12";
+
+// 1. Bring the supervisor in silently.
+const supervisor = await client.calling.dial({
+  from: "+15551234567",
+  to: "+15559876543",
+  swml: {
+    version: "1.0.0",
+    sections: { main: [{ join_conference: { name: "support-floor", muted: true } }] },
+  },
+});
+const supervisorCallId = supervisor.id;
+
+const participantUrl =
+  `https://${SPACE}/api/laml/2010-04-01/Accounts/${PROJECT_ID}` +
+  `/Conferences/${conferenceSid}/Participants/${supervisorCallId}`;
+
+async function setMode(fields: Record<string, string>) {
+  const response = await fetch(participantUrl, {
+    method: "POST",
+    headers: {
+      Authorization: "Basic " + Buffer.from(`${PROJECT_ID}:${API_TOKEN}`).toString("base64"),
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams(fields),
+  });
+  if (!response.ok) throw new Error(`Participant update failed: ${response.status}`);
+  return response.json();
+}
+
+// 2. Whisper: unmute and coach the agent in one request.
+await setMode({ Muted: "false", Coaching: "true", CallSidToCoach: agentCallId });
+
+// 3. Barge: stop coaching, and everyone hears the supervisor.
+await setMode({ Coaching: "false" });
+```
+</CodeBlocks>
+
+<Note title="TypeScript `dial()` signature depends on the SDK version">
+The TypeScript sample pins `@signalwire/sdk@2.0.5`, whose `dial()` takes a single options object. The [TypeScript `dial` reference][sdk-ts-dial] documents the positional `dial(from, to, options)` form of a newer release. Match the form to the version you install.
+</Note>
+
+To confirm the switch took effect, retrieve the supervisor's participant record. `coaching` is `true` and `call_sid_to_coach` holds the agent's call ID while whispering, and `muted` is `true` while listening in. If the update returns error 16002, `Coaching` was `true` without a `CallSidToCoach`, or the call ID in `CallSidToCoach` is not in that conference.
+
+## Keep the console in sync
+
+Subscribe to participant events so the console's buttons reflect state set anywhere, including a mute from another tool. In SWML, set `status_callback` and `status_callback_event` on the `join_conference` that creates the conference; in cXML, set `statusCallback` and `statusCallbackEvent` on `<Conference>`. The `join`, `leave`, `mute`, `hold`, and `speaker` events carry each participant's mute state and coaching state: `muted` and `coaching` in SWML callbacks, `Muted`, `Coaching`, and `CallSidToCoach` in cXML callbacks.
+
+## Limits
+
+- **Conference only.** A directly bridged two-party call cannot be monitored. Put agent calls in a conference from the start if supervisors may need to join.
+- **The agent must be present first.** A `coach` that names a call outside the conference fails the join, and a REST update naming one returns error 16002.
+- **A participant cannot coach itself.**
+- **Muted wins.** A muted coach is heard by nobody. Whisper needs `Muted=false` alongside `Coaching=true`.
+- **The coach leaves with the agent.** When the coached participant leaves the conference, every participant coaching them is removed from it too, and each of those calls continues with whatever follows the join in its own instructions. Switch a supervisor to listen in or barge before the agent hangs up if they need to stay.
+- **Several supervisors can coach one agent** at the same time. Each coach whispers to one participant.
+- **Same project.** A supervisor can only join conferences in the project that created them.
+
+## Recording and consent
+
+<Warning title="Not legal advice">
+Listening to, coaching on, or joining a call counts as monitoring or recording under laws that vary by country, by state, and by whether the call is inbound or outbound. Many require notice to one or both parties. SignalWire plays no notice and performs no consent check for you. Your application is responsible for any announcement, consent capture, and record-keeping the law requires. Consult qualified counsel before deploying supervisor monitoring.
+</Warning>
+
+Coaching state is visible: the participant record and the participant status callbacks report `coaching` and the coached call ID. Silent monitoring is not distinguished from any other muted participant, so keep your own log if you need one.
+
+## Not the same as
+
+Several features share this vocabulary and do something else:
+
+- **[Call whisper][call-whisper]** in SWML plays an announcement to the person answering before the caller is connected. It is call screening, not coaching.
+- **AI barge** in [`ai.params`][ai-params] controls whether a caller can interrupt the AI agent's speech. It has nothing to do with a human joining a call.
+- **[`ai_sidecar`][ai-sidecar]** observes a call and emits text for a UI. It injects no audio and is not a participant.
+- **[`stream`][stream] and [`tap`][tap]** fork call audio to a WebSocket or RTP endpoint. The receiver gets a media stream, not a call leg, and cannot speak into the call.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="join_conference" href="/docs/swml/reference/calling/join-conference" icon="regular users">
+    Every SWML conference parameter, including `muted`, `coach`, and the status callback events.
+  </Card>
+  <Card title="cXML Conference noun" href="/docs/compatibility-api/cxml/reference/voice/conference" icon="regular code">
+    The `<Conference>` attributes and the status callback fields.
+  </Card>
+  <Card title="Update a Participant" href="/docs/compatibility-api/rest/conference-participants/update-participant" icon="regular rectangle-api">
+    The REST request that switches a participant between modes.
+  </Card>
+  <Card title="Server SDK dial" href="/docs/server-sdks/reference/python/rest/calling/dial" icon="regular server">
+    Place the supervisor's call with inline SWML from Python, with a TypeScript twin.
+  </Card>
+</CardGroup>
