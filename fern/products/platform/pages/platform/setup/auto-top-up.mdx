@@ -1,10 +1,14 @@
 ---
 title: Auto Top-Up
-subtitle: Keep your balance funded automatically, and what enabling it commits you to.
-description: How Auto Top-Up funds your SignalWire balance and when your card is charged.
+subtitle: Keep your balance funded automatically, know what enabling it commits you to, and get notified when it runs low.
+description: How Auto Top-Up funds your SignalWire balance, when your card is charged, and how low balance email and webhook notifications work.
 slug: /auto-top-up
 max-toc-depth: 3
 ---
+
+[get-setting]: /docs/apis/rest/space/balance/get-low-balance-setting
+[update-setting]: /docs/apis/rest/space/balance/update-low-balance-setting
+[get-balance]: /docs/apis/rest/space/balance/get-balance
 
 Adding a payment method to your Space turns on Auto Top-Up.
 When your balance falls below a threshold you set, SignalWire charges the card you chose and adds the funds to your balance.
@@ -37,6 +41,48 @@ Registering a campaign with [The Campaign Registry](/docs/platform/messaging/cam
 ## Change your settings
 
 Open **Billing → Low Balance Settings** in the Dashboard to change the top-up amount, the threshold, and which card funds Auto Top-Up.
+The same screen sets up [low balance notifications](#low-balance-notifications), an email or webhook sent on the same low-balance event.
+
+## Low balance notifications
+
+A balance that runs out stops your calls and messages.
+SignalWire can warn you before that happens by sending an email, a webhook, or both when your balance falls below your threshold.
+
+### When notifications are sent
+
+The email and the webhook fire on the same low-balance event as Auto Top-Up, so the same cadence applies: at most once every six hours.
+They're sent whether or not Auto Top-Up is on.
+
+The email goes to the owner and every administrator of your Space.
+
+### Turn notifications on
+
+In **Billing → Low Balance Settings**, **Send an Email** is on by default.
+To add the webhook, turn on **Send a Webhook Request** and set the **Webhook URL** and **Method** (`POST` by default, or `GET`).
+
+To manage these settings over the REST API, use [Retrieve low balance settings][get-setting] and [Update low balance settings][update-setting].
+The `send_email`, `send_webhook`, `webhook_url`, and `webhook_method` fields control notifications.
+An update replaces the whole setting, so send your threshold and Auto Top-Up fields along with the notification fields.
+
+### The webhook request
+
+SignalWire sends an HTTP request to your webhook URL with two form-encoded parameters.
+With `GET`, they arrive as query parameters.
+With `POST`, they arrive in the request body.
+
+| Parameter | Description | Example |
+| :-- | :-- | :-- |
+| `threshold` | Your low balance threshold, in US dollars. | `5.0` |
+| `balance` | The balance that triggered the notification, in US dollars. | `4.253117` |
+
+The request carries only these two parameters, with the `User-Agent` header `SignalwireCallback/1.0`.
+
+SignalWire allows 3 seconds to connect to your endpoint and 5 seconds for the whole request.
+It follows up to 3 redirects, but a redirect drops the parameters unless it's a `307` or `308` response to a `POST`, so set the webhook URL to your endpoint's final address.
+
+SignalWire doesn't retry a failed delivery.
+If your endpoint is down, times out, or returns an error, that notification is lost, and the next one comes with the next low-balance event.
+To check where your balance stands after an outage, use [Retrieve the balance][get-balance].
 
 ## Remove the card that funds Auto Top-Up
 
