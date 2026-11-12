@@ -48,8 +48,11 @@ for (const number of available.data ?? []) {
 }
 
 // Purchase the first available number
-const purchased = await client.phoneNumbers.create({ number: available.data[0].e164 });
-console.log(`Purchased: ${purchased.number}`);
+const first = available.data?.[0];
+if (first) {
+  const purchased = await client.phoneNumbers.create({ number: first.e164 });
+  console.log(`Purchased: ${purchased.number}`);
+}
 
 // List your AI agent resources
 const response = await client.fabric.aiAgents.list();
@@ -87,6 +90,28 @@ const client = new RestClient();
 for await (const address of client.fabric.addresses.paginate()) {
   console.log(address.name);
 }
+```
+
+The standalone `paginate()` and `paginateAll()` functions do the same for any list path, given
+an `HttpClient`. `paginateAll()` collects every page into one array, so it holds the whole result
+set in memory; iterate with `paginate()` for large ones. Both take the client, the path, query
+parameters for the first request, and the key that holds each page's items (default `data`).
+`paginate()` also takes request options, applied to every page.
+
+```typescript {9-12}
+import { HttpClient, paginateAll } from "@signalwire/sdk";
+
+const http = new HttpClient({
+  project: "your-project-id",
+  token: "your-api-token",
+  host: "your-space.signalwire.com",
+});
+
+const addresses = await paginateAll<{ id: string; name: string }>(
+  http,
+  "/api/fabric/addresses",
+);
+console.log(`${addresses.length} addresses`);
 ```
 
 ## Timeouts, retries, and cancellation
