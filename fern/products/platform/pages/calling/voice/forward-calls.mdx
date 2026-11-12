@@ -312,8 +312,7 @@ client.run()
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
 // Install: npm install @signalwire/sdk
-// This sample also runs as JavaScript: save as forward-relay.mjs,
-// then run: node forward-relay.mjs
+// Save as forward-relay.mts and run: npx tsx forward-relay.mts
 import { RelayClient } from "@signalwire/sdk";
 
 const client = new RelayClient({
@@ -323,7 +322,9 @@ const client = new RelayClient({
 });
 
 client.onCall(async (call) => {
-  const caller = call.device.params?.from_number;
+  // An inbound phone call's device carries the caller's number in params.from_number.
+  const { params } = call.device as { params?: { from_number?: string } };
+  const caller = params?.from_number;
 
   call.on("calling.call.connect", async (event) => {
     const state = event.params.connect_state;
@@ -455,8 +456,8 @@ const client = new RestClient({
 const swml = new SwmlBuilder()
   .connect({ to: "<YOUR_DESTINATION>", from: "${call.from}", timeout: 20 })
   .say("Sorry, nobody at Bayview Taxi can take your call right now. Please call back later.")
-  .build();
-await client.calling.transfer("<YOUR_CALL_ID>", swml);
+  .render(); // JSON text; parse it to pass the document object to transfer()
+await client.calling.transfer("<YOUR_CALL_ID>", JSON.parse(swml));
 console.log("Forwarding");
 ```
 </CodeBlock>

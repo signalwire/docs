@@ -449,7 +449,7 @@ async def handle_call(call):
     await call.connect([[{"type": "phone", "params": {"to_number": "<YOUR_DESTINATION>", "from_number": "<YOUR_CALLER_ID>", "timeout": 30}}]])
 ```
 
-```typescript title="TypeScript — Relay client" {12-14}
+```typescript title="TypeScript — Relay client" {14-15}
 // Without an AI agent, gate the recording on a keypress instead of a tool call.
 client.onCall(async (call) => {
   await call.answer();
@@ -460,8 +460,10 @@ client.onCall(async (call) => {
     { digits: { max: 1, digit_timeout: 5, terminators: '#' } }
   );
   const event = await action.wait();
+  // A keypress result is { type: 'digit', params: { digits, terminator } }.
+  const digits = (event.params.result as { params?: { digits?: string } } | undefined)?.params?.digits;
 
-  if (event.params.result?.params?.digits === '1') {
+  if (digits === '1') {
     await call.record({ direction: 'both', format: 'mp3', stereo: true });
   }
 
@@ -851,9 +853,9 @@ client.onCall(async (call) => {
   const prompt = await call.play([{ type: 'tts', text: 'Leave a message after the beep.' }]);
   await prompt.wait(); // play returns as soon as the command is accepted
 
-  const action = await call.record({
-    beep: true, end_silence_timeout: 3, terminators: '#', max_length: 120,
-  });
+  // The SDK's record() type doesn't list max_length yet; passing a variable sends it unchanged.
+  const audio = { beep: true, end_silence_timeout: 3, terminators: '#', max_length: 120 };
+  const action = await call.record(audio);
   const event = await action.wait();
 
   // no_input is terminal too: a caller who never spoke still gets a url, but its media returns 404
