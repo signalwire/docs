@@ -2,7 +2,7 @@
 title: Groq
 subtitle: Text-to-speech
 slug: voice/tts/groq-tts
-description: Learn how to use Groq-hosted Orpheus TTS voices with SignalWire AI Voice applications.
+description: Learn how to use Groq-hosted Orpheus TTS voices in AI agents, SWML, Relay, and the REST Calling API.
 max-toc-depth: 3
 ---
 
@@ -24,7 +24,7 @@ See [Groq's text-to-speech documentation](https://console.groq.com/docs/text-to-
 
 | Model | Description |
 |-------|-------------|
-| `canopylabs/orpheus-v1-english` | **Default.** English voices |
+| `canopylabs/orpheus-v1-english` | **Default.** English voices. The shorthand `english` also selects this model |
 | `canopylabs/orpheus-arabic-saudi` | Arabic (Saudi dialect) voices. The shorthand `arabic` also selects this model |
 
 ## Voices
@@ -89,6 +89,10 @@ groq-tts.troy:canopylabs/orpheus-v1-english
 groq-tts.daniel:arabic
 ```
 
+A voice string with `/` works only in an AI agent's `languages`. SWML `play`, Relay, and the REST
+Calling API reject it, so outside an AI agent use a model shorthand, as in `groq-tts.troy:english`
+or `groq-tts.daniel:arabic`, or leave the model off to use English.
+
 You can also set the model with the separate
 [`model`](/docs/swml/reference/calling/ai/languages#use-voice-strings)
 parameter of the [`languages`](/docs/swml/reference/calling/ai/languages) SWML method
@@ -104,82 +108,442 @@ languages:
 
 ---
 
-## Build with Groq on SignalWire
+## Use Groq voices on a call
 
-<Steps>
+A Groq voice string such as `groq-tts.autumn` works in each of these places: an AI
+agent's `languages`, the `say_voice` of SWML's `play`, and a `tts` media item sent with Relay or
+the REST Calling API. Outside an AI agent, use a model shorthand instead of a model name that
+contains `/`; see [Usage](#usage). The examples below all use `groq-tts.autumn`. To control speech while it plays, see
+[Speak text on a call](/docs/platform/voice/speak-text).
 
-### Create a Space and add credit
+Replace these values in the samples:
 
-If you don't have one yet, you'll need to
-[create a SignalWire Space](/docs/platform/signing-up-for-a-space).
-Be sure to add some credit to test with.
+| Value | Replace with |
+|---|---|
+| `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for your SWML server. You include it in the server URL you give SignalWire: `https://signalwire:<password>@<host>/swml` |
+| `<YOUR_PROJECT_ID>` | Your Project ID |
+| `<YOUR_API_TOKEN>` | An API token with the **Voice** permission, used only in server code |
+| `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
+| `<YOUR_CALL_ID>` | The ID of an answered call, for the REST command |
 
-### Add a new Resource
+### Give an AI agent a Groq voice via SWML
 
-<Markdown src="/snippets/common/dashboard/add-resource.mdx" />
+The [`languages`](/docs/swml/reference/calling/ai/languages#use-voice-strings) list of the SWML
+[`ai`](/docs/swml/reference/calling/ai) method sets the voice an AI agent speaks in. The
+[Server SDKs](/docs/server-sdks) build the document and serve it at `/swml` on port 3000, only to
+requests that carry the username `signalwire` and your password.
 
-### Create a SWML Script
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python
+# Install: python -m pip install signalwire-sdk
+# Save as groq_ai_agent.py and run: python groq_ai_agent.py
+from signalwire import SWMLBuilder, SWMLService
 
-From the Resources menu, select **SWML Script**.
-Name it something fun and recognizable.
-Ours is titled Groq Wizard.
+service = SWMLService(
+    name="groq-ai-agent",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+SWMLBuilder(service).ai(
+    prompt_text="You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride.",
+    languages=[{
+        "name": "English",
+        "code": "en-US",
+        "voice": "groq-tts.autumn",
+    }],
+)
 
-Next, paste the following starter script into the text box, and hit <kbd>Save</kbd>:
+service.serve()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+// Install: npm install @signalwire/sdk
+// This sample also runs as JavaScript: save as groq-ai-agent.mjs,
+// then run: node groq-ai-agent.mjs
+import { SWMLService } from "@signalwire/sdk";
 
+const service = new SWMLService({
+  name: "groq-ai-agent",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+service.getBuilder().ai({
+  // The ai verb takes a { text } prompt; the SDK types prompt as a string or array.
+  prompt: { text: "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride." } as never,
+  languages: [
+    { name: "English", code: "en-US", voice: "groq-tts.autumn" },
+  ],
+});
+
+await service.serve();
+```
+</CodeBlock>
+<CodeBlock title="YAML">
 ```yaml
 version: 1.0.0
 sections:
   main:
-  - ai:
-      prompt:
-        text: |
-          You're Autumn, a voice from the Orpheus TTS engine hosted on Groq!
-          Introduce yourself, and have a conversation about programmable unified communications on the SignalWire platform.
-      languages:
-      - name: English
-        code: en-US
-        voice: groq-tts.autumn
+    - ai:
+        prompt:
+          text: "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride."
+        languages:
+          - name: English
+            code: en-US
+            voice: "groq-tts.autumn"
 ```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "ai": {
+          "prompt": {
+            "text": "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride."
+          },
+          "languages": [
+            {
+              "name": "English",
+              "code": "en-US",
+              "voice": "groq-tts.autumn"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
 
-### Buy and assign a phone number
+To send calls from your phone number to the server, follow
+[Answer a call via SWML](/docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml).
+Call the number, and the agent greets you in the Groq voice. If you hear a different voice, the
+voice string isn't in SignalWire's catalog, so the call falls back to a default voice. See
+[Custom and cloned voices](/docs/platform/voice/tts#custom-and-cloned-voices).
 
-Navigate to the **Phone Numbers** section of the Dashboard's left sidebar menu.
+### Speak text in a Groq voice via SWML
 
-Purchase a phone number and assign it to the desired SWML script.
+The SWML builder's `say()` writes a [`play`](/docs/swml/reference/calling/play) with a `say:` URL
+and the voice in `say_voice`. This server speaks one sentence in the Groq voice, then hangs up.
+Serve it and point your number at it the same way as the AI agent above.
 
-<Markdown src="/snippets/common/dashboard/_assign-resource-voice.mdx" />
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python
+# Install: python -m pip install signalwire-sdk
+# Save as groq_tts.py and run: python groq_tts.py
+from signalwire import SWMLBuilder, SWMLService
 
-### Give it a call!
+service = SWMLService(
+    name="groq-tts",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+SWMLBuilder(service).say(
+    "Hello from Bayview Taxi. You are hearing Groq text to speech on SignalWire.",
+    voice="groq-tts.autumn",
+).hangup()
 
-Call the number you just assigned to chat with your new AI voice application on the phone.
+service.serve()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+// Install: npm install @signalwire/sdk
+// This sample also runs as JavaScript: save as groq-tts.mjs,
+// then run: node groq-tts.mjs
+import { SWMLService } from "@signalwire/sdk";
 
-</Steps>
+const service = new SWMLService({
+  name: "groq-tts",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+service.getBuilder()
+  .say("Hello from Bayview Taxi. You are hearing Groq text to speech on SignalWire.", {
+    voice: "groq-tts.autumn",
+  })
+  .hangup();
 
-## Next steps with SWML
+await service.serve();
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - play:
+        url: "say:Hello from Bayview Taxi. You are hearing Groq text to speech on SignalWire."
+        say_voice: "groq-tts.autumn"
+    - hangup: {}
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "play": {
+          "url": "say:Hello from Bayview Taxi. You are hearing Groq text to speech on SignalWire.",
+          "say_voice": "groq-tts.autumn"
+        }
+      },
+      {
+        "hangup": {}
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
 
-Now you've deployed your very first SignalWire voice AI application using Groq-hosted Orpheus voices.
-Next, dive deeper into SWML to explore its capabilities!
+### Speak text in a Groq voice via WebSocket (Relay)
+
+A Relay client in the [Server SDKs](/docs/server-sdks) passes the voice string in a `tts` media
+item. This handler answers calls on the `default` topic, speaks in the Groq voice, and hangs
+up when the speech ends.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk
+# Save as groq_relay.py and run: python groq_relay.py
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    async def hang_up_after_playback(_event):
+        if call.state != "ended":
+            await call.hangup()
+
+    await call.play([{
+        "type": "tts",
+        "params": {
+            "text": "Hello from Bayview Taxi. You are hearing Groq text to speech on SignalWire.",
+            "voice": "groq-tts.autumn",
+        },
+    }], on_completed=hang_up_after_playback)
+    await call.wait_for_ended()
+
+client.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk
+// This sample also runs as JavaScript: save as groq-relay.mjs,
+// then run: node groq-relay.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["default"],
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+  await call.play([{
+    type: "tts",
+    params: {
+      text: "Hello from Bayview Taxi. You are hearing Groq text to speech on SignalWire.",
+      voice: "groq-tts.autumn",
+    },
+  }], {
+    onCompleted: async () => {
+      if (call.state !== "ended") await call.hangup();
+    },
+  });
+  await call.waitForEnded();
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
+
+To route calls from your phone number to the handler, assign the number to a Relay Application
+on the `default` topic, as described in
+[Answer a call via WebSocket (Relay)](/docs/platform/voice/make-and-receive-calls#answer-a-call-via-websocket-relay).
+Call the number to hear the sentence. If you hear a different voice, SignalWire couldn't use the
+voice string and played a fallback voice. If the play is rejected as a bad request, check the voice
+string for characters a `tts` item doesn't accept, such as spaces, parentheses, or `/`.
+
+### Speak text in a Groq voice on a call in progress via REST
+
+To speak on a call that's already up, such as from a backend job, send
+[`calling.play`](/docs/apis/rest/calls/call-commands) with the call's ID and the same `tts` media
+item. `control_id` names the playback so later commands can stop or pause it.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk
+# Save as groq_rest.py and run: python groq_rest.py
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+client.calling.play(
+    "<YOUR_CALL_ID>",
+    control_id="groq-greeting",
+    play=[{
+        "type": "tts",
+        "params": {
+            "text": "Hello from Bayview Taxi. You are hearing Groq text to speech on SignalWire.",
+            "voice": "groq-tts.autumn",
+        },
+    }],
+)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk
+// This sample also runs as JavaScript: save as groq-rest.mjs,
+// then run: node groq-rest.mjs
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+await client.calling.play("<YOUR_CALL_ID>", [{
+  type: "tts",
+  params: {
+    text: "Hello from Bayview Taxi. You are hearing Groq text to speech on SignalWire.",
+    voice: "groq-tts.autumn",
+  },
+}], { control_id: "groq-greeting" });
+```
+</CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "calling.play",
+    "id": "<YOUR_CALL_ID>",
+    "params": {
+      "control_id": "groq-greeting",
+      "play": [
+        {
+          "type": "tts",
+          "params": {
+            "text": "Hello from Bayview Taxi. You are hearing Groq text to speech on SignalWire.",
+            "voice": "groq-tts.autumn"
+          }
+        }
+      ]
+    }
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+The command returns once SignalWire accepts it, and the call hears the sentence in the Groq
+voice.
+If the call hears a different voice, SignalWire couldn't use the voice string and played a fallback
+voice. If the call hears nothing, check the voice string for characters a `tts` item doesn't
+accept, such as spaces, parentheses, or `/`. The request still returns success in that case, so
+silence on the call is the only sign.
+
+### Create a SWML Script that uses a Groq voice
+
+A SWML Script hosted in SignalWire runs the Groq-voiced AI agent above without a server of
+your own.
+
+1. In the Dashboard, open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
+2. Name the script and leave **Used For** set to **Calling**.
+3. Under **Handle Calls Using**, choose **Hosted Script** and paste this document into
+   **Primary Script**.
+4. Select **Create**.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride."
+        languages:
+          - name: English
+            code: en-US
+            voice: "groq-tts.autumn"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "ai": {
+          "prompt": {
+            "text": "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride."
+          },
+          "languages": [
+            {
+              "name": "English",
+              "code": "en-US",
+              "voice": "groq-tts.autumn"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Assign the script to your phone number as in
+[Answer a call via SWML](/docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml), then
+call the number. The agent answers in the Groq voice.
+
+## Next steps
 
 <CardGroup cols={3}>
-   <Card
-        title="Methods reference"
-        href="/docs/swml"
-        icon="/assets/icons/swml.svg"
-    >
-        Documentation for all SWML methods
-    </Card>
-    <Card
-        title="AI in SWML"
-        href="/docs/swml/guides"
-        icon="regular wand-magic-sparkles"
-    >
-        Build advanced AI applications using SignalWire Markup Language
-    </Card>
-    <Card
-        title="Guides"
-        href="/docs/swml/guides"
-        icon="regular book-open"
-    >
-    SWML guides and demo applications
-    </Card>
+  <Card title="Speak text on a call" icon="regular comment-dots" href="/docs/platform/voice/speak-text">
+    Control speech while it plays, mix it with audio, and speak on calls in progress.
+  </Card>
+  <Card title="Voice and language" icon="regular language" href="/docs/server-sdks/guides/voice-language">
+    Configure voices, languages, and pronunciation for AI agents built with the Server SDKs.
+  </Card>
+  <Card title="AI languages reference" icon="regular book-open" href="/docs/swml/reference/calling/ai/languages">
+    Every voice and language setting the SWML `ai` method accepts.
+  </Card>
 </CardGroup>
