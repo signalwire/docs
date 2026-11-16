@@ -1,0 +1,76 @@
+---
+title: "router"
+slug: reference/typescript/agents/chat-gateway/router
+description: Build the Hono app that exposes the gateway to a browser.
+max-toc-depth: 3
+---
+
+[chatgateway]: /docs/server-sdks/reference/typescript/agents/chat-gateway
+[handoffrouter]: /docs/server-sdks/reference/typescript/agents/handoff-router
+[aichatclient]: /docs/server-sdks/reference/typescript/agents/ai-chat-client
+
+Returns a Hono app that serves the gateway at `/`: `POST /` for the four browser methods
+(`start`, `chat`, `log`, `end`) and `OPTIONS /` for the CORS preflight. Mount it with
+`agent.mount(gateway.router(), { prefix: '/chat' })`, or with `app.route()` on any Hono app.
+
+A `chat` reply is streamed through without buffering. The service pads slow turns with keepalive
+whitespace so proxies don't close the connection, and collecting the body here would hold that
+padding back. A newly created handle is returned in the `X-Chat-Handle` response header, which is
+why it can be sent before the body.
+
+CORS headers go to origins the gateway allows, and `X-Chat-Handle` is exposed to them. A request
+body over 64 KiB is answered with `413` and `{ error: 'request too large' }` without being
+parsed. See [`ChatGateway`][chatgateway] for the methods, bodies, and status codes.
+
+## Parameters
+
+None.
+
+## Returns
+
+`Hono` -- the app. `hono` is installed with `@signalwire/sdk`.
+
+## Examples
+
+Mount the gateway on an agent, with the handoff routes at the same prefix:
+
+```typescript
+import { AgentBase, ChatGateway, HandoffRouter } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'dispatch', route: '/dispatch' });
+const gateway = new ChatGateway({
+  configUrl: 'https://bayview-taxi.example.com/dispatch',
+  key: '<YOUR_PUBLISHABLE_KEY>',
+  allowedOrigins: ['https://bayviewtaxi.example.com'],
+});
+
+agent.mount(gateway.router(), { prefix: '/chat' });
+
+// Optional: let the widget move a conversation to a phone call and back.
+const handoff = new HandoffRouter({ gateway });
+agent.mount(handoff.router(), { prefix: '/chat' });
+
+await agent.serve();
+```
+
+Mount it on a Hono app you already run:
+
+```typescript
+import { serve } from '@hono/node-server';
+import { Hono } from 'hono';
+import { ChatGateway } from '@signalwire/sdk';
+
+const gateway = new ChatGateway({
+  configUrl: 'https://bayview-taxi.example.com/dispatch',
+  key: '<YOUR_PUBLISHABLE_KEY>',
+  allowedOrigins: ['https://bayviewtaxi.example.com'],
+});
+
+const app = new Hono();
+app.route('/chat', gateway.router());
+
+serve({ fetch: app.fetch, port: 3000 });
+```
+
+To let the widget move a conversation to a phone call and back, mount a
+[`HandoffRouter`][handoffrouter] at the same prefix.

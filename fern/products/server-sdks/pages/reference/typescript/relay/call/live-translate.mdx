@@ -1,39 +1,153 @@
 ---
 title: "liveTranslate"
 slug: reference/typescript/relay/call/live-translate
-description: Start or stop live translation on a call.
+description: Start, summarize, or stop live translation on a call.
 max-toc-depth: 3
 ---
 
-Start or stop live translation on the call. Translates spoken audio into
-another language in real-time.
+[swml-live-translate]: /docs/swml/reference/calling/live-translate
+[translate-calls]: /docs/platform/voice/translate-calls
+
+Start, summarize, or stop live translation on the call. Live translation recognizes what each
+party says, translates it, and speaks the translation to the other party in place of the original
+audio. The `action` object takes the same shape as the [`live_translate`][swml-live-translate]
+SWML method: a single `start`, `summarize`, `inject`, or `stop` key.
+
+<Info>
+See the [translate calls guide][translate-calls] for which language each party speaks and for the
+webhook events.
+</Info>
 
 ## **Parameters**
 
 <ParamField path="action" type="Record<string, unknown>" required={true} toc={true}>
-  Action configuration for the live translation.
+  The action to perform. Set exactly one of `start`, `summarize`, `inject`, or `stop`.
 </ParamField>
 
 <Indent>
-<ParamField path="action.action" type="string" required={true} toc={true}>
-  The action to perform.
 
-  - `"start"` -- begin live translation
-  - `"stop"` -- end live translation
+<ParamField path="action.start" type="object" toc={true}>
+  Start a live translation session.
 </ParamField>
 
-<ParamField path="action.source_language" type="string" toc={true}>
-  Source language code (e.g., `"en-US"`).
+<Indent>
+
+<ParamField path="action.start.from_lang" type="string" required={true} toc={true}>
+  One of the two languages of the conversation, such as `"es-ES"`. `from_voice` speaks it.
 </ParamField>
 
-<ParamField path="action.target_language" type="string" toc={true}>
-  Target language code (e.g., `"es-ES"`).
+<ParamField path="action.start.to_lang" type="string" required={true} toc={true}>
+  The other language of the conversation, such as `"en-US"`. `to_voice` speaks it.
 </ParamField>
+
+<ParamField path="action.start.direction" type="string[]" required={true} toc={true}>
+  The sides of the call to translate: `"remote-caller"`, `"local-caller"`, or both. The order
+  decides which side speaks which language.
+</ParamField>
+
+<ParamField path="action.start.webhook" type="string" toc={true}>
+  The URL that receives translation events as HTTP `POST` requests.
+</ParamField>
+
+<ParamField path="action.start.from_voice" type="string" default="azure.en-US-RyanMultilingualNeural" toc={true}>
+  The voice that speaks translations into `from_lang`, as `<engine>.<voice>` with a lowercase
+  engine name, such as `"azure.es-ES-ElviraNeural"`.
+</ParamField>
+
+<ParamField path="action.start.to_voice" type="string" default="azure.en-US-RyanMultilingualNeural" toc={true}>
+  The voice that speaks translations into `to_lang`, such as `"elevenlabs.josh"`.
+</ParamField>
+
+<ParamField path="action.start.filter_from" type="string" toc={true}>
+  A tone filter for speech in `from_lang`: `"polite"`, `"rude"`, `"professional"`,
+  `"shakespeare"`, `"gen-z"`, or a custom instruction prefixed with `"prompt:"`.
+</ParamField>
+
+<ParamField path="action.start.filter_to" type="string" toc={true}>
+  A tone filter for speech in `to_lang`, with the same values as `filter_from`.
+</ParamField>
+
+<ParamField path="action.start.live_events" type="boolean" default="false" toc={true}>
+  Whether to send each translated utterance to the webhook as it is spoken.
+</ParamField>
+
+<ParamField path="action.start.ai_summary" type="boolean" default="false" toc={true}>
+  Whether to add AI summaries to the event sent to the webhook when the session ends.
+</ParamField>
+
+<ParamField path="action.start.ai_summary_prompt" type="string" toc={true}>
+  The prompt that tells the AI how to summarize the conversation when `ai_summary` is enabled.
+</ParamField>
+
+<ParamField path="action.start.speech_engine" type="string" default="deepgram" toc={true}>
+  The speech recognition engine: `"deepgram"` or `"google"`.
+</ParamField>
+
+<ParamField path="action.start.speech_timeout" type="number" default="60000" toc={true}>
+  The timeout for speech recognition, in milliseconds.
+</ParamField>
+
+<ParamField path="action.start.vad_silence_ms" type="number" toc={true}>
+  The silence, in milliseconds, that ends an utterance. Defaults to `700` with Deepgram and `500`
+  with Google.
+</ParamField>
+
+<ParamField path="action.start.vad_thresh" type="number" default="400" toc={true}>
+  Voice activity detection threshold, from `0` to `1800`.
+</ParamField>
+
 </Indent>
 
-<ParamField path="statusUrl" type="string | undefined" toc={true}>
-  URL to receive translation results via webhook.
+<ParamField path="action.summarize" type="object" toc={true}>
+  Request an AI summary of the conversation so far, while translation continues. Pass an empty
+  object to send the summary to the webhook from `start` with the default summary prompt.
 </ParamField>
+
+<Indent>
+
+<ParamField path="action.summarize.webhook" type="string" toc={true}>
+  The URL that receives the summary.
+</ParamField>
+
+<ParamField path="action.summarize.prompt" type="string" toc={true}>
+  The prompt that tells the AI how to summarize the conversation.
+</ParamField>
+
+</Indent>
+
+<ParamField path="action.inject" type="object" toc={true}>
+  Insert a message into the session, to be translated and spoken on the call.
+</ParamField>
+
+<Indent>
+
+<ParamField path="action.inject.message" type="string" required={true} toc={true}>
+  The message to translate and speak.
+</ParamField>
+
+<ParamField path="action.inject.direction" type="string" required={true} toc={true}>
+  The side of the call: `"remote-caller"` or `"local-caller"`.
+</ParamField>
+
+</Indent>
+
+<ParamField path="action.stop" type="object" toc={true}>
+  Stop the live translation session on both sides. Pass an empty object.
+</ParamField>
+
+</Indent>
+
+<ParamField path="options" type="object" toc={true}>
+  Optional settings for the command.
+</ParamField>
+
+<Indent>
+
+<ParamField path="options.statusUrl" type="string" toc={true}>
+  A status URL sent with the command. Translation events go to `action.start.webhook`.
+</ParamField>
+
+</Indent>
 
 ## **Returns**
 
@@ -41,7 +155,7 @@ another language in real-time.
 
 ## **Example**
 
-```typescript {13}
+```typescript {13-20}
 import { RelayClient } from '@signalwire/sdk';
 
 const client = new RelayClient({
@@ -53,14 +167,17 @@ const client = new RelayClient({
 client.onCall(async (call) => {
   await call.answer();
 
-  // Start live translation from English to Spanish
+  // Start live translation between Spanish and English
   await call.liveTranslate({
-    action: 'start',
-    source_language: 'en-US',
-    target_language: 'es-ES',
+    start: {
+      from_lang: 'es-ES',
+      to_lang: 'en-US',
+      direction: ['local-caller', 'remote-caller'],
+      webhook: 'https://example.com/translation-events',
+    },
   });
 
-  // Let the call proceed...
+  // Connect the caller to the other party, then let the call proceed...
   await call.waitForEnded();
 });
 

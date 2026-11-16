@@ -7,15 +7,26 @@ using TypeSpec.Http;
 namespace SignalWireAPI.Calling;
 
 
-@doc("The status of the call throughout its lifecycle.")
+@doc("""
+  The current status of the call. As a call is placed and progresses, it moves through `queued`,
+  `initiated`, `created`, `ringing`, `answered`, `ending`, and `ended`, though it can skip some of
+  them, such as `answered` for a call that is never answered. `ended` is the final
+  status of every call that was placed, however it ended; the `end_reason` in the
+  [call state callback](/docs/apis/rest/webhooks/call-state-status-callback) for `ended` says why,
+  such as `busy` or `noAnswer`.
+
+  Three statuses are outcomes rather than steps: `failed`, `canceled`, and `completed`. A call
+  that is never placed has one of these instead of `ended`, and no call state callback is sent
+  for it.
+  """)
 enum CallResponseStatus {
-  @doc("The call has been queued for processing.")
+  @doc("The call has been accepted and is waiting to be placed.")
   queued,
 
-  @doc("The call has been initiated but not yet created.")
+  @doc("SignalWire has started placing the call.")
   initiated,
 
-  @doc("The call has been created in FreeSWITCH.")
+  @doc("The call has been set up and is being placed.")
   created,
 
   @doc("The call is ringing at the destination.")
@@ -24,19 +35,19 @@ enum CallResponseStatus {
   @doc("The call has been answered and is in progress.")
   answered,
 
-  @doc("The call is in the process of being terminated.")
+  @doc("The call is hanging up. A call passes through this status on its way to `ended`.")
   ending,
 
-  @doc("The call has been terminated.")
+  @doc("The call has ended, however it ended. Check `end_reason` in the `ended` call state callback for the cause.")
   ended,
 
-  @doc("The call failed before reaching FreeSWITCH due to an error such as no available endpoints or spam blocking.")
+  @doc("The call couldn't be placed, for example because the destination is blocked, the call was flagged as spam, the destination has no registered SIP endpoint, or a temporary error occurred. No call state callback is sent.")
   failed,
 
-  @doc("The call was canceled before being answered.")
+  @doc("The call was canceled with the `update` command while it was still `queued`, so it was never placed. No call state callback is sent.")
   canceled,
 
-  @doc("The call has been completed successfully.")
+  @doc("The call was ended with the `update` command while it was still `queued`, so it was never placed. No call state callback is sent.")
   completed,
 }
 
