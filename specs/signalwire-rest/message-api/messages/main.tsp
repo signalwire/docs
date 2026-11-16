@@ -25,6 +25,7 @@ namespace SignalWireAPI.Message.Messages {
 
       - **SMS/MMS** when `from` is a purchased SignalWire phone number or shortcode. The message is MMS when `media` is present or `send_as_mms` is set, otherwise SMS.
       - **WhatsApp** when `from` is a `whatsapp:`-prefixed [WhatsApp number](/docs/platform/messaging/whatsapp/send-messages). Set `message_type` for a content message, or `template_id` for an [approved template](/docs/platform/messaging/whatsapp/message-templates). Free-form WhatsApp content is only allowed within the 24-hour customer service window.
+      - **RCS** when `from` is the ID of an [RCS agent](/docs/platform/messaging/rcs/send-messages). Set `body` for plain text, or `content` for rich content such as cards, carousels, and suggestions.
 
       Use this SignalWire REST operation for JSON requests. Integrations built around form-encoded requests and Message SIDs can use the Compatibility API's [Create message](/docs/compatibility-api/rest/messages/create-message) operation instead.
 

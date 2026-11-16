@@ -1,0 +1,59 @@
+---
+title: "router"
+slug: reference/typescript/agents/handoff-router/router
+description: Build the Hono app that serves the handoff routes.
+max-toc-depth: 3
+---
+
+[handoffrouter]: /docs/server-sdks/reference/typescript/agents/handoff-router
+[chatgateway]: /docs/server-sdks/reference/typescript/agents/chat-gateway
+[redeem]: /docs/server-sdks/reference/typescript/agents/handoff-router/redeem
+[escalate]: /docs/server-sdks/reference/typescript/agents/handoff-router/escalate
+[say]: /docs/server-sdks/reference/typescript/agents/handoff-router/say
+
+Returns a Hono app that serves `POST /handoff`, `/escalate`, and `/say`. Mount it at the same prefix
+as the [gateway's router][chatgateway], because the browser derives all three paths from the
+gateway's URL.
+
+| Route | Body | Returns | Calls |
+|---|---|---|---|
+| `/handoff` | `{ nonce }` | `{ handle }` | [`redeem()`][redeem] |
+| `/escalate` | `{ handle }` | `{ ok: true }` | [`escalate()`][escalate] |
+| `/say` | `{ nonce, text }` | `{ ok: true }` | [`say()`][say] |
+
+Each route returns `403` for a refused origin. It returns `404` with `{ error: 'not found' }` when
+the nonce or handle doesn't verify, and `/escalate` returns `400` with `{ error: 'bad request' }`
+when `handle` is missing. A body over 64 KiB is answered with `413` and
+`{ error: 'request too large' }`, and `/say` text over 8 KiB with `413` and
+`{ error: 'message too large' }`. Both are checked before the nonce is looked up.
+
+Each route answers its own CORS preflight, and every answer carries CORS headers for an origin the
+gateway allows.
+
+## Parameters
+
+None.
+
+## Returns
+
+`Hono` -- the app.
+
+## Examples
+
+```typescript
+import { AgentBase, ChatGateway, HandoffRouter } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'dispatch', route: '/dispatch' });
+const gateway = new ChatGateway({
+  configUrl: 'https://bayview-taxi.example.com/dispatch',
+  key: '<YOUR_PUBLISHABLE_KEY>',
+  allowedOrigins: ['https://bayviewtaxi.example.com'],
+});
+const handoff = new HandoffRouter({ gateway });
+
+// Same prefix: the widget derives all three paths from the gateway's URL.
+agent.mount(gateway.router(), { prefix: '/chat' });
+agent.mount(handoff.router(), { prefix: '/chat' });
+
+await agent.serve();
+```

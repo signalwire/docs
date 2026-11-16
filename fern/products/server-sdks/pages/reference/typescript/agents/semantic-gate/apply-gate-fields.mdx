@@ -1,0 +1,71 @@
+---
+title: "applyGateFields"
+slug: reference/typescript/agents/semantic-gate/apply-gate-fields
+description: Check and normalize the gates and gate fillers in a function definition, in place.
+max-toc-depth: 3
+---
+
+[gate-definitions]: /docs/server-sdks/reference/typescript/agents/semantic-gate/gate-definitions
+
+Check and normalize `gates` and `gate_fillers` in a function's fields, in place.
+`fields` is a function definition or the extra fields of one. Its `gates` become
+the plain objects the platform reads, as returned by
+[`gateDefinitions()`][gate-definitions]. A `gate_fillers` that is left out or
+`null` is removed, because the platform ignores it.
+
+## Parameters
+
+<ParamField path="fields" type="Record<string, unknown>" required={true} toc={true}>
+  The function definition or its extra fields. Modified in place.
+</ParamField>
+
+<ParamField path="functionName" type="string" required={true} toc={true}>
+  The function's name, used in error messages and checked against the reserved
+  function names.
+</ParamField>
+
+<ParamField path="opts" type="{ definition?: boolean }" toc={true}>
+  Optional settings.
+</ParamField>
+
+<Indent>
+
+<ParamField path="opts.definition" type="boolean" default="false" toc={true}>
+  Set to `true` when `fields` is a whole function definition sent as written, such
+  as a `DataMap`'s or a raw one. Then the `gates` and `gate_fillers` keys are found
+  without regard to case, `gates: null` is refused, and a gated function needs a
+  `description` (or `purpose`). When `false`, a `null` or `undefined` `gates` means
+  no gates, as an option left out does.
+</ParamField>
+
+</Indent>
+
+## Returns
+
+`void`
+
+Throws `Error` for gates the platform would refuse, for `gate_fillers` on a
+function without gates (the platform ignores them there), for `gate_fillers` that
+isn't an object mapping a language code, `'auto'`, or `'default'` to a list of
+phrases, and, with `definition: true`, for a gated definition without a
+description.
+
+## Examples
+
+```typescript {14}
+import { applyGateFields } from '@signalwire/sdk';
+
+const fields: Record<string, unknown> = {
+  gates: [
+    {
+      question: 'Has the caller explicitly asked to cancel their account in `conversation`?',
+      threshold: 0.95,
+      on_fail: { response: 'cancel_account was not run. Ask the caller to confirm.' },
+    },
+  ],
+  gate_fillers: { 'en-US': ['One moment.'] },
+};
+
+applyGateFields(fields, 'cancel_account');
+console.log(fields.gates); // the gate as a plain object, deep-copied
+```
