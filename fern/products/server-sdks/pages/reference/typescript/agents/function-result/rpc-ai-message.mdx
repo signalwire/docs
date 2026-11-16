@@ -1,39 +1,59 @@
 ---
 title: "rpcAiMessage"
 slug: reference/typescript/agents/function-result/rpc-ai-message
-description: Inject a message into the AI agent running on another call.
+description: Send a message, global data, or both to the AI agent running on another call.
 max-toc-depth: 3
 ---
 
 [functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
+[rpcaiglobaldata]: /docs/server-sdks/reference/typescript/agents/function-result/rpc-ai-global-data
 
-Inject a message into the AI agent running on another call. Useful for
-cross-call coordination, such as notifying a held caller's agent about a
-status change or instructing it to relay information.
+Send a message, global data, or both to the AI agent running on another call.
+Useful for cross-call coordination, such as notifying a held caller's agent about
+a status change.
 
-## **Parameters**
+The two payloads behave differently. `messageText` lands as a turn in the other
+agent's conversation, where it competes with everything else arriving at that
+moment. `globalData` is merged into the other call's global data, where it stays
+silent until a prompt expands it with `${global_data.your_key}`, so data is the
+better channel for content a later step needs to say. To send data only, use
+[`rpcAiGlobalData()`][rpcaiglobaldata].
+
+## Parameters
 
 <ParamField path="callId" type="string" required={true} toc={true}>
   Call ID of the target call whose AI agent should receive the message.
 </ParamField>
 
-<ParamField path="messageText" type="string" required={true} toc={true}>
+<ParamField path="messageText" type="string | null" toc={true}>
   The message text to inject into the target AI's conversation.
 </ParamField>
 
 <ParamField path="role" type="string" default="system" toc={true}>
-  Role for the injected message. Typically `"system"` for instructions.
+  Role for the injected message, sent with the message. Typically `"system"` for
+  instructions.
 </ParamField>
 
-## **Returns**
+<ParamField path="globalData" type={"Record<string, unknown>"} toc={true}>
+  Object merged into the target call's global data.
+</ParamField>
+
+Throws an `Error` when neither `messageText` nor `globalData` is given.
+
+## Returns
 
 [`FunctionResult`][functionresult] -- `this`, for chaining.
 
-## **Example**
+## Example
 
-```typescript {4}
+```typescript {4-9}
 import { FunctionResult } from '@signalwire/sdk';
 
-const result = new FunctionResult()
-  .rpcAiMessage('call-id-123', 'The caller needs help with billing.');
+const result = new FunctionResult('Tell the driver the passenger has been updated.')
+  .rpcAiMessage(
+    '<WAITING_CALL_ID>',
+    'Your driver is on the way. Tell the caller their pickup is confirmed.',
+    'system',
+    { eta_minutes: 8 },
+  );
 ```

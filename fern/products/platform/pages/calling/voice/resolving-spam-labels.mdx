@@ -1,11 +1,21 @@
 ---
-title: Resolving spam labels
+title: Resolve spam labels and blocked calls
 slug: voice/resolving-spam-labels
-description: Fix SignalWire numbers labeled as spam or scam by requesting STIR/SHAKEN A attestation, updating CNAM, and correcting caller reputation with Hiya, First Orion, and TNS.
+description: Diagnose outbound calls that are blocked or labeled as spam, read the SIP response that points to the blocking provider, and fix caller reputation with STIR/SHAKEN A attestation, CNAM, and corrections to Hiya, First Orion, TNS, and Verizon.
 max-toc-depth: 3
 ---
 
-Mobile devices sometimes label calls as **Spam**, **Scam Likely**, or **Spam Risk**. If your SignalWire numbers show one of these warnings, the label usually comes from third-party caller-reputation providers used by mobile carriers and device apps. This guide walks through the full remediation path: requesting [STIR/SHAKEN](/docs/platform/voice/stir-shaken) "`A`" attestation, updating your [CNAM](/docs/platform/voice/how-to-set-caller-id-or-cnam), and submitting reputation corrections to the major providers.
+[segment-ids]: /docs/platform/what-is-a-sid
+[dashboard-logs]: https://my.signalwire.com/logs/voices
+[att-redress]: https://www.att.com/redressC
+[verizon-feedback]: https://www.voicespamfeedback.com/vsf/
+[first-orion-registration]: https://firstorion.com/products/free-number-registration/
+[free-caller-registry]: https://www.freecallerregistry.com/
+[rfc8197]: https://www.rfc-editor.org/rfc/rfc8197.html
+[rfc8688]: https://www.rfc-editor.org/rfc/rfc8688.html
+[fcc-rule]: https://www.ecfr.gov/current/title-47/chapter-I/subchapter-B/part-64/subpart-L/section-64.1200
+
+Carrier analytics can affect your outbound calls in two ways. A **labeled** call still rings, but the recipient's phone shows a warning such as **Spam**, **Scam Likely**, or **Spam Risk**. A **blocked** call never rings, because the destination network rejects it and your application sees a failed call. The two problems share most of their causes and fixes, so this guide covers both. It shows how to tell them apart, how to read the SIP response that points to the blocking provider, and how to request [STIR/SHAKEN](/docs/platform/voice/stir-shaken) "`A`" attestation, update your [CNAM](/docs/platform/voice/how-to-set-caller-id-or-cnam), and submit corrections to the providers that label and block calls.
 
 <Info>
 
@@ -13,18 +23,63 @@ Spam and scam labels are set by several independent systems: mobile carriers, de
 
 </Info>
 
-## How spam labels work
+## Labeled or blocked
 
-A spam or scam label is not stored in a single database. Several signals feed into it:
+Work out which problem you have before you change anything. A blocked call usually shows up as "we can't call this number" rather than "we're flagged as spam", and its fix starts in a different place.
 
-- Number history, including reputation inherited from a previous user of the number
-- Call patterns, such as volume, call duration, and answer rates
-- End-user spam reports
-- Your CNAM (caller ID name) record
-- STIR/SHAKEN call authentication and your attestation level
-- Reputation providers such as Hiya, First Orion, and TNS
+| | Labeled | Blocked |
+| --- | --- | --- |
+| Does the call reach the recipient? | Yes, with a warning on screen | No, the network rejects it |
+| What you notice | Fewer recipients answer | Calls to certain numbers fail without ringing |
+| Where the evidence is | A screenshot from the recipient's phone | The SIP response the destination network returned |
+| Where to start | [Identify who applied the label](#identify-who-applied-a-label) | [Diagnose the SIP response](#diagnose-a-blocked-call-from-its-sip-response) |
 
-Because these signals come from different sources, resolving a label usually takes more than one step. The steps below address each of these signals.
+## Diagnose a blocked call from its SIP response
+
+A blocked call fails with a SIP response code, and some of those responses carry the blocking provider's dispute contact. FCC rules require a terminating provider that blocks calls based on an analytics program to return a response code to the origination point of the call. On IP networks, that code is SIP `603+` as defined in ATIS-1000099 ([47 CFR 64.1200(k)(9)][fcc-rule]).
+
+To get the response for a failed call, open **Logs** in your [SignalWire Dashboard][dashboard-logs], select the call, and copy its [Segment ID][segment-ids]. Then open a ticket with SignalWire Support. Include two or three Segment IDs, or exact timestamps with a time zone, and ask for the SIP response code and `Reason` header that the destination network returned.
+
+| Response | What it means | What to do |
+| --- | --- | --- |
+| `603` with a `Reason` header containing `v=analytics1` | An analytics program blocked the call (`603+`) | Use the redress contact in the `Reason` header |
+| `607 Unwanted` | The called party marked the call as unwanted ([RFC 8197][rfc8197]) | Review consent and calling patterns for that destination |
+| `608 Rejected` | An intermediary, such as an analytics engine, rejected the call ([RFC 8688][rfc8688]) | Look for the intermediary's contact details in the `Call-Info` header |
+| `403`, `404`, or another code | Not one of the analytics responses above | Troubleshoot it as an ordinary call failure with SignalWire Support |
+
+### 603 with an analytics Reason header
+
+A `603+` response carries a `Reason` header whose `text` value starts with `v=analytics1`. It includes a redress contact, usually a `url`, and can include an `id` that identifies the block when you file a dispute. The contact arrives inside the rejection itself, so you don't have to guess which provider blocked the call.
+
+```text
+Reason: SIP;cause=603;text="v=analytics1;url=https://example.com/redress;id=ABC123"
+```
+
+<Warning title="Copy the AT&T redress URL exactly">
+
+The AT&T redress URL is `https://www.att.com/redressC`. The capital `C` at the end is part of the URL, not a typo, so keep it when you copy the link. The page states that the number is being blocked by AT&T's partner Hiya and sends you to Hiya to submit a claim.
+
+</Warning>
+
+### 607 Unwanted
+
+[RFC 8197][rfc8197] defines `607 Unwanted` as the way a called party indicates that a call was unwanted. The recipient's phone or app sends it, based on the user's input or its own logic. A service provider can weigh `607` responses when it decides how to handle future calls from the same caller, so a pattern of them points to a consent or calling-pattern problem.
+
+### 608 Rejected
+
+[RFC 8688][rfc8688] defines `608 Rejected` for calls that an intermediary rejects on the called user's behalf, with an analytics engine as the first use case. The intermediary adds a `Call-Info` header with `purpose=jwscard`. It points to a signed jCard with the intermediary's contact details, such as a URL, email address, or phone number, so you can reach the entity that blocked the call in error. In the US, FCC rules now require a terminating provider that blocks calls based on analytics to return `603+` instead.
+
+## Identify who applied a label
+
+The exact wording of a label can tell you which system applied it, so ask the recipient for a screenshot. Verizon lists its spam labels as **Potential Spam**, **Potential Fraud**, **Robo caller**, and **SPAM?**. A call with a different label, such as **SPAM LIKELY**, was not labeled by Verizon, and Verizon directs recipients to check with their spam protection service provider instead.
+
+Most reports name the carrier ("Verizon flags our calls") rather than the analytics provider. Use this table to find who to contact.
+
+| Recipient's carrier | Who labels or blocks the calls | Where to go |
+| --- | --- | --- |
+| AT&T | Hiya, as AT&T's partner | [AT&T blocked-call redress][att-redress], which sends you to Hiya, or the Hiya path below |
+| T-Mobile | First Orion | [First Orion free business number registration][first-orion-registration], whose watchlist shows when your numbers are tagged on T-Mobile |
+| Verizon | Verizon, with a third-party spam analytics provider | [Verizon voice spam feedback][verizon-feedback] |
 
 ## Remediation steps
 
@@ -55,6 +110,7 @@ Open a support ticket from the **Support** button in your [SignalWire Dashboard]
 - Confirmation that the numbers are assigned to your business or application
 - If caller ID name is not available through the Dashboard or REST API, a spreadsheet of the numbers and requested CNAM values
 - Evidence of the label: screenshots, the carrier or app where it appears (such as AT&T, Verizon, T-Mobile, Samsung Smart Call, or Hiya), and an example call date and time
+- For blocked calls, two or three [Segment IDs][segment-ids] of failed calls and the destination numbers
 
 If you need SignalWire Support to set CNAM, use this spreadsheet format:
 
@@ -84,8 +140,14 @@ For full details on caller ID and CNAM, see [Caller ID & CNAM](/docs/platform/vo
 
 ### Register with Free Caller Registry
 
-After attestation and CNAM are addressed, register your outbound numbers with [Free Caller Registry](https://www.freecallerregistry.com/). 
+After attestation and CNAM are addressed, register your outbound numbers with [Free Caller Registry][free-caller-registry]. 
 A single submission there forwards your business caller information to the major reputation providers, including First Orion, Hiya, and TNS.
+
+<Warning title="Only for businesses calling on their own behalf">
+
+Free Caller Registry accepts registrations only from the business that uses the numbers. If you are a service provider, BPO, or other third party registering numbers for another business, Free Caller Registry directs you to contact the call protection providers directly. Skip this step and use the provider paths in the next step instead.
+
+</Warning>
 
 Use accurate, consistent information:
 
@@ -100,15 +162,15 @@ Use accurate, consistent information:
 
 Be specific about why you call customers. Vague descriptions make it harder for reputation providers to validate the traffic.
 
-### Correct labels with a specific provider
+### Register or dispute with a specific provider
 
-The Free Caller Registry submission forwards your information to Hiya, First Orion, and TNS. If a specific provider still shows an incorrect label, or you want to register or report directly, use its path below.
+Provider paths come in two kinds. Registration tells a provider about your numbers before there's a problem. A dispute asks it to review a label or block that is already in place. If a specific provider still shows an incorrect label, blocks your calls, or you want to register directly, use its path below.
 
 <AccordionGroup>
 
 <Accordion title="Hiya: request a correction">
 
-If Hiya is labeling your calls incorrectly, submit a correction request through the [Hiya request hub](https://hiyahelp.zendesk.com/hc/en-us/p/request_hub). Include:
+If Hiya is labeling your calls incorrectly, submit a correction request through the [Hiya request hub](https://hiyahelp.zendesk.com/hc/en-us/p/request_hub). If AT&T is blocking your calls, the [AT&T blocked-call redress page][att-redress] sends you to Hiya to submit a claim. Include:
 
 - Business name
 - Business website
@@ -123,13 +185,15 @@ Hiya also offers business number registration and caller reputation review optio
 
 <Accordion title="First Orion: register your numbers">
 
-First Orion provides [free business number registration](https://firstorion.com/products/free-number-registration/). Registering supplies business and call-purpose information that influences how your calls are labeled across supported carrier networks. Use the same business name, website, number list, and call-purpose explanation you used with Free Caller Registry.
+First Orion provides [free business number registration][first-orion-registration]. Registering supplies business and call-purpose information that influences how your calls are labeled across supported carrier networks. Use the same business name, website, number list, and call-purpose explanation you used with Free Caller Registry.
+
+This is a registration path. The registration page doesn't describe a way to dispute a label that is already applied. Registration includes a free watchlist that shows when and why registered numbers are tagged as potential spam on T-Mobile. If you register through First Orion's API, note that API access supports T-Mobile registrations only.
 
 </Accordion>
 
 <Accordion title="TNS: report a mischaracterized call">
 
-TNS provides a [reporting path for mischaracterized calls](https://reportarobocall.com/). Use it when legitimate calls are treated as spam, nuisance, fraud, or robocall traffic. Include:
+TNS provides a [reporting path for mischaracterized calls](https://reportarobocall.com/). Use it when legitimate calls are treated as spam, nuisance, fraud, or robocall traffic. The form has a separate option for business or enterprise numbers that are blocked or mislabeled, and it takes a display name for each number you report. Include:
 
 - The calling number
 - The called number, if available
@@ -137,6 +201,12 @@ TNS provides a [reporting path for mischaracterized calls](https://reportaroboca
 - The label shown to the recipient
 - Your business name and website
 - A short explanation of why the call was legitimate
+
+</Accordion>
+
+<Accordion title="Verizon: send voice spam feedback">
+
+Verizon runs its own [voice spam feedback form][verizon-feedback] for calls to Verizon wireless and home phone numbers. Use it when your calls to Verizon customers show one of Verizon's labels or are blocked. Verizon shares the feedback with its third-party spam analytics provider. Verizon notes that "your submission may not result in a change to how future calls are labeled." This form complements the TNS path above rather than replacing it.
 
 </Accordion>
 
@@ -170,6 +240,22 @@ Thank you.
 
 </Steps>
 
+## Your rights when a carrier blocks calls in error
+
+FCC rules give callers a dispute route with the terminating provider that blocked the call ([47 CFR 64.1200(k)(8)][fcc-rule]). A terminating provider that blocks calls under that section must publish a single point of contact on its website for call blocking error complaints. When it determines that a credible claim of erroneous blocking is correct, it must promptly stop the call treatment for that number unless circumstances change. It may not charge you for reporting, investigating, or resolving a complaint made in good faith.
+
+## Confirm the result
+
+A dispute or registration is only finished when the calls behave differently, so test each affected path.
+
+For blocked calls, place a new test call to a destination that failed before. If it fails again, collect its Segment ID and ask SignalWire Support for the new SIP response. A `603+` that still carries a `Reason` header means the block is still in place, and its redress contact tells you who to follow up with.
+
+For labels, the recipient's phone is the place to check. Call a handset on each affected carrier's network and look at what it displays. First Orion's free watchlist reports when registered numbers are tagged as potential spam on T-Mobile, and the paid services listed later on this page include caller reputation monitoring.
+
+## Why a resolved label or block can return
+
+A successful dispute removes the current treatment. It doesn't change the calling behavior that triggered it. The FCC rule has a provider stop the call treatment for a number "unless circumstances change", and Verizon warns that a feedback submission may not change how future calls are labeled. If your numbers keep calling the way they did before, expect the label or block to come back. The practices in the next section are what keep a corrected number in good standing.
+
 ## Outbound Calling Best Practices
 
 Even after CNAM and reputation corrections are submitted, calling behavior can flag numbers again.
@@ -201,6 +287,12 @@ Consistent calling behavior keeps a corrected number in good standing.
 
 </Note>
 
+## What SignalWire can and can't do
+
+SignalWire can review your account for STIR/SHAKEN A attestation, set CNAM where your number's carrier supports it, and confirm that your numbers are assigned to you. SignalWire Support can also investigate a failed call from its Segment ID, which is how you get the SIP response described in [Diagnose a blocked call from its SIP response](#diagnose-a-blocked-call-from-its-sip-response).
+
+SignalWire can't remove a label or a block that another carrier or reputation provider applied.
+
 ## Optional paid reputation and branded calling services
 
 Several reputation providers offer commercial products for businesses that rely heavily on outbound calling.
@@ -227,6 +319,9 @@ These services suit customers with high outbound call volume, contact-center tra
   </Card>
   <Card title="Caller ID & CNAM" href="/docs/platform/voice/how-to-set-caller-id-or-cnam">
     Set caller ID and CNAM for your numbers and SIP endpoints.
+  </Card>
+  <Card title="Segment IDs" href="/docs/platform/what-is-a-sid">
+    Find the ID of a failed call to include in a support ticket.
   </Card>
   <Card title="Optimize delivery rates" href="/docs/platform/messaging/sms-best-practices">
     Parallel guidance for messages flagged as spam.
