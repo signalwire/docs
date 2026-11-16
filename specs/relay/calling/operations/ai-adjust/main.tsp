@@ -21,7 +21,9 @@ model AiAdjustRequest is JsonRpcRequest<typeof callingAiAdjust, AiAdjustParams>;
 @doc("""
   Change timing settings of the AI agent running on the call, without pausing it.
   Every value is validated before any is applied: one invalid value rejects the
-  whole request and nothing changes.
+  whole request and nothing changes. Applies only to an agent started with
+  `calling.ai`; on a `calling.amazon_bedrock` session the request fails with `code`
+  `"400"`.
 
   A `project_id` key anywhere in the params is refused with a JSON-RPC error
   `-32602`, and the request is not processed.

@@ -20,23 +20,6 @@ model QueueEnterParams {
   @doc("HTTP or HTTPS URL where SignalWire POSTs queue status updates as the call moves through the queue.")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
-
-  @doc("URL of audio to play to the caller while they wait in the queue. Has no effect on calls controlled over Relay; it applies only when a call enters the queue from SWML.")
-  @example("https://example.com/hold.mp3")
-  wait_url?: url;
-
-  @doc("How long, in seconds, to keep the caller in the queue before giving up. Default `180` (3 minutes). Has no effect on calls controlled over Relay; it applies only when a call enters the queue from SWML.")
-  @minValue(1)
-  @example(180)
-  wait_time?: int32;
-
-  @doc("Where to send the call after it leaves the queue — a URL or inline SWML to execute. Has no effect on calls controlled over Relay; it applies only when a call enters the queue from SWML.")
-  @example("https://example.com/swml/after-queue")
-  execute_after_queue?: string;
-
-  @doc("SWML to run on the queued call just before it is bridged — a URL to a SWML document or inline SWML (a JSON string starting with `{`). Has no effect on calls controlled over Relay; it applies only when a call enters the queue from SWML.")
-  @example("https://example.com/swml/whisper")
-  whisper_url?: string;
 }
 
 model QueueLeaveParams {

@@ -77,18 +77,15 @@ model DetectDigitParams {
   digits?: string;
 }
 
-@doc("""
-  Run the answering-machine (voicemail) detector. This is the default when `type`
-  is omitted.
-  """)
+@doc("Run the answering-machine (voicemail) detector.")
 @summary("Machine detector")
 model DetectConfigMachine {
-  @doc("`machine` (answering machine / voicemail). Optional — omitting `type` selects this detector.")
+  @doc("`machine` (answering machine / voicemail).")
   @example("machine")
-  type?: "machine" = "machine";
+  type: "machine";
 
-  @doc("Optional tuning for the machine detector. Every field is optional and defaults are used when omitted.")
-  params?: DetectMachineParams;
+  @doc("Tuning for the machine detector. Required, but every field inside is optional: send `{}` to use the defaults.")
+  params: DetectMachineParams;
 }
 
 @doc("Run the fax-tone detector.")
@@ -98,8 +95,8 @@ model DetectConfigFax {
   @example("fax")
   type: "fax";
 
-  @doc("Optional tuning for the fax detector. Only `tone` is accepted.")
-  params?: DetectFaxParams;
+  @doc("Tuning for the fax detector. Required, but `tone` is optional: send `{}` to use the default. Only `tone` is accepted.")
+  params: DetectFaxParams;
 }
 
 @doc("Run the DTMF digit detector.")
@@ -109,15 +106,16 @@ model DetectConfigDigit {
   @example("digit")
   type: "digit";
 
-  @doc("Optional tuning for the digit detector. Only `digits` is accepted.")
-  params?: DetectDigitParams;
+  @doc("Tuning for the digit detector. Required, but `digits` is optional: send `{}` to use the default. Only `digits` is accepted.")
+  params: DetectDigitParams;
 }
 
 @doc("""
-  The detector to start and its optional tuning. Set `type` to `machine`, `fax`, or
-  `digit` (omit it for `machine`), then supply that detector's settings in `params`.
-  When `type` is set, `params` accepts only that detector's fields; a field that
-  belongs to another detector is rejected with a `400`.
+  The detector to start and its tuning. Set `type` to `machine`, `fax`, or `digit`,
+  and supply that detector's settings in `params`. Both are required; a request
+  missing either is refused with a JSON-RPC error `-32602`. `params`
+  accepts only the chosen detector's fields; a field that belongs to another
+  detector is rejected with a `400`.
   """)
 @summary("Detector config")
 union DetectConfig {
@@ -133,16 +131,13 @@ model DetectParams {
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
-  @doc("The detector to run. Set `type` to `machine`, `fax`, or `digit`, then supply that detector's `params`.")
+  @doc("The detector to run. Set `type` to `machine`, `fax`, or `digit`, and supply that detector's `params` (send `{}` for the defaults).")
   detect: DetectConfig;
 
   @doc("Maximum time, in seconds, to run the detector before it stops on its own. Default `30.0`.")
   @minValue(0)
   @example(30.0)
   timeout?: float64;
-
-  @doc("HTTP(s) URL to POST detector events to.")
-  status_url?: url;
 }
 
 model DetectStopParams {

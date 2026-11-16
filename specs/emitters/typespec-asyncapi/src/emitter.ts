@@ -15,7 +15,7 @@ import {
   serializeValueAsJson,
   Type,
 } from "@typespec/compiler";
-import { getExtensions } from "@typespec/openapi";
+import { getExtensions, getInfo } from "@typespec/openapi";
 import { applyWebSocketBindings } from "./bindings/ws.js";
 import { getBearerAuth, getChannel, getReply, getServer } from "./decorators.js";
 import { AsyncAPIEmitterOptions, reportDiagnostic } from "./lib.js";
@@ -51,6 +51,24 @@ interface EventState {
   emitted: Set<string>;
   /** `${channelId}::${msgId}` pairs already given a receive op. */
   receive: Set<string>;
+  /**
+   * Owner of every component message id: the operation for its request/response messages, the
+   * model for an event message. Message ids are not namespace-qualified (an event's id is
+   * `lcfirst(model.name)`), so two distinct owners resolving to one id is reported as a
+   * `duplicate-message-id` error instead of silently reusing the first owner's message.
+   */
+  owners: Map<string, Type>;
+}
+
+/** Record `owner` as the source of message id `id`; false (plus a diagnostic) if another owner has it. */
+function claimMessageId(program: Program, owners: Map<string, Type>, id: string, owner: Type): boolean {
+  const prev = owners.get(id);
+  if (prev && prev !== owner) {
+    reportDiagnostic(program, { code: "duplicate-message-id", target: owner, format: { id } });
+    return false;
+  }
+  owners.set(id, owner);
+  return true;
 }
 
 function findServiceNamespace(program: Program): Namespace | undefined {
@@ -128,11 +146,12 @@ function ensureEventMessage(
   displayName: string,
   ref: RefFn,
   target: EmitTarget,
-  emitted: Set<string>,
+  events: EventState,
 ): string {
   const msgId = lcfirst(model.name);
-  if (emitted.has(msgId)) return msgId;
-  emitted.add(msgId);
+  if (!claimMessageId(program, events.owners, msgId, model)) return msgId;
+  if (events.emitted.has(msgId)) return msgId;
+  events.emitted.add(msgId);
   const msg: AsyncAPIMessage = {
     name: model.name,
     title: displayName,
@@ -215,7 +234,7 @@ function emitRpcMethods(
       const hasRequest = op.parameters.properties.size > 0;
 
       // Request message — payload is the operation's parameters (the in-spec request frame), verbatim.
-      if (hasRequest) {
+      if (hasRequest && claimMessageId(program, events.owners, reqMsgId, op)) {
         target.messages[reqMsgId] = {
           name: `${method}.request`,
           title: `${method} request`,
@@ -236,6 +255,7 @@ function emitRpcMethods(
       if (hasRequest) {
         replyArms.forEach((arm, i) => {
           const resMsgId = replyArms.length === 1 ? `${opKey}Response` : `${opKey}Response${i + 1}`;
+          claimMessageId(program, events.owners, resMsgId, op);
           target.messages[resMsgId] = {
             name: `${method}.response`,
             title: `${method} response`,
@@ -322,7 +342,7 @@ function emitRpcMethods(
       const seenReceive = new Set<string>();
       for (const ev of eventArms) {
         const dn = eventDisplayName(program, ev);
-        const msgId = ensureEventMessage(program, ev, dn, ref, target, events.emitted);
+        const msgId = ensureEventMessage(program, ev, dn, ref, target, events);
         if (seenReceive.has(msgId)) continue;
         seenReceive.add(msgId);
         emitReceiveOp(target, chId, `on${baseId}${ev.name}`, msgId, dn, msgs, events.receive, getExtensions(program, ev));
@@ -405,7 +425,7 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
   // One channel-name namespace is global across the whole connection — guard duplicates.
   const seen = new Set<string>();
   // Shared across services so an event referenced by ops in several services is emitted once.
-  const events: EventState = { emitted: new Set<string>(), receive: new Set<string>() };
+  const events: EventState = { emitted: new Set<string>(), receive: new Set<string>(), owners: new Map<string, Type>() };
 
   if (channelMode === "single") {
     // Idiomatic AsyncAPI shape for a single-socket, payload-routed protocol: ONE channel (the
@@ -433,7 +453,9 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
 
   const doc: AsyncAPI3Document = {
     asyncapi: "3.0.0",
-    info: { title, version: "1.0.0" },
+    // Document version from the standard `@info(#{ version })` on the service namespace
+    // (@typespec/openapi); "1.0.0" when none is authored.
+    info: { title, version: getInfo(program, serviceNs)?.version ?? "1.0.0" },
     defaultContentType: "application/json",
     servers: { [serverCfg.name]: server },
     channels,

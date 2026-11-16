@@ -4,6 +4,10 @@ import "@typespec/openapi";
 
 import "../models/core.tsp";
 import "../models/entities.tsp";
+import "../../calling/operations/ai/models/events.tsp";
+import "../../calling/operations/ai-sidecar/models/events.tsp";
+import "../../calling/operations/live-transcribe/models/events.tsp";
+import "../../calling/operations/live-translate/models/events.tsp";
 
 using TypeSpec.OpenAPI;
 
@@ -124,7 +128,7 @@ model CallStateParams {
   @example("e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f")
   segment_id?: string;
 
-  @doc("The `tag` you set when creating the call, echoed back so you can match the event to your request.")
+  @doc("The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.")
   @example("my-tag-1")
   tag?: string;
 
@@ -189,8 +193,8 @@ model CallStateParams {
 const fabricCallState = "call.state";
 @doc("""
   Fires every time a Call Fabric call leg changes state — created, ringing, answered,
-  ending, ended. Track the call through its lifecycle with `call_state`, and match `tag`
-  to the call you created.
+  ending, ended. Track the call through its lifecycle with `call_state`. A leg that a
+  server-side application dialed with a `tag` carries it here too.
   """)
 @summary(fabricCallState)
 @extension("x-fern-display-name", fabricCallState)
@@ -429,7 +433,7 @@ model FabricMediaEventAddress {
   @example("e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f")
   segment_id?: string;
 
-  @doc("The `tag` you set when creating the call, echoed back so you can match the event to your request.")
+  @doc("The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.")
   @example("my-tag-1")
   tag?: string;
 }
@@ -451,7 +455,7 @@ union FabricCallPlayState {
 model CallPlayParams {
   ...FabricMediaAddress;
 
-  @doc("The `control_id` of the playback this event refers to, returned when you started it.")
+  @doc("The `control_id` of the playback this event refers to, from the request that started it.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
@@ -461,7 +465,7 @@ model CallPlayParams {
 }
 
 const fabricCallPlay = "call.play";
-@doc("Fires when audio playback on a Call Fabric call starts, pauses, resumes, finishes, or errors, so you can track a play action through to completion.")
+@doc("Fires when audio playback on a Call Fabric call starts, pauses, resumes, finishes, or errors, so you can track the playback through to completion. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @summary(fabricCallPlay)
 @extension("x-fern-display-name", fabricCallPlay)
 model CallPlayEvent is SignalwireEvent<typeof fabricCallPlay, CallPlayParams>;
@@ -515,7 +519,7 @@ model CallConnectParams {
 }
 
 const fabricCallConnect = "call.connect";
-@doc("Fires as a connect request progresses, telling you whether your Call Fabric call has been bridged to the peer. Watch `connect_state` to know when the two calls are joined, torn down, or have failed to connect.")
+@doc("Fires as a connect progresses, telling you whether your Call Fabric call has been bridged to the peer. Watch `connect_state` to know when the two calls are joined, torn down, or have failed to connect. SWML or a server-side application starts the connect; there is no client request that starts it.")
 @summary(fabricCallConnect)
 @extension("x-fern-display-name", fabricCallConnect)
 model CallConnectEvent
@@ -561,7 +565,7 @@ model FabricRecordEventAudio {
   direction?: FabricRecordEventDirection;
 }
 
-@doc("Describes how the recording was made. The `audio` field is present when you recorded audio.")
+@doc("Describes how the recording was made. The `audio` field is present when audio was recorded.")
 @summary("Fabric recording specification")
 model FabricRecordEventSpec {
   @doc("The audio settings used for this recording.")
@@ -573,7 +577,7 @@ model FabricRecordEventSpec {
 model CallRecordParams {
   ...FabricMediaEventAddress;
 
-  @doc("The `control_id` of the recording this event refers to, returned when you started it.")
+  @doc("The `control_id` of the recording this event refers to, from the request that started it.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
@@ -618,7 +622,7 @@ model CallRecordParams {
 }
 
 const fabricCallRecord = "call.record";
-@doc("Fires when a recording on a Call Fabric call starts, pauses, resumes, or finishes. Every state carries the recording URL; the finished event adds the duration and file size.")
+@doc("Fires when a recording on a Call Fabric call starts, pauses, resumes, or finishes. Every state carries the recording URL; the finished event adds the duration and file size. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @summary(fabricCallRecord)
 @extension("x-fern-display-name", fabricCallRecord)
 model CallRecordEvent
@@ -668,14 +672,14 @@ model FabricCallCollectResultNoInput extends FabricCallCollectResult {
   type: "no_input";
 }
 
-@doc("Input was received but did not match your `digits`/`speech` criteria.")
+@doc("Input was received but did not match the collect's `digits`/`speech` criteria.")
 @summary("Fabric collect no-match result")
 model FabricCallCollectResultNoMatch extends FabricCallCollectResult {
   @example("no_match")
   type: "no_match";
 }
 
-@doc("Signals that the caller has started giving input. You receive this only when you set `send_start_of_input: true` on the collect.")
+@doc("Signals that the caller has started giving input. Sent only when the collect was started with `send_start_of_input: true`.")
 @summary("Fabric start-of-input result")
 model FabricCallCollectResultStartOfInput extends FabricCallCollectResult {
   @example("start_of_input")
@@ -700,7 +704,7 @@ model FabricCallCollectResultDigit extends FabricCallCollectResult {
     @example("1234")
     digits: string;
 
-    @doc("The digit that ended collection. Set to your terminator key when the caller pressed it, empty otherwise.")
+    @doc("The digit that ended collection. Set to the collect's terminator key when the caller pressed it, empty otherwise.")
     @example("#")
     terminator: string;
   };
@@ -728,7 +732,7 @@ model FabricCallCollectResultSpeech extends FabricCallCollectResult {
 model CallCollectParams {
   ...FabricMediaAddress;
 
-  @doc("The `control_id` of the collection this event refers to, returned when you started it.")
+  @doc("The `control_id` of the collection this event refers to, from the request that started it.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
@@ -736,11 +740,11 @@ model CallCollectParams {
   @example("finished")
   state?: FabricCallCollectState;
 
-  @doc("What the caller gave you. Check its `type` to handle digits, speech, or a no-input/no-match marker.")
+  @doc("What the caller gave. Check its `type` to handle digits, speech, or a no-input/no-match marker.")
   result?: FabricCallCollectResult;
 
   @doc("""
-    Relevant when you requested partial or continuous results: `true` once the
+    Relevant when the collect asked for partial or continuous results: `true` once the
     recognizer has finished the current utterance. With `continuous: true`, the
     collector then restarts to listen for the next one.
     """)
@@ -749,7 +753,7 @@ model CallCollectParams {
 }
 
 const fabricCallCollect = "call.collect";
-@doc("Fires as you collect input from a caller on a Call Fabric call — DTMF digits or speech — reporting partial and final results so you can react to what they said or pressed.")
+@doc("Fires as input is collected from the caller on a Call Fabric call — DTMF digits or speech — reporting partial and final results so you can react to what they said or pressed. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @summary(fabricCallCollect)
 @extension("x-fern-display-name", fabricCallCollect)
 model CallCollectEvent
@@ -859,7 +863,7 @@ model CallTapParams {
 }
 
 const fabricCallTap = "call.tap";
-@doc("Fires when a tap starts streaming Call Fabric call audio and again when it stops. Check `state` to tell which.")
+@doc("Fires when a tap starts streaming Call Fabric call audio and again when it stops. Check `state` to tell which. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @summary(fabricCallTap)
 @extension("x-fern-display-name", fabricCallTap)
 model CallTapEvent is SignalwireEvent<typeof fabricCallTap, CallTapParams>;
@@ -891,13 +895,13 @@ model CallStreamParams {
   @example("wss://example.com/media")
   url?: url;
 
-  @doc("The friendly name you gave the stream, if you set one.")
+  @doc("The stream's friendly name, if one was set.")
   @example("my_stream")
   name?: string;
 }
 
 const fabricCallStream = "call.stream";
-@doc("Fires when a media stream on a Call Fabric call starts and again when it stops. Check `state` to tell which.")
+@doc("Fires when a media stream on a Call Fabric call starts and again when it stops. Check `state` to tell which. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @summary(fabricCallStream)
 @extension("x-fern-display-name", fabricCallStream)
 model CallStreamEvent
@@ -931,14 +935,14 @@ union FabricCallDetectMachineEvent {
   "UNKNOWN",
 
   @doc("""
-    The machine is ready for you to leave your message. This is a final result
+    The machine is ready for a message to be left. This is a final result
     when `detect_interruptions=false` or `beep=true`.
     """)
   "READY",
 
   @doc("""
-    The machine's greeting started over and interrupted your message. You only
-    receive this when `detect_interruptions=true`.
+    The machine's greeting started over and interrupted the message being left.
+    Sent only when the detector runs with `detect_interruptions=true`.
     """)
   "NOT_READY",
 
@@ -979,7 +983,7 @@ model FabricCallDetectMachine extends FabricCallDetectResult {
     @example("MACHINE")
     event: FabricCallDetectMachineEvent;
 
-    @doc("Whether a beep was detected, signaling it's your turn to leave a message.")
+    @doc("Whether a beep was detected, signaling that a message can be left now.")
     @example(true)
     beep?: boolean;
   };
@@ -1002,7 +1006,7 @@ model FabricCallDetectDigit extends FabricCallDetectResult {
 model CallDetectParams {
   ...FabricMediaEventAddress;
 
-  @doc("The `control_id` of the detector this event refers to, returned when you started it.")
+  @doc("The `control_id` of the detector this event refers to, from the request that started it.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
@@ -1011,7 +1015,7 @@ model CallDetectParams {
 }
 
 const fabricCallDetect = "call.detect";
-@doc("Fires when a detector on a Call Fabric call reports a result — a fax tone, an answering machine versus a human, or a DTMF digit.")
+@doc("Fires when a detector on a Call Fabric call reports a result — a fax tone, an answering machine versus a human, or a DTMF digit. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @summary(fabricCallDetect)
 @extension("x-fern-display-name", fabricCallDetect)
 model CallDetectEvent
@@ -1024,7 +1028,7 @@ model CallDetectEvent
 // ===========================================================================
 
 // ── call.dial ────────────────────────────────────────────────────────────────
-@doc("Payload of the Call Fabric `call.dial` event: the outcome of a dial that reached your call leg.")
+@doc("Payload of the Call Fabric `call.dial` event: the outcome of a dial that reached the call leg.")
 @summary("Call Fabric dial event payload")
 model CallDialParams {
   @doc("The dial's `tag`. This event has no call ID of its own, so `call_id` carries the same value.")
@@ -1039,7 +1043,7 @@ model CallDialParams {
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id: string;
 
-  @doc("The `tag` set on the dial request.")
+  @doc("The `tag` the server-side application set on the dial.")
   @example("my-tag-1")
   tag: string;
 
@@ -1060,7 +1064,7 @@ model CallDialParams {
 }
 
 const fabricCallDial = "call.dial";
-@doc("Fires when a dial reaches a Call Fabric call leg, reporting whether it was answered or failed.")
+@doc("Fires when a dial reaches a Call Fabric call leg, reporting whether it was answered or failed. A server-side application starts the dial; there is no client request that starts it.")
 @summary(fabricCallDial)
 @extension("x-fern-display-name", fabricCallDial)
 model CallDialEvent is SignalwireEvent<typeof fabricCallDial, CallDialParams>;
@@ -1081,7 +1085,7 @@ model CallSendDigitsParams {
 }
 
 const fabricCallSendDigits = "call.send_digits";
-@doc("Fires when sending DTMF digits on a Call Fabric call leg finishes or fails.")
+@doc("Fires when sending DTMF digits on a Call Fabric call leg finishes or fails. SWML or a server-side application sends the digits on the leg; digits you send with `call.digit.send` do not fire this event.")
 @summary(fabricCallSendDigits)
 @extension("x-fern-display-name", fabricCallSendDigits)
 model CallSendDigitsEvent
@@ -1111,7 +1115,7 @@ model CallReferParams {
 }
 
 const fabricCallRefer = "call.refer";
-@doc("Fires each time a SIP REFER transfer of a Call Fabric call leg changes state.")
+@doc("Fires each time a SIP REFER transfer of a Call Fabric call leg changes state. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @summary(fabricCallRefer)
 @extension("x-fern-display-name", fabricCallRefer)
 model CallReferEvent is SignalwireEvent<typeof fabricCallRefer, CallReferParams>;
@@ -1211,7 +1215,7 @@ model CallTranscribeParams {
 }
 
 const fabricCallTranscribe = "call.transcribe";
-@doc("Fires when transcription on a Call Fabric call leg starts and again when it finishes.")
+@doc("Fires when transcription on a Call Fabric call leg starts and again when it finishes. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @summary(fabricCallTranscribe)
 @extension("x-fern-display-name", fabricCallTranscribe)
 model CallTranscribeEvent
@@ -1261,7 +1265,7 @@ model CallQueueParams {
 }
 
 const fabricCallQueue = "call.queue";
-@doc("Fires as a Call Fabric call leg moves through a queue: when it joins, is pulled to be connected, or leaves, plus periodic position updates.")
+@doc("Fires as a Call Fabric call leg moves through a queue: when it joins, is pulled to be connected, or leaves, plus periodic position updates. SWML or a server-side application places the leg in the queue; there is no client request that does.")
 @summary(fabricCallQueue)
 @extension("x-fern-display-name", fabricCallQueue)
 model CallQueueEvent is SignalwireEvent<typeof fabricCallQueue, CallQueueParams>;
@@ -1296,7 +1300,7 @@ model CallFaxParams {
 }
 
 const fabricCallFax = "call.fax";
-@doc("Fires as a fax on a Call Fabric call leg progresses: once per page, then once when it finishes.")
+@doc("Fires as a fax on a Call Fabric call leg progresses: once per page, then once when it finishes. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @summary(fabricCallFax)
 @extension("x-fern-display-name", fabricCallFax)
 model CallFaxEvent is SignalwireEvent<typeof fabricCallFax, CallFaxParams>;
@@ -1321,7 +1325,7 @@ model CallPayParams {
 }
 
 const fabricCallPay = "call.pay";
-@doc("Fires as a pay session on a Call Fabric call leg progresses and once more when it completes.")
+@doc("Fires as a pay session on a Call Fabric call leg progresses and once more when it completes. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @summary(fabricCallPay)
 @extension("x-fern-display-name", fabricCallPay)
 model CallPayEvent is SignalwireEvent<typeof fabricCallPay, CallPayParams>;
@@ -1342,7 +1346,7 @@ model CallAiParams {
 }
 
 const fabricCallAi = "call.ai";
-@doc("Fires when an AI agent session on a Call Fabric call leg ends.")
+@doc("Fires when an AI agent session on a Call Fabric call leg ends. SWML or a server-side application starts the agent on the leg; there is no client request that starts it.")
 @summary(fabricCallAi)
 @extension("x-fern-display-name", fabricCallAi)
 model CallAiEvent is SignalwireEvent<typeof fabricCallAi, CallAiParams>;
@@ -1363,149 +1367,258 @@ model FabricUserEvent
   is SignalwireEvent<typeof fabricUserEvent, FabricUserEventParams>;
 
 // ── ai.* ─────────────────────────────────────────────────────────────────────
-@doc("""
-  Payload of an `ai.*` event on a Call Fabric call leg: the call address plus the
-  event-specific fields. Each event carries the same fields as the matching
-  `calling.ai.*` event in the Calling API.
-  """)
-@summary("Call Fabric AI activity event payload")
-model FabricAiEventParams {
+// The ai.* events are the Calling API's calling.ai.* events delivered to the
+// Call Fabric leg: same body, with the Fabric address (room_session_id added) in
+// place of the Calling event address. Spread the Calling payload so the two
+// surfaces share one contract.
+alias CallingEventAddressKey = "node_id" | "call_id" | "segment_id" | "tag";
+
+@summary("Call Fabric AI completion event payload")
+model FabricAiCompletionParams {
   ...FabricMediaEventAddress;
-  ...Record<unknown>;
+  ...OmitProperties<Relay.Calling.AiCompletionEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric AI response event payload")
+model FabricAiResponseParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.AiResponseEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric AI response utterance event payload")
+model FabricAiResponseUtteranceParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.AiResponseUtteranceEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric AI speech detect event payload")
+model FabricAiSpeechDetectParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.AiSpeechDetectEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric AI partial result event payload")
+model FabricAiPartialResultParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.AiPartialResultEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric AI begin speaking event payload")
+model FabricAiBeginSpeakingParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.AiBeginSpeakingEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric AI warning event payload")
+model FabricAiWarningParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.AiWarningEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric AI transparent barge event payload")
+model FabricAiTransparentBargeParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.AiTransparentBargeEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric AI stop event payload")
+model FabricAiStopParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.AiStopEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric AI post-prompt event payload")
+model FabricAiPostPromptParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.AiPostPromptEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric AI SWAIG event payload")
+model FabricAiSwaigParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.AiSwaigEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric AI SWAIG action event payload")
+model FabricAiSwaigActionParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.AiSwaigActionEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric AI sidecar event payload")
+model FabricAiSidecarParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.AiSidecarEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric Live transcription utterance event payload")
+model FabricAiTranscribeUtteranceParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.TranscribeUtteranceEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric Live transcription summary event payload")
+model FabricAiTranscribeLiveSummarizeParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.TranscribeLiveSummarizeEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric Live transcription conversation log event payload")
+model FabricAiTranscribeConversationLogParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.TranscribeConversationLogEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric Live translation transcript delta event payload")
+model FabricAiTranslateTranscriptDeltaParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.TranslateTranscriptDeltaEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric Live translation summary event payload")
+model FabricAiTranslateLiveSummaryParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.TranslateLiveSummaryEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric Live translation conversation log event payload")
+model FabricAiTranslateConversationLogParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.TranslateConversationLogEventData, CallingEventAddressKey>;
 }
 
 const fabricAiCompletion = "ai.completion";
-@doc("Fires on a Call Fabric call leg when the agent completes a response turn, with the response `text` and whether it was `barged`. Same fields as the Calling API's `calling.ai.completion` event.")
+@doc("Fires on a Call Fabric call leg when the agent completes a response turn, with the response `text` and whether it was `barged`. Same fields as the Calling API's `calling.ai.completion` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @summary(fabricAiCompletion)
 @extension("x-fern-display-name", fabricAiCompletion)
 model FabricAiCompletionEvent
-  is SignalwireEvent<typeof fabricAiCompletion, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiCompletion, FabricAiCompletionParams>;
 
 const fabricAiResponse = "ai.response";
-@doc("Fires on a Call Fabric call leg when the agent produces its full response text for a turn. Same fields as the Calling API's `calling.ai.response` event.")
+@doc("Fires on a Call Fabric call leg when the agent produces its full response text for a turn. Same fields as the Calling API's `calling.ai.response` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @summary(fabricAiResponse)
 @extension("x-fern-display-name", fabricAiResponse)
 model FabricAiResponseEvent
-  is SignalwireEvent<typeof fabricAiResponse, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiResponse, FabricAiResponseParams>;
 
 const fabricAiResponseUtterance = "ai.response_utterance";
-@doc("Fires on a Call Fabric call leg when the agent speaks one segment of its response. Same fields as the Calling API's `calling.ai.response_utterance` event.")
+@doc("Fires on a Call Fabric call leg when the agent speaks one segment of its response. Same fields as the Calling API's `calling.ai.response_utterance` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @summary(fabricAiResponseUtterance)
 @extension("x-fern-display-name", fabricAiResponseUtterance)
 model FabricAiResponseUtteranceEvent
-  is SignalwireEvent<typeof fabricAiResponseUtterance, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiResponseUtterance, FabricAiResponseUtteranceParams>;
 
 const fabricAiSpeechDetect = "ai.speech_detect";
-@doc("Fires on a Call Fabric call leg when the caller's final transcript for a turn is recognized. Same fields as the Calling API's `calling.ai.speech_detect` event.")
+@doc("Fires on a Call Fabric call leg when the caller's final transcript for a turn is recognized. Same fields as the Calling API's `calling.ai.speech_detect` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @summary(fabricAiSpeechDetect)
 @extension("x-fern-display-name", fabricAiSpeechDetect)
 model FabricAiSpeechDetectEvent
-  is SignalwireEvent<typeof fabricAiSpeechDetect, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiSpeechDetect, FabricAiSpeechDetectParams>;
 
 const fabricAiPartialResult = "ai.partial_result";
-@doc("Fires on a Call Fabric call leg when an interim transcript of the caller's speech is available. Same fields as the Calling API's `calling.ai.partial_result` event.")
+@doc("Fires on a Call Fabric call leg when an interim transcript of the caller's speech is available. Same fields as the Calling API's `calling.ai.partial_result` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @summary(fabricAiPartialResult)
 @extension("x-fern-display-name", fabricAiPartialResult)
 model FabricAiPartialResultEvent
-  is SignalwireEvent<typeof fabricAiPartialResult, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiPartialResult, FabricAiPartialResultParams>;
 
 const fabricAiBeginSpeaking = "ai.begin_speaking";
-@doc("Fires on a Call Fabric call leg when speaking starts in the AI session. Same fields as the Calling API's `calling.ai.begin_speaking` event.")
+@doc("Fires on a Call Fabric call leg when speaking starts in the AI session. Same fields as the Calling API's `calling.ai.begin_speaking` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @summary(fabricAiBeginSpeaking)
 @extension("x-fern-display-name", fabricAiBeginSpeaking)
 model FabricAiBeginSpeakingEvent
-  is SignalwireEvent<typeof fabricAiBeginSpeaking, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiBeginSpeaking, FabricAiBeginSpeakingParams>;
 
 const fabricAiWarning = "ai.warning";
-@doc("Fires on a Call Fabric call leg when the AI session reports a non-fatal warning. Same fields as the Calling API's `calling.ai.warning` event.")
+@doc("Fires on a Call Fabric call leg when the AI session reports a non-fatal warning. Same fields as the Calling API's `calling.ai.warning` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @summary(fabricAiWarning)
 @extension("x-fern-display-name", fabricAiWarning)
 model FabricAiWarningEvent
-  is SignalwireEvent<typeof fabricAiWarning, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiWarning, FabricAiWarningParams>;
 
 const fabricAiTransparentBarge = "ai.transparent_barge";
-@doc("Fires on a Call Fabric call leg when the caller interrupts the agent and the turn is handled as a transparent barge. Same fields as the Calling API's `calling.ai.transparent_barge` event.")
+@doc("Fires on a Call Fabric call leg when the caller interrupts the agent and the turn is handled as a transparent barge. Same fields as the Calling API's `calling.ai.transparent_barge` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @summary(fabricAiTransparentBarge)
 @extension("x-fern-display-name", fabricAiTransparentBarge)
 model FabricAiTransparentBargeEvent
-  is SignalwireEvent<typeof fabricAiTransparentBarge, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiTransparentBarge, FabricAiTransparentBargeParams>;
 
 const fabricAiStop = "ai.stop";
-@doc("Fires on a Call Fabric call leg when the AI session stops, with session timing and billing detail. Same fields as the Calling API's `calling.ai.stop` event.")
+@doc("Fires on a Call Fabric call leg when the AI session stops, with session timing and billing detail. Same fields as the Calling API's `calling.ai.stop` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @summary(fabricAiStop)
 @extension("x-fern-display-name", fabricAiStop)
 model FabricAiStopEvent
-  is SignalwireEvent<typeof fabricAiStop, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiStop, FabricAiStopParams>;
 
 const fabricAiPostPrompt = "ai.post_prompt";
-@doc("Fires on a Call Fabric call leg when the end-of-call summary is produced. Same fields as the Calling API's `calling.ai.post_prompt` event.")
+@doc("Fires on a Call Fabric call leg when the end-of-call summary is produced. Same fields as the Calling API's `calling.ai.post_prompt` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @summary(fabricAiPostPrompt)
 @extension("x-fern-display-name", fabricAiPostPrompt)
 model FabricAiPostPromptEvent
-  is SignalwireEvent<typeof fabricAiPostPrompt, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiPostPrompt, FabricAiPostPromptParams>;
 
 const fabricAiSwaig = "ai.swaig";
-@doc("Fires on a Call Fabric call leg when a SWAIG function is called. Same fields as the Calling API's `calling.ai.swaig` event.")
+@doc("Fires on a Call Fabric call leg when a SWAIG function is called. Same fields as the Calling API's `calling.ai.swaig` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @summary(fabricAiSwaig)
 @extension("x-fern-display-name", fabricAiSwaig)
 model FabricAiSwaigEvent
-  is SignalwireEvent<typeof fabricAiSwaig, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiSwaig, FabricAiSwaigParams>;
 
 const fabricAiSwaigAction = "ai.swaig_action";
-@doc("Fires on a Call Fabric call leg when a SWAIG function returns an action. Same fields as the Calling API's `calling.ai.swaig_action` event.")
+@doc("Fires on a Call Fabric call leg when a SWAIG function returns an action. Same fields as the Calling API's `calling.ai.swaig_action` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @summary(fabricAiSwaigAction)
 @extension("x-fern-display-name", fabricAiSwaigAction)
 model FabricAiSwaigActionEvent
-  is SignalwireEvent<typeof fabricAiSwaigAction, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiSwaigAction, FabricAiSwaigActionParams>;
 
 const fabricAiSidecar = "ai.sidecar";
-@doc("Fires on a Call Fabric call leg when the AI sidecar reports activity. Same fields as the Calling API's `calling.ai.sidecar` event.")
+@doc("Fires on a Call Fabric call leg when the AI sidecar reports activity. Same fields as the Calling API's `calling.ai.sidecar` event. SWML or a server-side application attaches the sidecar to the leg; there is no client request that attaches it.")
 @summary(fabricAiSidecar)
 @extension("x-fern-display-name", fabricAiSidecar)
 model FabricAiSidecarEvent
-  is SignalwireEvent<typeof fabricAiSidecar, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiSidecar, FabricAiSidecarParams>;
 
 const fabricAiTranscribeUtterance = "ai.transcribe.utterance";
-@doc("Fires on a Call Fabric call leg when live transcription produces an utterance. Same fields as the Calling API's `calling.ai.transcribe.utterance` event.")
+@doc("Fires on a Call Fabric call leg when live transcription produces an utterance. Same fields as the Calling API's `calling.ai.transcribe.utterance` event. SWML or a server-side application starts live transcription on the leg; there is no client request that starts it.")
 @summary(fabricAiTranscribeUtterance)
 @extension("x-fern-display-name", fabricAiTranscribeUtterance)
 model FabricAiTranscribeUtteranceEvent
-  is SignalwireEvent<typeof fabricAiTranscribeUtterance, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiTranscribeUtterance, FabricAiTranscribeUtteranceParams>;
 
 const fabricAiTranscribeLiveSummarize = "ai.transcribe.live_summarize";
-@doc("Fires on a Call Fabric call leg when live transcription produces a running summary. Same fields as the Calling API's `calling.ai.transcribe.live_summarize` event.")
+@doc("Fires on a Call Fabric call leg when live transcription produces a running summary. Same fields as the Calling API's `calling.ai.transcribe.live_summarize` event. SWML or a server-side application starts live transcription on the leg; there is no client request that starts it.")
 @summary(fabricAiTranscribeLiveSummarize)
 @extension("x-fern-display-name", fabricAiTranscribeLiveSummarize)
 model FabricAiTranscribeLiveSummarizeEvent
-  is SignalwireEvent<typeof fabricAiTranscribeLiveSummarize, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiTranscribeLiveSummarize, FabricAiTranscribeLiveSummarizeParams>;
 
 const fabricAiTranscribeConversationLog = "ai.transcribe.conversation_log";
-@doc("Fires on a Call Fabric call leg when live transcription delivers its conversation log. Same fields as the Calling API's `calling.ai.transcribe.conversation_log` event.")
+@doc("Fires on a Call Fabric call leg when live transcription delivers its conversation log. Same fields as the Calling API's `calling.ai.transcribe.conversation_log` event. SWML or a server-side application starts live transcription on the leg; there is no client request that starts it.")
 @summary(fabricAiTranscribeConversationLog)
 @extension("x-fern-display-name", fabricAiTranscribeConversationLog)
 model FabricAiTranscribeConversationLogEvent
-  is SignalwireEvent<typeof fabricAiTranscribeConversationLog, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiTranscribeConversationLog, FabricAiTranscribeConversationLogParams>;
 
 const fabricAiTranslateTranscriptDelta = "ai.translate.transcript_delta";
-@doc("Fires on a Call Fabric call leg when live translation produces translated text. Same fields as the Calling API's `calling.ai.translate.transcript_delta` event.")
+@doc("Fires on a Call Fabric call leg when live translation produces translated text. Same fields as the Calling API's `calling.ai.translate.transcript_delta` event. SWML or a server-side application starts live translation on the leg; there is no client request that starts it.")
 @summary(fabricAiTranslateTranscriptDelta)
 @extension("x-fern-display-name", fabricAiTranslateTranscriptDelta)
 model FabricAiTranslateTranscriptDeltaEvent
-  is SignalwireEvent<typeof fabricAiTranslateTranscriptDelta, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiTranslateTranscriptDelta, FabricAiTranslateTranscriptDeltaParams>;
 
 const fabricAiTranslateLiveSummary = "ai.translate.live_summary";
-@doc("Fires on a Call Fabric call leg when live translation produces a running summary. Same fields as the Calling API's `calling.ai.translate.live_summary` event.")
+@doc("Fires on a Call Fabric call leg when live translation produces a running summary. Same fields as the Calling API's `calling.ai.translate.live_summary` event. SWML or a server-side application starts live translation on the leg; there is no client request that starts it.")
 @summary(fabricAiTranslateLiveSummary)
 @extension("x-fern-display-name", fabricAiTranslateLiveSummary)
 model FabricAiTranslateLiveSummaryEvent
-  is SignalwireEvent<typeof fabricAiTranslateLiveSummary, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiTranslateLiveSummary, FabricAiTranslateLiveSummaryParams>;
 
 const fabricAiTranslateConversationLog = "ai.translate.conversation_log";
-@doc("Fires on a Call Fabric call leg when live translation delivers its conversation log. Same fields as the Calling API's `calling.ai.translate.conversation_log` event.")
+@doc("Fires on a Call Fabric call leg when live translation delivers its conversation log. Same fields as the Calling API's `calling.ai.translate.conversation_log` event. SWML or a server-side application starts live translation on the leg; there is no client request that starts it.")
 @summary(fabricAiTranslateConversationLog)
 @extension("x-fern-display-name", fabricAiTranslateConversationLog)
 model FabricAiTranslateConversationLogEvent
-  is SignalwireEvent<typeof fabricAiTranslateConversationLog, FabricAiEventParams>;
+  is SignalwireEvent<typeof fabricAiTranslateConversationLog, FabricAiTranslateConversationLogParams>;
 
 // ===========================================================================
 // Conference events (room.*, rooms.*, member.promoted/demoted, recording.*,

@@ -18,7 +18,15 @@ model VmutedHideSetResult { ...FabricResult; }
 @reply
 model VmutedHideSetReply is JsonRpcResponse<VmutedHideSetResult>;
 
-@doc("Sets whether video-muted members are hidden from the room layout. A `room.updated` event follows.")
+@doc("""
+  Hides video-muted members from the room layout. A `room.updated` event follows.
+
+  Send `hide: true`. The request always hides video-muted members, whatever value
+  `hide` carries, so it can't be used to show them again.
+
+  Returns code `"403"` when the target is on a 1:1 call rather than in a conference,
+  or when you lack permission.
+  """)
 @channel(callVmutedHideSet)
 @summary("Hide or show video-muted members")
 @extension("x-fern-display-name", callVmutedHideSet)
@@ -32,7 +40,12 @@ model LockResult { ...FabricResult; }
 @reply
 model LockReply is JsonRpcResponse<LockResult>;
 
-@doc("Locks the room to new participants. A `room.updated` event follows.")
+@doc("""
+  Locks the room to new participants. A `room.updated` event follows.
+
+  Returns code `"403"` when the target is on a 1:1 call rather than in a conference,
+  or when you lack permission.
+  """)
 @channel(callLock)
 @summary("Lock the room")
 @extension("x-fern-display-name", callLock)
@@ -46,7 +59,12 @@ model UnlockResult { ...FabricResult; }
 @reply
 model UnlockReply is JsonRpcResponse<UnlockResult>;
 
-@doc("Unlocks the room, reversing `call.lock`. A `room.updated` event follows.")
+@doc("""
+  Unlocks the room, reversing `call.lock`. A `room.updated` event follows.
+
+  Returns code `"403"` when the target is on a 1:1 call rather than in a conference,
+  or when you lack permission.
+  """)
 @channel(callUnlock)
 @summary("Unlock the room")
 @extension("x-fern-display-name", callUnlock)
@@ -61,7 +79,13 @@ model LowbitrateSetResult { ...FabricResult; }
 @reply
 model LowbitrateSetReply is JsonRpcResponse<LowbitrateSetResult>;
 
-@doc("Enables or disables low-bitrate mode for a member. Target yourself with `self` or another member with `target`. A `member.updated` event follows.")
+@doc("""
+  Enables or disables low-bitrate mode for a member. Target yourself with `self` or another member with `target`. A `member.updated`
+  event follows.
+
+  Returns code `"403"` when the target is on a 1:1 call rather than in a conference,
+  or when you lack permission to act on that member.
+  """)
 @channel(callLowbitrateSet)
 @summary("Set a member's low-bitrate mode")
 @extension("x-fern-display-name", callLowbitrateSet)
@@ -76,7 +100,13 @@ model DenoiseSetResult { ...FabricResult; }
 @reply
 model DenoiseSetReply is JsonRpcResponse<DenoiseSetResult>;
 
-@doc("Enables or disables noise reduction (denoise) for a member. Target yourself with `self` or another member with `target`. A `member.updated` event follows.")
+@doc("""
+  Enables or disables noise reduction (denoise) for a member. Target yourself with `self` or another member with `target`. A `member.updated`
+  event follows.
+
+  Returns code `"403"` when the target is on a 1:1 call rather than in a conference,
+  or when you lack permission to act on that member.
+  """)
 @channel(callDenoiseSet)
 @summary("Set a member's denoise")
 @extension("x-fern-display-name", callDenoiseSet)
@@ -91,7 +121,13 @@ model AudioflagsSetResult { ...FabricResult; }
 @reply
 model AudioflagsSetReply is JsonRpcResponse<AudioflagsSetResult>;
 
-@doc("Sets a member's audio processing flags — echo cancellation, noise suppression, automatic gain. Send at least one flag. Target yourself with `self` or another member with `target`. A `member.updated` event follows.")
+@doc("""
+  Sets a member's audio processing flags — echo cancellation, noise suppression, automatic gain. Send at least one flag. Target yourself with `self` or another member with `target`. A `member.updated`
+  event follows.
+
+  Returns code `"403"` when the target is on a 1:1 call rather than in a conference,
+  or when you lack permission to act on that member.
+  """)
 @channel(callAudioflagsSet)
 @summary("Set a member's audio flags")
 @extension("x-fern-display-name", callAudioflagsSet)

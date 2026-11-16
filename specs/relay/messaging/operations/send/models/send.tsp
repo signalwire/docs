@@ -75,7 +75,18 @@ model SendParams {
   @example("+15551230002")
   to_number: string;
 
-  @doc("The number to send from: an E.164 phone number or a 5–6 digit short code. Must be on your account.")
+  @doc("""
+    The sender, which also picks the channel. One of:
+
+    - A phone number on your project, in E.164 format, to send SMS or MMS.
+    - A 5–6 digit short code on your project, to send SMS or MMS.
+    - Your registered WhatsApp business number, prefixed with `whatsapp:` (for
+      example, `whatsapp:+15551230001`), to send over WhatsApp.
+    - The ID of your RCS agent, to send over RCS. The agent must be in review,
+      launching, or launched, and RCS must be enabled for your space.
+
+    A verified caller ID can't be used as the sender.
+    """)
   @example("+15551230001")
   from_number: string;
 
@@ -92,7 +103,8 @@ model SendParams {
   @doc("""
     One or more media URLs to send as an MMS. You must include `body`, `media`,
     or both — at least one is required. Each URL must be HTTP or HTTPS. Up to
-    8 URLs; defaults to an empty array.
+    8 URLs; defaults to an empty array. Not supported when sending from an RCS
+    agent.
     """)
   @maxItems(8)
   @example(#["https://example.com/receipt.png"])
@@ -109,7 +121,7 @@ model SendParams {
   @doc("""
     For a WhatsApp media or interactive message, the kind of WhatsApp message to
     send. Required when sending from a WhatsApp number unless you supply a
-    `template_id` instead. Leave unset for SMS/MMS.
+    `template_id` instead. Leave unset for SMS, MMS, and RCS.
     """)
   @example("whatsapp_media_image")
   message_type?: WhatsAppMessageType;

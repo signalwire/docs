@@ -73,6 +73,12 @@ export const $lib = createTypeSpecLibrary({
         default: paramMessage`@channel "${"method"}" has no request parameters (a receive-only channel) but returns a @reply/@error model. A reply correlates to a request; either give the operation request parameters or return only server-pushed event models.`,
       },
     },
+    "duplicate-message-id": {
+      severity: "error",
+      messages: {
+        default: paramMessage`Duplicate message id "${"id"}". Two distinct operations or event models resolve to the same AsyncAPI message id (event ids are the model name, without its namespace); rename one.`,
+      },
+    },
     "duplicate-type-name": {
       severity: "error",
       messages: {

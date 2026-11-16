@@ -39,11 +39,11 @@ model UnmuteResult { ...FabricResult; }
 model UnmuteReply is JsonRpcResponse<UnmuteResult>;
 
 @doc("""
-  Unmutes a member's audio and/or video, reversing `call.mute`. Target yourself with
-  `self` or another member with `target`, and choose the streams with `channels`.
+  Unmutes your audio and/or video, reversing `call.mute`. Set `target` equal to `self`,
+  and choose the streams with `channels`.
 
-  Returns code `"403"` when the target is on a 1:1 call rather than in a conference,
-  or when you lack permission to unmute that member.
+  Returns code `"403"` when `target` is another member, when the target is on a 1:1
+  call rather than in a conference, or when you lack permission.
   """)
 @channel(callUnmute)
 @summary("Unmute a member's audio or video")

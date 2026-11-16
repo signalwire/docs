@@ -1,6 +1,6 @@
 ---
 title: Events and subscriptions
-slug: /relay/server/events
+slug: relay/server/events
 description: How Relay pushes events to your backend connection, and how to subscribe to inbound events with contexts.
 max-toc-depth: 3
 ---
@@ -46,19 +46,29 @@ Calling events reach a connection only when it was opened with a protocol `major
 
 ## What an event looks like
 
-Each event carries an `event_type` that names it and a `params` payload whose fields depend on the event:
+Every event arrives as a JSON-RPC request with the method `signalwire.event`. Its `params` is an envelope: `event_type` names the event, and the inner `params` holds the payload, whose fields depend on the event. This `calling.call.state` event is shortened to a few payload fields:
 
 ```json
 {
-  "event_type": "calling.call.state",
+  "jsonrpc": "2.0",
+  "id": "7d1e2f3a-4b5c-4d6e-8f9a-0b1c2d3e4f5a",
+  "method": "signalwire.event",
   "params": {
-    "call_id": "c1a2b3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
-    "call_state": "answered"
+    "event_type": "calling.call.state",
+    "event_channel": "signalwire_c1d2e3f4a5b6",
+    "timestamp": 1712345678.842,
+    "project_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "space_id": "c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f",
+    "params": {
+      "call_id": "c1a2b3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "node_id": "a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "call_state": "answered"
+    }
   }
 }
 ```
 
-The exact `params` for each event live on that event's page in the API reference. If you use an SDK, you don't parse this shape by hand — the SDK delivers each event as a typed object or a callback.
+Events are notifications, so you don't reply to them. Some services shape the envelope slightly differently: inbound events routed by context, such as `calling.call.receive` and `messaging.receive`, carry the `context` they were routed to, and Tasking events put their fields directly under `params`. The exact envelope and payload for each event live on that event's page in the API reference. If you use an SDK, you don't parse this shape by hand — the SDK delivers each event as a typed object or a callback.
 
 ## Correlate events to your requests
 
@@ -71,7 +81,7 @@ Events echo the identifiers you set, so you can tie each one back to the request
 
 <CardGroup cols={2}>
   <Card title="Connection lifecycle" icon="arrows-rotate" href="/docs/apis/relay/server/connection-lifecycle">
-    Keep the connection healthy, and handle a server-initiated disconnect.
+    Detect a dropped connection, rotate your API token, and reconnect cleanly.
   </Card>
   <Card title="Overview" icon="tower-broadcast" href="/docs/apis/relay/server">
     How a Relay connection works end to end, and what each service does.

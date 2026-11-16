@@ -11,7 +11,7 @@ model EndParams {
   @doc("The call leg you're operating from — your own leg on this call.")
   self: Target;
 
-  @doc("The call leg to end — required. `call.end` must be processed on an explicitly-named target and cannot end an un-targeted leg: set `target` equal to `self` to end your own leg, or to another member's `{node_id, call_id, member_id}` to end theirs.")
+  @doc("A leg on the call to end — required. On a 1:1 call this leg is hung up; in a conference, naming any member's leg ends the conference for every member. Set `target` equal to `self` to name your own leg.")
   target: Target;
 }
 

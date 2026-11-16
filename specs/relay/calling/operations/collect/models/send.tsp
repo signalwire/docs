@@ -6,17 +6,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-@doc("""
-  Pins speech recognition to a specific engine for a collect. The engine you
-  choose must support the `language` you request. Leave it unset to let
-  SignalWire pick an engine for you.
-  """)
-union CollectSpeechEngine {
-  "Deepgram",
-  "Google",
-  "Google.V2",
-}
-
 @doc("Settings that control how the caller's DTMF (touch-tone) key presses are collected.")
 model CollectDigits {
   @doc("Maximum number of digits to collect before collection finishes. Must be a positive integer.")
@@ -64,11 +53,6 @@ model CollectSpeech {
   @doc("Words or phrases you expect to hear, used to bias recognition toward them. Not set by default.")
   @example(#["sales", "support", "representative"])
   hints?: string[];
-
-  #deprecated "Use `model` instead."
-  @doc("(DEPRECATED — use `model` instead.) Pins recognition to a specific engine. Defaults to unset, which lets SignalWire choose.")
-  @example("Google")
-  engine?: CollectSpeechEngine;
 
   @doc("""
     Recognition model to use, such as `default`, `enhanced`, `enhanced.phone_call`,
@@ -128,9 +112,6 @@ model CollectParams {
   @doc("When `true`, start the `initial_timeout` timer immediately. Set `false` to start it later with `calling.collect.start_input_timers`. Defaults to `false`.")
   @example(false)
   start_input_timers?: boolean = false;
-
-  @doc("HTTP or HTTPS URL that collect events are also POSTed to as they occur.")
-  status_url?: url;
 }
 
 model CollectStopParams {

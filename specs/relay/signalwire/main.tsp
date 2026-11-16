@@ -1,7 +1,6 @@
 import "@signalwire/typespec-asyncapi";
 
 import "./operations/connect/main.tsp";
-import "./operations/disconnect/main.tsp";
 import "./operations/ping/main.tsp";
 
 using SignalWire.AsyncAPI;

@@ -23,15 +23,16 @@ model JsonRpcRequest<Method extends string, Params> {
 @doc("""
   A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
   `result` (the method result). If the request fails at the protocol level — an
-  incompatible version, failed authentication, insufficient scope, invalid params, or the
-  service being at capacity — the frame carries `error` instead of `result`. Many
+  incompatible version, failed authentication, insufficient scope, invalid params, or your
+  project's connection limit — the frame carries `error` instead of `result`. Many
   method-level failures (for example most Calling failures) are reported the other way: a
   normal `result` whose own `code` is not `"200"`. Each method documents which form its
   failures take.
 
   An `error` returned for `signalwire.connect` is followed by the service closing the
-  WebSocket; open a new connection to try again. Errors on any later request leave the
-  connection open.
+  WebSocket; open a new connection to try again. The same happens when
+  `signalwire.reauthenticate` sends credentials that are rejected, except for a
+  Subscriber Access Token. Errors on any other request leave the connection open.
   """)
 @summary("JSON-RPC response")
 model JsonRpcResponse<Result> {
@@ -55,9 +56,9 @@ model JsonRpcResponse<Result> {
   - `-32001` — protocol version incompatible (the `version` you sent on `signalwire.connect` is not supported)
   - `-32002` — authentication failed (bad or expired token)
   - `-32003` — not allowed (the connection lacks the scope/permission for this request)
-  - `-32004` — not available
-  - `-32005` — capacity exceeded (SignalWire is temporarily at capacity; retry later)
-  - `-32600` — invalid request (malformed JSON-RPC frame)
+  - `-32004` — not available (the service that handles this request could not be reached; retry later)
+  - `-32005` — connection limit reached (your project already has the maximum number of open connections; returned on `signalwire.connect`)
+  - `-32600` — invalid request (the request does not apply to this connection — for example, a Call Fabric request on a token that does not identify a subscriber)
   - `-32601` — method not found
   - `-32602` — invalid params (a required parameter is missing or malformed)
   - `-32603` — internal error
@@ -81,16 +82,16 @@ union JsonRpcErrorCode {
 @doc("""
   A JSON-RPC 2.0 error object, delivered on the `error` field of a `JsonRpcResponse` when
   a request fails at the protocol level (bad version, authentication, scope, params, or
-  service capacity). It replaces `result` — a frame carries one or the other, never both.
+  your project's connection limit). It replaces `result` — a frame carries one or the other, never both.
   """)
 @summary("JSON-RPC error")
 model JsonRpcError {
   @doc("The error code — a negative integer identifying the failure. See `JsonRpcErrorCode` for the full list of values and meanings.")
-  @example(-32002)
+  @example(-32001)
   code: JsonRpcErrorCode;
 
   @doc("A human-readable description of what went wrong.")
-  @example("Authentication failed, invalid token")
+  @example("SignalWire version is not compatible")
   message: string;
 
   @doc("""
@@ -100,8 +101,8 @@ model JsonRpcError {
   @example(#{
     jsonrpc: "2.0",
     id: "b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
-    method: "signalwire.receive",
-    params: #{ contexts: #["office"] },
+    method: "signalwire.connect",
+    params: #{ version: #{ major: 4, minor: 1, revision: 0 } },
   })
   original_request: Record<unknown>;
 

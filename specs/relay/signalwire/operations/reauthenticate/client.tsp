@@ -26,7 +26,10 @@ model ReauthenticateRequest
 
   Failures arrive as a JSON-RPC `error`: `-32002` if the new token is rejected,
   `-32602` if `project` is missing for a non-SAT token, and `-32603` if `project`
-  differs from the connection's project. The connection stays open either way.
+  differs from the connection's project. On a Subscriber Access Token connection the
+  connection stays open after any of these, keeping its current authorization. With
+  any other token, a rejected token closes the WebSocket after the error, as a failed
+  `signalwire.connect` does; a missing or mismatched `project` leaves it open.
   """)
 @channel(signalwireReauthenticate)
 @summary("Refresh credentials without reconnecting")

@@ -18,7 +18,13 @@ model MicrophoneVolumeSetResult { ...FabricResult; }
 @reply
 model MicrophoneVolumeSetReply is JsonRpcResponse<MicrophoneVolumeSetResult>;
 
-@doc("Sets a member's microphone (input) volume. Target yourself with `self` or another member with `target`. A `member.updated` event follows.")
+@doc("""
+  Sets a member's microphone (input) volume. Target yourself with `self` or another member with `target`. A
+  `member.updated` event follows.
+
+  Returns code `"403"` when the target is on a 1:1 call rather than in a conference,
+  or when you lack permission to act on that member.
+  """)
 @channel(callMicrophoneVolumeSet)
 @summary("Set a member's microphone volume")
 @extension("x-fern-display-name", callMicrophoneVolumeSet)
@@ -36,7 +42,13 @@ model MicrophoneSensitivitySetResult { ...FabricResult; }
 @reply
 model MicrophoneSensitivitySetReply is JsonRpcResponse<MicrophoneSensitivitySetResult>;
 
-@doc("Sets a member's microphone sensitivity. Target yourself with `self` or another member with `target`. A `member.updated` event follows.")
+@doc("""
+  Sets a member's microphone sensitivity. Target yourself with `self` or another member with `target`. A
+  `member.updated` event follows.
+
+  Returns code `"403"` when the target is on a 1:1 call rather than in a conference,
+  or when you lack permission to act on that member.
+  """)
 @channel(callMicrophoneSensitivitySet)
 @summary("Set a member's microphone sensitivity")
 @extension("x-fern-display-name", callMicrophoneSensitivitySet)
@@ -53,7 +65,13 @@ model SpeakerVolumeSetResult { ...FabricResult; }
 @reply
 model SpeakerVolumeSetReply is JsonRpcResponse<SpeakerVolumeSetResult>;
 
-@doc("Sets a member's speaker (output) volume. Target yourself with `self` or another member with `target`. A `member.updated` event follows.")
+@doc("""
+  Sets a member's speaker (output) volume. Target yourself with `self` or another member with `target`. A
+  `member.updated` event follows.
+
+  Returns code `"403"` when the target is on a 1:1 call rather than in a conference,
+  or when you lack permission to act on that member.
+  """)
 @channel(callSpeakerVolumeSet)
 @summary("Set a member's speaker volume")
 @extension("x-fern-display-name", callSpeakerVolumeSet)

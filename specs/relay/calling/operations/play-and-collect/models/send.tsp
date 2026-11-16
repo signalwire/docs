@@ -92,10 +92,6 @@ model PlayAndCollectParams {
 
   @doc("What to listen for from the caller while the media plays.")
   collect: PlayAndCollectCollect;
-
-  @doc("HTTP or HTTPS URL that status events are POSTed to.")
-  @example("https://example.com/webhooks/relay")
-  status_url?: url;
 }
 
 model PlayAndCollectStopParams {

@@ -45,16 +45,18 @@ channels:
     x-fern-display-name: signalwire.authorization.state
     bindings:
       ws: {}
-  signalwire.disconnect:
+  signalwire.connect:
     address: /
-    title: signalwire.disconnect
-    description: Service is about to disconnect the client
+    title: signalwire.connect
+    description: Authenticate and establish a Relay connection
     servers:
       - $ref: "#/servers/production"
     messages:
-      disconnectEvent:
-        $ref: "#/components/messages/disconnectEvent"
-    x-fern-display-name: signalwire.disconnect
+      signalwireConnectRequest:
+        $ref: "#/components/messages/signalwireConnectRequest"
+      signalwireConnectResponse:
+        $ref: "#/components/messages/signalwireConnectResponse"
+    x-fern-display-name: signalwire.connect
     bindings:
       ws: {}
   signalwire.ping:
@@ -73,18 +75,16 @@ channels:
     x-fern-display-name: signalwire.ping
     bindings:
       ws: {}
-  signalwire.connect:
+  signalwire.disconnect:
     address: /
-    title: signalwire.connect
-    description: Authenticate and establish a Relay connection
+    title: signalwire.disconnect
+    description: Service is about to disconnect the client
     servers:
       - $ref: "#/servers/production"
     messages:
-      signalwireConnectRequest:
-        $ref: "#/components/messages/signalwireConnectRequest"
-      signalwireConnectResponse:
-        $ref: "#/components/messages/signalwireConnectResponse"
-    x-fern-display-name: signalwire.connect
+      disconnectEvent:
+        $ref: "#/components/messages/disconnectEvent"
+    x-fern-display-name: signalwire.disconnect
     bindings:
       ws: {}
   signalwire.reauthenticate:
@@ -1270,14 +1270,28 @@ operations:
     messages:
       - $ref: "#/channels/signalwire.authorization.state/messages/authorizationStateEvent"
     x-fern-display-name: signalwire.authorization.state
-  onSignalwireDisconnectDisconnectEvent:
+  signalwireConnect:
+    action: send
+    channel:
+      $ref: "#/channels/signalwire.connect"
+    title: signalwire.connect
+    summary: Authenticate and establish a Relay connection
+    messages:
+      - $ref: "#/channels/signalwire.connect/messages/signalwireConnectRequest"
+    reply:
+      channel:
+        $ref: "#/channels/signalwire.connect"
+      messages:
+        - $ref: "#/channels/signalwire.connect/messages/signalwireConnectResponse"
+    x-fern-display-name: signalwire.connect
+  onSignalwireConnectResponse:
     action: receive
     channel:
-      $ref: "#/channels/signalwire.disconnect"
-    title: Service is about to disconnect the client
+      $ref: "#/channels/signalwire.connect"
+    title: signalwire.connect response
     messages:
-      - $ref: "#/channels/signalwire.disconnect/messages/disconnectEvent"
-    x-fern-display-name: signalwire.disconnect
+      - $ref: "#/channels/signalwire.connect/messages/signalwireConnectResponse"
+    x-fern-display-name: signalwire.connect response
   signalwirePing:
     action: send
     channel:
@@ -1308,28 +1322,14 @@ operations:
     messages:
       - $ref: "#/channels/signalwire.ping/messages/signalwirePingResponse"
     x-fern-display-name: signalwire.ping response
-  signalwireConnect:
-    action: send
-    channel:
-      $ref: "#/channels/signalwire.connect"
-    title: signalwire.connect
-    summary: Authenticate and establish a Relay connection
-    messages:
-      - $ref: "#/channels/signalwire.connect/messages/signalwireConnectRequest"
-    reply:
-      channel:
-        $ref: "#/channels/signalwire.connect"
-      messages:
-        - $ref: "#/channels/signalwire.connect/messages/signalwireConnectResponse"
-    x-fern-display-name: signalwire.connect
-  onSignalwireConnectResponse:
+  onSignalwireDisconnectDisconnectEvent:
     action: receive
     channel:
-      $ref: "#/channels/signalwire.connect"
-    title: signalwire.connect response
+      $ref: "#/channels/signalwire.disconnect"
+    title: Service is about to disconnect the client
     messages:
-      - $ref: "#/channels/signalwire.connect/messages/signalwireConnectResponse"
-    x-fern-display-name: signalwire.connect response
+      - $ref: "#/channels/signalwire.disconnect/messages/disconnectEvent"
+    x-fern-display-name: signalwire.disconnect
   signalwireReauthenticate:
     action: send
     channel:
@@ -2532,269 +2532,6 @@ components:
       required:
         - authorization_state
       description: The payload of a `signalwire.authorization.state` event, carrying your latest authorization state.
-    Signalwire.DisconnectEvent:
-      type: object
-      properties:
-        jsonrpc:
-          type: string
-          enum:
-            - "2.0"
-          description: JSON-RPC version. Always `2.0`.
-        id:
-          type: string
-          description: Request id, echoed on the correlated response.
-        method:
-          type: string
-          enum:
-            - signalwire.disconnect
-          description: The name of the JSON-RPC method being invoked.
-        params:
-          description: The method's input parameters.
-          allOf:
-            - $ref: "#/components/schemas/Signalwire.DisconnectParams"
-      required:
-        - jsonrpc
-        - id
-        - method
-        - params
-      description: |-
-        A `signalwire.disconnect` request the service pushes to you when it is about to
-        close your connection — for example during a deployment. The frame carries a
-        single `restart` flag. Flush anything pending and reply with an empty result
-        `{}` to acknowledge; that reply should be the last thing you send before the
-        connection closes. If `restart` is `true`, reconnect afterward.
-
-        You receive this message; you do not send it (that is why this channel has no
-        send operation).
-    Signalwire.DisconnectParams:
-      type: object
-      properties:
-        restart:
-          type: boolean
-          description: Whether you should open a fresh connection after disconnecting. Always present.
-          examples:
-            - true
-      required:
-        - restart
-      description: The parameters delivered with the `signalwire.disconnect` request the service sends you.
-    Signalwire.PingRequest:
-      type: object
-      properties:
-        jsonrpc:
-          type: string
-          enum:
-            - "2.0"
-          description: JSON-RPC version. Always `2.0`.
-        id:
-          type: string
-          description: Request id, echoed on the correlated response.
-        method:
-          type: string
-          enum:
-            - signalwire.ping
-          description: The name of the JSON-RPC method being invoked.
-        params:
-          description: The method's input parameters.
-          allOf:
-            - $ref: "#/components/schemas/Signalwire.PingParams"
-      required:
-        - jsonrpc
-        - id
-        - method
-        - params
-      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
-    Signalwire.PingParams:
-      type: object
-      properties:
-        timestamp:
-          type: number
-          format: double
-          description: When the ping was sent, as a Unix timestamp in seconds. Echoed back unchanged in the reply.
-          examples:
-            - 1712345678.842
-        payload:
-          type: string
-          description: An opaque value echoed back unchanged in the reply. Use it to correlate a ping with its response.
-          examples:
-            - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
-      description: |-
-        The parameters carried by a `signalwire.ping`, in either direction. Both fields
-        are optional and are echoed back unchanged in the reply, so you can use them to
-        measure round-trip latency or correlate a ping with its response.
-    Signalwire.PingReply:
-      type: object
-      properties:
-        jsonrpc:
-          type: string
-          enum:
-            - "2.0"
-          description: JSON-RPC version. Always `2.0`.
-        id:
-          type: string
-          description: The id of the request this responds to.
-        result:
-          description: The method result. Present when the request succeeded.
-          allOf:
-            - $ref: "#/components/schemas/Signalwire.PingResult"
-        error:
-          description: Present instead of `result` when the request failed at the protocol level.
-          allOf:
-            - $ref: "#/components/schemas/JsonRpcError"
-      required:
-        - jsonrpc
-        - id
-      description: |-
-        A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
-        `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
-        method-level failures (for example most Calling failures) are reported the other way: a
-        normal `result` whose own `code` is not `"200"`. Each method documents which form its
-        failures take.
-
-        An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
-    Signalwire.PingResult:
-      type: object
-      properties:
-        timestamp:
-          type: number
-          format: double
-          description: The `timestamp` from the ping, echoed back unchanged.
-          examples:
-            - 1712345678.842
-        payload:
-          type: string
-          description: The `payload` from the ping, echoed back unchanged.
-          examples:
-            - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
-      description: "The result of a `signalwire.ping`: the `timestamp` and `payload` from the ping, echoed back unchanged."
-    JsonRpcError:
-      type: object
-      properties:
-        code:
-          description: The error code — a negative integer identifying the failure. See `JsonRpcErrorCode` for the full list of values and meanings.
-          examples:
-            - -32002
-          allOf:
-            - $ref: "#/components/schemas/JsonRpcErrorCode"
-        message:
-          type: string
-          description: A human-readable description of what went wrong.
-          examples:
-            - Authentication failed, invalid token
-        original_request:
-          type: object
-          additionalProperties: {}
-          description: |-
-            An echo of the request that failed — the full JSON-RPC frame you sent
-            (`jsonrpc`, `id`, `method`, `params`). Always present.
-          examples:
-            - jsonrpc: "2.0"
-              id: b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
-              method: signalwire.receive
-              params:
-                contexts:
-                  - office
-        requester_nodeid:
-          type: string
-          description: The node that sent the failed request. Present only on some routing errors.
-          examples:
-            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-        requester_identity:
-          type: string
-          description: The identity of the requester. Present only on some routing errors; same value as `requester_nodeid`.
-          examples:
-            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-        responder_nodeid:
-          type: string
-          description: The node that was handling the request. Present only on some routing errors.
-          examples:
-            - f47ac10b-58cc-4372-a567-0e02b2c3d479
-        responder_identity:
-          type: string
-          description: The identity of the responder. Present only on some routing errors; same value as `responder_nodeid`.
-          examples:
-            - f47ac10b-58cc-4372-a567-0e02b2c3d479
-        last_hop_timeout:
-          type: boolean
-          description: "`true` when the request timed out on its final hop inside SignalWire. Present only on some timeout errors."
-          examples:
-            - true
-      required:
-        - code
-        - message
-        - original_request
-      description: |-
-        A JSON-RPC 2.0 error object, delivered on the `error` field of a `JsonRpcResponse` when
-        a request fails at the protocol level (bad version, authentication, scope, params, or
-        service capacity). It replaces `result` — a frame carries one or the other, never both.
-    JsonRpcErrorCode:
-      oneOf:
-        - type: integer
-          enum:
-            - -32000
-        - type: integer
-          enum:
-            - -32001
-        - type: integer
-          enum:
-            - -32002
-        - type: integer
-          enum:
-            - -32003
-        - type: integer
-          enum:
-            - -32004
-        - type: integer
-          enum:
-            - -32005
-        - type: integer
-          enum:
-            - -32600
-        - type: integer
-          enum:
-            - -32601
-        - type: integer
-          enum:
-            - -32602
-        - type: integer
-          enum:
-            - -32603
-        - type: integer
-          enum:
-            - -32700
-    Signalwire.ServerPingRequest:
-      type: object
-      properties:
-        jsonrpc:
-          type: string
-          enum:
-            - "2.0"
-          description: JSON-RPC version. Always `2.0`.
-        id:
-          type: string
-          description: Request id, echoed on the correlated response.
-        method:
-          type: string
-          enum:
-            - signalwire.ping
-          description: The name of the JSON-RPC method being invoked.
-        params:
-          description: The method's input parameters.
-          allOf:
-            - $ref: "#/components/schemas/Signalwire.PingParams"
-      required:
-        - jsonrpc
-        - id
-        - method
-        - params
-      description: |-
-        A keepalive `signalwire.ping` the service pushes to you. Reply with a
-        `signalwire.ping` result, echoing back the `timestamp` and `payload` you
-        received. If you do not answer, the service closes your connection. SDKs answer
-        this for you; a direct Relay client must handle it itself.
     Signalwire.ConnectRequest:
       type: object
       properties:
@@ -2963,15 +2700,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Signalwire.ConnectResult:
       type: object
       properties:
@@ -3043,6 +2781,277 @@ components:
         - credentialType
         - username
       description: A STUN/TURN ICE server to use for media in WebRTC connections.
+    JsonRpcError:
+      type: object
+      properties:
+        code:
+          description: The error code — a negative integer identifying the failure. See `JsonRpcErrorCode` for the full list of values and meanings.
+          examples:
+            - -32001
+          allOf:
+            - $ref: "#/components/schemas/JsonRpcErrorCode"
+        message:
+          type: string
+          description: A human-readable description of what went wrong.
+          examples:
+            - SignalWire version is not compatible
+        original_request:
+          type: object
+          additionalProperties: {}
+          description: |-
+            An echo of the request that failed — the full JSON-RPC frame you sent
+            (`jsonrpc`, `id`, `method`, `params`). Always present.
+          examples:
+            - jsonrpc: "2.0"
+              id: b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+              method: signalwire.connect
+              params:
+                version:
+                  major: 4
+                  minor: 1
+                  revision: 0
+        requester_nodeid:
+          type: string
+          description: The node that sent the failed request. Present only on some routing errors.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        requester_identity:
+          type: string
+          description: The identity of the requester. Present only on some routing errors; same value as `requester_nodeid`.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        responder_nodeid:
+          type: string
+          description: The node that was handling the request. Present only on some routing errors.
+          examples:
+            - f47ac10b-58cc-4372-a567-0e02b2c3d479
+        responder_identity:
+          type: string
+          description: The identity of the responder. Present only on some routing errors; same value as `responder_nodeid`.
+          examples:
+            - f47ac10b-58cc-4372-a567-0e02b2c3d479
+        last_hop_timeout:
+          type: boolean
+          description: "`true` when the request timed out on its final hop inside SignalWire. Present only on some timeout errors."
+          examples:
+            - true
+      required:
+        - code
+        - message
+        - original_request
+      description: |-
+        A JSON-RPC 2.0 error object, delivered on the `error` field of a `JsonRpcResponse` when
+        a request fails at the protocol level (bad version, authentication, scope, params, or
+        your project's connection limit). It replaces `result` — a frame carries one or the other, never both.
+    JsonRpcErrorCode:
+      oneOf:
+        - type: integer
+          enum:
+            - -32000
+        - type: integer
+          enum:
+            - -32001
+        - type: integer
+          enum:
+            - -32002
+        - type: integer
+          enum:
+            - -32003
+        - type: integer
+          enum:
+            - -32004
+        - type: integer
+          enum:
+            - -32005
+        - type: integer
+          enum:
+            - -32600
+        - type: integer
+          enum:
+            - -32601
+        - type: integer
+          enum:
+            - -32602
+        - type: integer
+          enum:
+            - -32603
+        - type: integer
+          enum:
+            - -32700
+    Signalwire.PingRequest:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: Request id, echoed on the correlated response.
+        method:
+          type: string
+          enum:
+            - signalwire.ping
+          description: The name of the JSON-RPC method being invoked.
+        params:
+          description: The method's input parameters.
+          allOf:
+            - $ref: "#/components/schemas/Signalwire.PingParams"
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
+    Signalwire.PingParams:
+      type: object
+      properties:
+        timestamp:
+          type: number
+          format: double
+          description: When the ping was sent, as a Unix timestamp in seconds. Echoed back unchanged in the reply.
+          examples:
+            - 1712345678.842
+        payload:
+          type: string
+          description: An opaque value echoed back unchanged in the reply. Use it to correlate a ping with its response.
+          examples:
+            - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
+      description: |-
+        The parameters carried by a `signalwire.ping`, in either direction. Both fields
+        are optional and are echoed back unchanged in the reply, so you can use them to
+        measure round-trip latency or correlate a ping with its response.
+    Signalwire.PingReply:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: The id of the request this responds to.
+        result:
+          description: The method result. Present when the request succeeded.
+          allOf:
+            - $ref: "#/components/schemas/Signalwire.PingResult"
+        error:
+          description: Present instead of `result` when the request failed at the protocol level.
+          allOf:
+            - $ref: "#/components/schemas/JsonRpcError"
+      required:
+        - jsonrpc
+        - id
+      description: |-
+        A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
+        `result` (the method result). If the request fails at the protocol level — an
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
+        method-level failures (for example most Calling failures) are reported the other way: a
+        normal `result` whose own `code` is not `"200"`. Each method documents which form its
+        failures take.
+
+        An `error` returned for `signalwire.connect` is followed by the service closing the
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
+    Signalwire.PingResult:
+      type: object
+      properties:
+        timestamp:
+          type: number
+          format: double
+          description: The `timestamp` from the ping, echoed back unchanged.
+          examples:
+            - 1712345678.842
+        payload:
+          type: string
+          description: The `payload` from the ping, echoed back unchanged.
+          examples:
+            - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
+      description: "The result of a `signalwire.ping`: the `timestamp` and `payload` from the ping, echoed back unchanged."
+    Signalwire.ServerPingRequest:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: Request id, echoed on the correlated response.
+        method:
+          type: string
+          enum:
+            - signalwire.ping
+          description: The name of the JSON-RPC method being invoked.
+        params:
+          description: The method's input parameters.
+          allOf:
+            - $ref: "#/components/schemas/Signalwire.PingParams"
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      description: |-
+        A keepalive `signalwire.ping` the service pushes to you. Reply with a
+        `signalwire.ping` result, echoing back the `timestamp` and `payload` you
+        received. If you do not answer, the service closes your connection. The Browser
+        SDK answers this for you; a direct Relay client must handle it itself.
+    Signalwire.DisconnectEvent:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: Request id, echoed on the correlated response.
+        method:
+          type: string
+          enum:
+            - signalwire.disconnect
+          description: The name of the JSON-RPC method being invoked.
+        params:
+          description: The method's input parameters.
+          allOf:
+            - $ref: "#/components/schemas/Signalwire.DisconnectParams"
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      description: |-
+        A `signalwire.disconnect` request the service pushes to you when it is about to
+        close your connection — for example during a deployment. Stop sending new
+        requests on this connection. A few seconds later the service closes the socket;
+        it does not wait for a reply, so the close comes on schedule whether or not you
+        answer. You may reply with an empty result `{}`.
+
+        `restart` tells you how to reconnect. When it is `false`, reconnect and restore
+        your session by passing your saved `protocol` and `authorization_state` to
+        `signalwire.connect`. When it is `true`, reconnect as a fresh connection, without
+        them.
+
+        You receive this message; you do not send it (that is why this channel has no
+        send operation).
+    Signalwire.DisconnectParams:
+      type: object
+      properties:
+        restart:
+          type: boolean
+          description: Whether you should open a fresh connection after disconnecting. Always present.
+          examples:
+            - true
+      required:
+        - restart
+      description: The parameters delivered with the `signalwire.disconnect` request the service sends you.
     Signalwire.ReauthenticateRequest:
       type: object
       properties:
@@ -3139,15 +3148,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Signalwire.ReauthenticateResult:
       type: object
       properties:
@@ -3249,11 +3259,13 @@ components:
           items:
             type: string
           description: |-
-            Event channels to subscribe to alongside this request — useful when you
-            join a conference and want its event feed. Values are conference/room event
-            channels such as `member.joined`, `member.left`, `room.ended`,
-            `room.updated`, `layout.changed`, and `member.updated` (illustrative, not
-            exhaustive).
+            The room events to receive, by event type. Read only when this frame is a
+            participant `verto.invite` that joins a Video Room: from then on, that room's
+            events reach this connection only if their type is in this list, except
+            `room.subscribed`, which always arrives. A screen-share or additional-device
+            invite reuses the list from the participant invite. Calls to any other kind of
+            address deliver their call, member, and room events without this list, so you
+            can omit it.
           examples:
             - - member.joined
               - member.left
@@ -3286,15 +3298,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     WebRTC.VertoResult:
       type: object
       properties:
@@ -3400,15 +3413,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     WebRTC.WebRTCMessageResult:
       type: object
       properties:
@@ -3510,14 +3524,15 @@ components:
         Delivers a Verto frame from SignalWire to your client. This fires when SignalWire
         has a Verto response to one of your `webrtc.verto` frames, but also when
         SignalWire initiates signaling on its own — an incoming `verto.invite`, a
-        `verto.bye` when the far end hangs up, `verto.media`/`verto.display` updates, or a
-        conference/room event on a channel you subscribed to — so it can arrive without
-        you sending anything.
+        `verto.bye` when the far end hangs up, `verto.media`/`verto.display` updates — so
+        it can arrive without you sending anything.
 
         The Verto frame arrives at `params.params`, passed through as-is (the surrounding
         `params` object is the event envelope: `node_id`, `event_channel`, timestamps).
-        Each frame is a Verto-protocol signaling message whose contents depend on the
-        Verto method it carries.
+        Only these Verto methods are delivered: `verto.invite`, `verto.answer`,
+        `verto.attach`, `verto.bye`, `verto.media`, `verto.mediaParams`, `verto.display`,
+        and `verto.ping`. Conference and room events arrive as their own event types,
+        such as `member.joined` and `room.updated`, never inside `webrtc.message`.
     Fabric.MuteRequest:
       type: object
       properties:
@@ -3621,15 +3636,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.MuteResult:
       type: object
       properties:
@@ -3685,7 +3701,7 @@ components:
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
-          description: The member to unmute — required. Set `target` equal to `self` to unmute yourself, or to another member's `{node_id, call_id, member_id}` to unmute them.
+          description: The member to unmute — required. Set `target` equal to `self`; targeting another member returns code `"403"`.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         channels:
@@ -3728,15 +3744,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.UnmuteResult:
       type: object
       properties:
@@ -3824,15 +3841,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.DeafResult:
       type: object
       properties:
@@ -3920,15 +3938,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.UndeafResult:
       type: object
       properties:
@@ -3984,7 +4003,7 @@ components:
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
-          description: The member to raise the hand of — required. Set `target` equal to `self` to raise your own hand, or to another member's `{node_id, call_id, member_id}` to raise theirs.
+          description: The member whose hand to raise — required. Set `target` equal to `self`; targeting another member returns code `"403"`.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
       required:
@@ -4016,15 +4035,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.RaisehandResult:
       type: object
       properties:
@@ -4080,7 +4100,7 @@ components:
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
-          description: The member to lower the hand of — required. Set `target` equal to `self` to lower your own hand, or to another member's `{node_id, call_id, member_id}` to lower theirs.
+          description: The member whose hand to lower — required. Set `target` equal to `self`; targeting another member returns code `"403"`.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
       required:
@@ -4112,15 +4132,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.LowerhandResult:
       type: object
       properties:
@@ -4176,7 +4197,7 @@ components:
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
-          description: "The call leg to end — required. `call.end` must be processed on an explicitly-named target and cannot end an un-targeted leg: set `target` equal to `self` to end your own leg, or to another member's `{node_id, call_id, member_id}` to end theirs."
+          description: A leg on the call to end — required. On a 1:1 call this leg is hung up; in a conference, naming any member's leg ends the conference for every member. Set `target` equal to `self` to name your own leg.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
       required:
@@ -4208,15 +4229,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.EndResult:
       type: object
       properties:
@@ -4299,15 +4321,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.HangupResult:
       type: object
       properties:
@@ -4395,15 +4418,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.FabricLayoutListResult:
       type: object
       properties:
@@ -4507,15 +4531,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.LayoutSetResult:
       type: object
       properties:
@@ -4603,15 +4628,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.FabricMemberListResult:
       type: object
       properties:
@@ -4675,7 +4701,7 @@ components:
             - member
         name:
           type: string
-          description: "Display name: the subscriber's name when the leg belongs to a subscriber, otherwise the dialed number or address."
+          description: "Display name: the subscriber's name when the leg belongs to a subscriber, otherwise the dialed number or address. Absent when none of these is known."
           examples:
             - Alice
         parent_id:
@@ -4728,7 +4754,6 @@ components:
         - room_id
         - room_session_id
         - type
-        - name
         - visible
         - handraised
         - audio_muted
@@ -4886,7 +4911,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Fabric.Target"
-          description: The call legs to remove. Must contain at least one complete target.
+          description: The call legs to remove. Must contain at least one complete target. On a 1:1 call only the first target is used.
           minItems: 1
       required:
         - self
@@ -4917,15 +4942,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.MemberRemoveResult:
       type: object
       properties:
@@ -5035,15 +5061,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.MemberPositionSetResult:
       type: object
       properties:
@@ -5140,15 +5167,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.MicrophoneVolumeSetResult:
       type: object
       properties:
@@ -5245,15 +5273,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.MicrophoneSensitivitySetResult:
       type: object
       properties:
@@ -5350,15 +5379,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.SpeakerVolumeSetResult:
       type: object
       properties:
@@ -5447,15 +5477,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.DigitSendResult:
       type: object
       properties:
@@ -5516,7 +5547,7 @@ components:
             - $ref: "#/components/schemas/Fabric.Target"
         hide:
           type: boolean
-          description: Whether to hide video-muted members from the layout.
+          description: Send `true`. Video-muted members are hidden whatever value you send, so `false` does not show them again.
           examples:
             - true
       required:
@@ -5549,15 +5580,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.VmutedHideSetResult:
       type: object
       properties:
@@ -5645,15 +5677,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.LockResult:
       type: object
       properties:
@@ -5741,15 +5774,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.UnlockResult:
       type: object
       properties:
@@ -5843,15 +5877,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.LowbitrateSetResult:
       type: object
       properties:
@@ -5945,15 +5980,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.DenoiseSetResult:
       type: object
       properties:
@@ -6056,15 +6092,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.AudioflagsSetResult:
       type: object
       properties:
@@ -6141,15 +6178,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.SubscriberOnlineResult:
       type: object
       properties:
@@ -6226,15 +6264,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Fabric.SubscriberOfflineResult:
       type: object
       properties:
@@ -6322,8 +6361,8 @@ components:
         - params
       description: |-
         Fires every time a Call Fabric call leg changes state — created, ringing, answered,
-        ending, ended. Track the call through its lifecycle with `call_state`, and match `tag`
-        to the call you created.
+        ending, ended. Track the call through its lifecycle with `call_state`. A leg that a
+        server-side application dialed with a `tag` carries it here too.
     Fabric.CallStateParams:
       type: object
       properties:
@@ -6347,7 +6386,7 @@ components:
             - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
         tag:
           type: string
-          description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
           examples:
             - my-tag-1
         call_state:
@@ -7596,7 +7635,7 @@ components:
         - id
         - method
         - params
-      description: Fires when audio playback on a Call Fabric call starts, pauses, resumes, finishes, or errors, so you can track a play action through to completion.
+      description: Fires when audio playback on a Call Fabric call starts, pauses, resumes, finishes, or errors, so you can track the playback through to completion. SWML or a server-side application starts it on the leg; there is no client request that starts it.
     Fabric.CallPlayParams:
       type: object
       properties:
@@ -7617,7 +7656,7 @@ components:
             - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
         control_id:
           type: string
-          description: The `control_id` of the playback this event refers to, returned when you started it.
+          description: The `control_id` of the playback this event refers to, from the request that started it.
           examples:
             - d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e
         state:
@@ -7704,7 +7743,7 @@ components:
         - id
         - method
         - params
-      description: Fires as a connect request progresses, telling you whether your Call Fabric call has been bridged to the peer. Watch `connect_state` to know when the two calls are joined, torn down, or have failed to connect.
+      description: Fires as a connect progresses, telling you whether your Call Fabric call has been bridged to the peer. Watch `connect_state` to know when the two calls are joined, torn down, or have failed to connect. SWML or a server-side application starts the connect; there is no client request that starts it.
     Fabric.CallConnectParams:
       type: object
       properties:
@@ -7730,7 +7769,7 @@ components:
             - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
         tag:
           type: string
-          description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
           examples:
             - my-tag-1
         peer:
@@ -7855,7 +7894,7 @@ components:
         - id
         - method
         - params
-      description: Fires when a recording on a Call Fabric call starts, pauses, resumes, or finishes. Every state carries the recording URL; the finished event adds the duration and file size.
+      description: Fires when a recording on a Call Fabric call starts, pauses, resumes, or finishes. Every state carries the recording URL; the finished event adds the duration and file size. SWML or a server-side application starts it on the leg; there is no client request that starts it.
     Fabric.CallRecordParams:
       type: object
       properties:
@@ -7881,12 +7920,12 @@ components:
             - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
         tag:
           type: string
-          description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
           examples:
             - my-tag-1
         control_id:
           type: string
-          description: The `control_id` of the recording this event refers to, returned when you started it.
+          description: The `control_id` of the recording this event refers to, from the request that started it.
           examples:
             - d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e
         state:
@@ -7969,7 +8008,7 @@ components:
           description: The audio settings used for this recording.
           allOf:
             - $ref: "#/components/schemas/Fabric.FabricRecordEventAudio"
-      description: Describes how the recording was made. The `audio` field is present when you recorded audio.
+      description: Describes how the recording was made. The `audio` field is present when audio was recorded.
     Fabric.FabricRecordEventAudio:
       type: object
       properties:
@@ -8060,7 +8099,7 @@ components:
         - id
         - method
         - params
-      description: Fires as you collect input from a caller on a Call Fabric call — DTMF digits or speech — reporting partial and final results so you can react to what they said or pressed.
+      description: Fires as input is collected from the caller on a Call Fabric call — DTMF digits or speech — reporting partial and final results so you can react to what they said or pressed. SWML or a server-side application starts it on the leg; there is no client request that starts it.
     Fabric.CallCollectParams:
       type: object
       properties:
@@ -8081,7 +8120,7 @@ components:
             - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
         control_id:
           type: string
-          description: The `control_id` of the collection this event refers to, returned when you started it.
+          description: The `control_id` of the collection this event refers to, from the request that started it.
           examples:
             - d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e
         state:
@@ -8091,13 +8130,13 @@ components:
           allOf:
             - $ref: "#/components/schemas/Fabric.FabricCallCollectState"
         result:
-          description: What the caller gave you. Check its `type` to handle digits, speech, or a no-input/no-match marker.
+          description: What the caller gave. Check its `type` to handle digits, speech, or a no-input/no-match marker.
           allOf:
             - $ref: "#/components/schemas/Fabric.FabricCallCollectResult"
         final:
           type: boolean
           description: |-
-            Relevant when you requested partial or continuous results: `true` once the
+            Relevant when the collect asked for partial or continuous results: `true` once the
             recognizer has finished the current utterance. With `continuous: true`, the
             collector then restarts to listen for the next one.
           examples:
@@ -8167,7 +8206,7 @@ components:
               const: no_match
           required:
             - type
-          description: Input was received but did not match your `digits`/`speech` criteria.
+          description: Input was received but did not match the collect's `digits`/`speech` criteria.
     Fabric.FabricCallCollectResultStartOfInput:
       allOf:
         - $ref: "#/components/schemas/Fabric.FabricCallCollectResult"
@@ -8178,7 +8217,7 @@ components:
               const: start_of_input
           required:
             - type
-          description: "Signals that the caller has started giving input. You receive this only when you set `send_start_of_input: true` on the collect."
+          description: "Signals that the caller has started giving input. Sent only when the collect was started with `send_start_of_input: true`."
     Fabric.FabricCallCollectResultFinished:
       allOf:
         - $ref: "#/components/schemas/Fabric.FabricCallCollectResult"
@@ -8208,7 +8247,7 @@ components:
                     - "1234"
                 terminator:
                   type: string
-                  description: The digit that ended collection. Set to your terminator key when the caller pressed it, empty otherwise.
+                  description: The digit that ended collection. Set to the collect's terminator key when the caller pressed it, empty otherwise.
                   examples:
                     - "#"
               required:
@@ -8311,7 +8350,7 @@ components:
         - id
         - method
         - params
-      description: Fires when a tap starts streaming Call Fabric call audio and again when it stops. Check `state` to tell which.
+      description: Fires when a tap starts streaming Call Fabric call audio and again when it stops. Check `state` to tell which. SWML or a server-side application starts it on the leg; there is no client request that starts it.
     Fabric.CallTapParams:
       type: object
       properties:
@@ -8337,7 +8376,7 @@ components:
             - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
         tag:
           type: string
-          description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
           examples:
             - my-tag-1
         control_id:
@@ -8560,7 +8599,7 @@ components:
         - id
         - method
         - params
-      description: Fires when a media stream on a Call Fabric call starts and again when it stops. Check `state` to tell which.
+      description: Fires when a media stream on a Call Fabric call starts and again when it stops. Check `state` to tell which. SWML or a server-side application starts it on the leg; there is no client request that starts it.
     Fabric.CallStreamParams:
       type: object
       properties:
@@ -8586,7 +8625,7 @@ components:
             - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
         tag:
           type: string
-          description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
           examples:
             - my-tag-1
         control_id:
@@ -8608,7 +8647,7 @@ components:
             - wss://example.com/media
         name:
           type: string
-          description: The friendly name you gave the stream, if you set one.
+          description: The stream's friendly name, if one was set.
           examples:
             - my_stream
       required:
@@ -8687,7 +8726,7 @@ components:
         - id
         - method
         - params
-      description: Fires when a detector on a Call Fabric call reports a result — a fax tone, an answering machine versus a human, or a DTMF digit.
+      description: Fires when a detector on a Call Fabric call reports a result — a fax tone, an answering machine versus a human, or a DTMF digit. SWML or a server-side application starts it on the leg; there is no client request that starts it.
     Fabric.CallDetectParams:
       type: object
       properties:
@@ -8713,12 +8752,12 @@ components:
             - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
         tag:
           type: string
-          description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
           examples:
             - my-tag-1
         control_id:
           type: string
-          description: The `control_id` of the detector this event refers to, returned when you started it.
+          description: The `control_id` of the detector this event refers to, from the request that started it.
           examples:
             - d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e
         detect:
@@ -8795,7 +8834,7 @@ components:
                     - $ref: "#/components/schemas/Fabric.FabricCallDetectMachineEvent"
                 beep:
                   type: boolean
-                  description: Whether a beep was detected, signaling it's your turn to leave a message.
+                  description: Whether a beep was detected, signaling that a message can be left now.
                   examples:
                     - true
               required:
@@ -8897,7 +8936,7 @@ components:
         - id
         - method
         - params
-      description: Fires when a dial reaches a Call Fabric call leg, reporting whether it was answered or failed.
+      description: Fires when a dial reaches a Call Fabric call leg, reporting whether it was answered or failed. A server-side application starts the dial; there is no client request that starts it.
     Fabric.CallDialParams:
       type: object
       properties:
@@ -8918,7 +8957,7 @@ components:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         tag:
           type: string
-          description: The `tag` set on the dial request.
+          description: The `tag` the server-side application set on the dial.
           examples:
             - my-tag-1
         dial_state:
@@ -8954,7 +8993,7 @@ components:
         - node_id
         - tag
         - dial_state
-      description: "Payload of the Call Fabric `call.dial` event: the outcome of a dial that reached your call leg."
+      description: "Payload of the Call Fabric `call.dial` event: the outcome of a dial that reached the call leg."
     Fabric.CallSendDigitsEvent:
       type: object
       properties:
@@ -9019,7 +9058,7 @@ components:
         - id
         - method
         - params
-      description: Fires when sending DTMF digits on a Call Fabric call leg finishes or fails.
+      description: Fires when sending DTMF digits on a Call Fabric call leg finishes or fails. SWML or a server-side application sends the digits on the leg; digits you send with `call.digit.send` do not fire this event.
     Fabric.CallSendDigitsParams:
       type: object
       properties:
@@ -9122,7 +9161,7 @@ components:
         - id
         - method
         - params
-      description: Fires each time a SIP REFER transfer of a Call Fabric call leg changes state.
+      description: Fires each time a SIP REFER transfer of a Call Fabric call leg changes state. SWML or a server-side application starts it on the leg; there is no client request that starts it.
     Fabric.CallReferParams:
       type: object
       properties:
@@ -9148,7 +9187,7 @@ components:
             - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
         tag:
           type: string
-          description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
           examples:
             - my-tag-1
         state:
@@ -9275,7 +9314,7 @@ components:
             - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
         tag:
           type: string
-          description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
           examples:
             - my-tag-1
         denoised:
@@ -9379,7 +9418,7 @@ components:
             - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
         tag:
           type: string
-          description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
           examples:
             - my-tag-1
         state:
@@ -9486,7 +9525,7 @@ components:
             - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
         tag:
           type: string
-          description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
           examples:
             - my-tag-1
         join_status:
@@ -9576,7 +9615,7 @@ components:
         - id
         - method
         - params
-      description: Fires when transcription on a Call Fabric call leg starts and again when it finishes.
+      description: Fires when transcription on a Call Fabric call leg starts and again when it finishes. SWML or a server-side application starts it on the leg; there is no client request that starts it.
     Fabric.CallTranscribeParams:
       type: object
       properties:
@@ -9602,7 +9641,7 @@ components:
             - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
         tag:
           type: string
-          description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
           examples:
             - my-tag-1
         control_id:
@@ -9718,7 +9757,7 @@ components:
         - id
         - method
         - params
-      description: "Fires as a Call Fabric call leg moves through a queue: when it joins, is pulled to be connected, or leaves, plus periodic position updates."
+      description: "Fires as a Call Fabric call leg moves through a queue: when it joins, is pulled to be connected, or leaves, plus periodic position updates. SWML or a server-side application places the leg in the queue; there is no client request that does."
     Fabric.CallQueueParams:
       type: object
       properties:
@@ -9862,7 +9901,7 @@ components:
         - id
         - method
         - params
-      description: "Fires as a fax on a Call Fabric call leg progresses: once per page, then once when it finishes."
+      description: "Fires as a fax on a Call Fabric call leg progresses: once per page, then once when it finishes. SWML or a server-side application starts it on the leg; there is no client request that starts it."
     Fabric.CallFaxParams:
       type: object
       properties:
@@ -9888,7 +9927,7 @@ components:
             - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
         tag:
           type: string
-          description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
           examples:
             - my-tag-1
         control_id:
@@ -10018,7 +10057,7 @@ components:
         - id
         - method
         - params
-      description: Fires as a pay session on a Call Fabric call leg progresses and once more when it completes.
+      description: Fires as a pay session on a Call Fabric call leg progresses and once more when it completes. SWML or a server-side application starts it on the leg; there is no client request that starts it.
     Fabric.CallAiEvent:
       type: object
       properties:
@@ -10083,7 +10122,7 @@ components:
         - id
         - method
         - params
-      description: Fires when an AI agent session on a Call Fabric call leg ends.
+      description: Fires when an AI agent session on a Call Fabric call leg ends. SWML or a server-side application starts the agent on the leg; there is no client request that starts it.
     Fabric.CallAiParams:
       type: object
       properties:
@@ -10109,7 +10148,7 @@ components:
             - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
         tag:
           type: string
-          description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
           examples:
             - my-tag-1
         control_id:
@@ -10206,7 +10245,7 @@ components:
                     - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
                 tag:
                   type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+                  description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
                   examples:
                     - my-tag-1
               required:
@@ -10276,38 +10315,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiCompletionParams"
           required:
             - event_type
             - event_channel
@@ -10319,7 +10329,54 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when the agent completes a response turn, with the response `text` and whether it was `barged`. Same fields as the Calling API's `calling.ai.completion` event.
+      description: Fires on a Call Fabric call leg when the agent completes a response turn, with the response `text` and whether it was `barged`. Same fields as the Calling API's `calling.ai.completion` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.
+    Fabric.FabricAiCompletionParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        text:
+          type: string
+          description: The assistant's completed utterance for the turn. Redacted when the app has `redact_prompt` set. Always an empty string on `calling.amazon_bedrock` sessions.
+          examples:
+            - Sure — I can help you place an order. Would you like pickup or delivery?
+        type:
+          type: string
+          enum:
+            - normal
+            - barged
+          description: "Whether the turn completed normally or was cut short by a barge-in: `barged` when the caller interrupted the assistant, otherwise `normal`. Always `normal` on `calling.amazon_bedrock` sessions."
+          examples:
+            - normal
+      required:
+        - call_id
+        - node_id
+        - room_session_id
+        - text
+        - type
     Fabric.FabricAiResponseEvent:
       type: object
       properties:
@@ -10370,38 +10427,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiResponseParams"
           required:
             - event_type
             - event_channel
@@ -10413,7 +10441,45 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when the agent produces its full response text for a turn. Same fields as the Calling API's `calling.ai.response` event.
+      description: Fires on a Call Fabric call leg when the agent produces its full response text for a turn. Same fields as the Calling API's `calling.ai.response` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.
+    Fabric.FabricAiResponseParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        response:
+          type: string
+          description: The assistant's full response text for the turn. Redacted when the app has `redact_prompt` set.
+          examples:
+            - Sure — I can help you place an order. Would you like pickup or delivery?
+      required:
+        - call_id
+        - node_id
+        - room_session_id
+        - response
     Fabric.FabricAiResponseUtteranceEvent:
       type: object
       properties:
@@ -10464,38 +10530,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiResponseUtteranceParams"
           required:
             - event_type
             - event_channel
@@ -10507,7 +10544,45 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when the agent speaks one segment of its response. Same fields as the Calling API's `calling.ai.response_utterance` event.
+      description: Fires on a Call Fabric call leg when the agent speaks one segment of its response. Same fields as the Calling API's `calling.ai.response_utterance` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.
+    Fabric.FabricAiResponseUtteranceParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        utterance:
+          type: string
+          description: One spoken segment of the assistant's response, emitted as it streams. Redacted when the app has `redact_prompt` set.
+          examples:
+            - Would you like pickup or delivery?
+      required:
+        - call_id
+        - node_id
+        - room_session_id
+        - utterance
     Fabric.FabricAiSpeechDetectEvent:
       type: object
       properties:
@@ -10558,38 +10633,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiSpeechDetectParams"
           required:
             - event_type
             - event_channel
@@ -10601,7 +10647,45 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when the caller's final transcript for a turn is recognized. Same fields as the Calling API's `calling.ai.speech_detect` event.
+      description: Fires on a Call Fabric call leg when the caller's final transcript for a turn is recognized. Same fields as the Calling API's `calling.ai.speech_detect` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.
+    Fabric.FabricAiSpeechDetectParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        text:
+          type: string
+          description: The caller's final recognized transcript for the turn. Not sent when the app has `redact_prompt` set, except with a realtime speech-to-speech model or on `calling.amazon_bedrock`.
+          examples:
+            - I'd like to order a large pepperoni pizza for delivery.
+      required:
+        - call_id
+        - node_id
+        - room_session_id
+        - text
     Fabric.FabricAiPartialResultEvent:
       type: object
       properties:
@@ -10652,38 +10736,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiPartialResultParams"
           required:
             - event_type
             - event_channel
@@ -10695,7 +10750,49 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when an interim transcript of the caller's speech is available. Same fields as the Calling API's `calling.ai.partial_result` event.
+      description: Fires on a Call Fabric call leg when an interim transcript of the caller's speech is available. Same fields as the Calling API's `calling.ai.partial_result` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.
+    Fabric.FabricAiPartialResultParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        text:
+          type: string
+          description: The caller's interim (partial) speech-recognition transcript. Absent when you use `calling.amazon_bedrock`, where this event fires with an empty body.
+          examples:
+            - I'd like to order a large
+        barged:
+          type: boolean
+          description: Present and `true` only when this partial transcript triggered a barge-in of the assistant's speech.
+          examples:
+            - true
+      required:
+        - call_id
+        - node_id
+        - room_session_id
     Fabric.FabricAiBeginSpeakingEvent:
       type: object
       properties:
@@ -10746,38 +10843,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiBeginSpeakingParams"
           required:
             - event_type
             - event_channel
@@ -10789,7 +10857,39 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when speaking starts in the AI session. Same fields as the Calling API's `calling.ai.begin_speaking` event.
+      description: Fires on a Call Fabric call leg when speaking starts in the AI session. Same fields as the Calling API's `calling.ai.begin_speaking` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.
+    Fabric.FabricAiBeginSpeakingParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+      required:
+        - call_id
+        - node_id
+        - room_session_id
     Fabric.FabricAiWarningEvent:
       type: object
       properties:
@@ -10840,38 +10940,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiWarningParams"
           required:
             - event_type
             - event_channel
@@ -10883,7 +10954,67 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when the AI session reports a non-fatal warning. Same fields as the Calling API's `calling.ai.warning` event.
+      description: Fires on a Call Fabric call leg when the AI session reports a non-fatal warning. Same fields as the Calling API's `calling.ai.warning` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.
+    Fabric.FabricAiWarningParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        error:
+          type: string
+          description: 'The warning: `"Excessive System Prompt.\n"` or `"unresolved_variable"`.'
+          examples:
+            - |
+              Excessive System Prompt.
+        tokens:
+          type: number
+          format: double
+          description: The prompt token count that triggered the warning. Present on the oversized-prompt warning.
+          examples:
+            - 78000
+        field:
+          type: string
+          enum:
+            - prompt
+            - static_greeting
+          description: "Where the unresolved expressions were found: `prompt` or `static_greeting`. Present on `unresolved_variable` warnings."
+          examples:
+            - prompt
+        expressions:
+          type: array
+          items:
+            type: string
+          description: The expressions that resolved to nothing. Present on `unresolved_variable` warnings.
+          examples:
+            - - ${global_data.customer_name}
+      required:
+        - call_id
+        - node_id
+        - room_session_id
+        - error
     Fabric.FabricAiTransparentBargeEvent:
       type: object
       properties:
@@ -10934,38 +11065,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiTransparentBargeParams"
           required:
             - event_type
             - event_channel
@@ -10977,7 +11079,54 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when the caller interrupts the agent and the turn is handled as a transparent barge. Same fields as the Calling API's `calling.ai.transparent_barge` event.
+      description: Fires on a Call Fabric call leg when the caller interrupts the agent and the turn is handled as a transparent barge. Same fields as the Calling API's `calling.ai.transparent_barge` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.
+    Fabric.FabricAiTransparentBargeParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        combined_text:
+          type: string
+          description: |-
+            The caller's merged turn text after a transparent barge — when the caller interrupts but the
+            assistant keeps listening and merges the interruption into the same turn. Present only when
+            non-empty.
+          examples:
+            - Actually, make that two large pepperoni pizzas.
+        context_rewritten:
+          type: boolean
+          description: |-
+            Present and `false` when the barge did not rewrite the conversation — for
+            example, because the assistant's answer had already been delivered.
+          examples:
+            - false
+      required:
+        - call_id
+        - node_id
+        - room_session_id
     Fabric.FabricAiStopEvent:
       type: object
       properties:
@@ -11028,38 +11177,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiStopParams"
           required:
             - event_type
             - event_channel
@@ -11071,7 +11191,63 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when the AI session stops, with session timing and billing detail. Same fields as the Calling API's `calling.ai.stop` event.
+      description: Fires on a Call Fabric call leg when the AI session stops, with session timing and billing detail. Same fields as the Calling API's `calling.ai.stop` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.
+    Fabric.FabricAiStopParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        start_time:
+          type: integer
+          format: int64
+          description: When the AI session started, as a Unix timestamp in microseconds.
+          examples:
+            - 1718000000000000
+        end_time:
+          type: integer
+          format: int64
+          description: When the AI session ended, as a Unix timestamp in microseconds.
+          examples:
+            - 1718000123000000
+        wallet_paused_sec:
+          type: number
+          format: double
+          description: Total seconds that billing was paused during the session. Emitted only when you start the agent with `calling.ai`; absent when you use `calling.amazon_bedrock`.
+          examples:
+            - 0
+        billing:
+          type: object
+          additionalProperties: {}
+          description: Per-session billing detail. The breakdown under `this_visit` and `cumulative` varies by the resources used, so the exact keys are not fixed.
+      required:
+        - call_id
+        - node_id
+        - room_session_id
+        - start_time
+        - end_time
     Fabric.FabricAiPostPromptEvent:
       type: object
       properties:
@@ -11146,7 +11322,7 @@ components:
                     - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
                 tag:
                   type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+                  description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
                   examples:
                     - my-tag-1
               required:
@@ -11165,7 +11341,7 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when the end-of-call summary is produced. Same fields as the Calling API's `calling.ai.post_prompt` event.
+      description: Fires on a Call Fabric call leg when the end-of-call summary is produced. Same fields as the Calling API's `calling.ai.post_prompt` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.
     Fabric.FabricAiSwaigEvent:
       type: object
       properties:
@@ -11240,7 +11416,7 @@ components:
                     - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
                 tag:
                   type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+                  description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
                   examples:
                     - my-tag-1
               required:
@@ -11259,7 +11435,7 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when a SWAIG function is called. Same fields as the Calling API's `calling.ai.swaig` event.
+      description: Fires on a Call Fabric call leg when a SWAIG function is called. Same fields as the Calling API's `calling.ai.swaig` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.
     Fabric.FabricAiSwaigActionEvent:
       type: object
       properties:
@@ -11334,7 +11510,7 @@ components:
                     - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
                 tag:
                   type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
+                  description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
                   examples:
                     - my-tag-1
               required:
@@ -11353,7 +11529,7 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when a SWAIG function returns an action. Same fields as the Calling API's `calling.ai.swaig_action` event.
+      description: Fires on a Call Fabric call leg when a SWAIG function returns an action. Same fields as the Calling API's `calling.ai.swaig_action` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.
     Fabric.FabricAiSidecarEvent:
       type: object
       properties:
@@ -11404,38 +11580,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiSidecarParams"
           required:
             - event_type
             - event_channel
@@ -11447,7 +11594,319 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when the AI sidecar reports activity. Same fields as the Calling API's `calling.ai.sidecar` event.
+      description: Fires on a Call Fabric call leg when the AI sidecar reports activity. Same fields as the Calling API's `calling.ai.sidecar` event. SWML or a server-side application attaches the sidecar to the leg; there is no client request that attaches it.
+    Fabric.FabricAiSidecarParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        call_info:
+          description: Call/session context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiCallInfo"
+        sidecar_event:
+          description: The sidecar event. Its `type` field determines which type-specific fields it carries.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiSidecarEventBody"
+      required:
+        - call_id
+        - node_id
+        - room_session_id
+        - call_info
+        - sidecar_event
+    Calling.AiCallInfo:
+      type: object
+      properties:
+        project_id:
+          type: string
+          description: Your project ID.
+        space_id:
+          type: string
+          description: Your space ID.
+        content_type:
+          type: string
+          description: The content type of the delivery.
+        content_disposition:
+          type: string
+          description: The content disposition of the delivery.
+        conversation_type:
+          type: string
+          description: The kind of conversation this delivery describes.
+        call_id:
+          type: string
+          description: The call ID.
+      required:
+        - content_type
+        - content_disposition
+        - conversation_type
+        - call_id
+      description: |-
+        Call/session context attached to AI transcribe, translate, and sidecar webhook deliveries, as a
+        sibling of the documented event fields. Added on every delivery.
+    Calling.AiSidecarEventBody:
+      type: object
+      properties:
+        type:
+          description: The callback type. Determines which type-specific fields are present.
+          examples:
+            - ask_answer
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiSidecarCallbackType"
+        ts:
+          type: integer
+          format: int64
+          description: When the event was produced, as a Unix timestamp in microseconds.
+          examples:
+            - 1718000123000000
+        tick_id:
+          type: integer
+          format: int64
+          description: Groups callbacks that the sidecar produced together in one processing pass — callbacks from the same pass share a `tick_id`.
+          examples:
+            - 42
+        channel_data:
+          type: object
+          additionalProperties: {}
+          description: Call/channel context (`call_id`, plus caller id fields when available).
+        ask_id:
+          type: string
+          description: |-
+            Matches the `ask_id` returned by `calling.ai_sidecar.ask`, correlating this
+            callback with the question you sent. Present on `ask_request` and `ask_answer`,
+            and on `request`, `thought`, `tool_call`, and `tool_result` callbacks produced
+            while answering an ask.
+          examples:
+            - a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        raw:
+          type: string
+          description: "The raw insight or answer text. Present on `type: insight` and on `type: ask_answer` (the reply to your `calling.ai_sidecar.ask`)."
+          examples:
+            - The customer's account is past due by 14 days.
+        summary:
+          type: string
+          description: "The end-of-session summary text. Present on `type: final` when a summary was generated."
+          examples:
+            - Handled a billing dispute; the account is past due by 14 days and a callback was scheduled for Friday.
+        text:
+          type: string
+          description: "The reasoning text on `type: thought`, or the text the sidecar would have spoken on an `action` callback for a `say` action."
+        name:
+          type: string
+          description: "The tool (function) name. Present on `type: tool_call` and `tool_result`."
+        arguments:
+          type: string
+          description: "The tool-call arguments, delivered as a raw JSON string. Present on `type: tool_call`."
+          examples:
+            - '{"order_id": "A123"}'
+        response:
+          type: string
+          description: "The tool-call response, delivered as a raw JSON string. Present on `type: tool_result`."
+          examples:
+            - '{"status": "ok"}'
+        reason:
+          type: string
+          description: "Why the sidecar took no action this pass (`type: skip`), or why a `say` action was not spoken (`type: action`)."
+        error_reason:
+          type: string
+          description: "A machine-readable error reason. Present on `type: error`."
+        detail:
+          type: string
+          description: "Human-readable error detail. Present on some `type: error` callbacks."
+        function:
+          type: string
+          description: "The SWAIG function whose webhook failed. Present on `type: error` for webhook failures."
+        http_code:
+          type: integer
+          format: int32
+          description: "HTTP status of the failed webhook request. Present on `type: error` for webhook failures."
+        curl_code:
+          type: integer
+          format: int32
+          description: "Transport error code of the failed webhook request. Present on `type: error` for webhook failures."
+        stripped:
+          type: integer
+          format: int32
+          description: "How many malformed tool calls were dropped. Present on `type: error` with `error_reason: malformed_tool_call`."
+        dropped_count:
+          type: integer
+          format: int32
+          description: "How many history entries were dropped. Present on `type: history_pruned`."
+        kept_count:
+          type: integer
+          format: int32
+          description: "How many history entries were kept after pruning. Present on `type: history_pruned`."
+        tokens_before:
+          type: integer
+          format: int32
+          description: "Token count before pruning. Present on `type: history_pruned`."
+        tokens_after:
+          type: integer
+          format: int32
+          description: "Token count after pruning. Present on `type: history_pruned`."
+        iter:
+          type: integer
+          format: int32
+          description: The current iteration. Present on the `request`, `thought`, `tool_call`, `tool_result`, `insight`, and `ask_answer` callbacks.
+        total_iters:
+          type: integer
+          format: int32
+          description: The total iterations. Present on the `insight` and `ask_answer` callbacks.
+        triggered_by:
+          type: string
+          description: |-
+            `ask` when the callback was produced while answering a
+            `calling.ai_sidecar.ask` question. Present on `ask_answer`, and on `request`,
+            `thought`, `tool_call`, and `tool_result` callbacks produced by an ask.
+          examples:
+            - ask
+        model:
+          type: string
+          description: "The model in use. Present on `type: start`, `request`, and `final`."
+          examples:
+            - gpt-4o-mini
+        global_data:
+          type: object
+          additionalProperties: {}
+          description: "The session's global data. Present on `type: start` and `final`."
+        tools:
+          type: array
+          items:
+            type: string
+          description: "Names of the SWAIG functions available to the sidecar. Present on `type: start`."
+        transcript_delta:
+          type: string
+          description: "The new transcript text since the previous turn. Present on `type: turn`."
+        customer_text:
+          type: string
+          description: "The customer's text for this turn. Present on `type: turn`."
+        agent_text:
+          type: string
+          description: "The agent's text for this turn. Present on `type: turn`."
+        messages_count:
+          type: integer
+          format: int32
+          description: "Number of messages sent to the model. Present on `type: request`."
+        messages_token_count:
+          type: integer
+          format: int32
+          description: "Token count of the messages sent to the model. Present on `type: request`."
+        tool_choice:
+          type: string
+          description: "The tool-choice mode sent to the model. Present on `type: request`."
+          examples:
+            - auto
+        action:
+          description: "The SWAIG action item. Present on `type: action`."
+        source_function:
+          type: string
+          description: "The SWAIG function that returned the action. Present on `type: action` when known."
+        executed:
+          type: boolean
+          description: "Whether the action was applied to the call. Present on `type: action`."
+        spoken:
+          type: boolean
+          description: "Whether the text was spoken. Present (and `false`) on `type: action` for a `say` action."
+        key:
+          type: string
+          description: "The global-data key that changed. Present on `type: global_data_change`."
+        old_value:
+          description: "The key's previous value. Present on `type: global_data_change` when the key existed."
+        new_value:
+          description: "The key's new value. Present on `type: global_data_change`."
+        question:
+          type: string
+          description: "The question you sent. Present on `type: ask_request`."
+        stop_reason:
+          type: string
+          description: "Why the session ended. Present on `type: stop` and `final`."
+        history:
+          type: array
+          items: {}
+          description: "The sidecar's conversation history. Present on `type: final`."
+        transcript:
+          type: array
+          items: {}
+          description: "The call transcript. Present on `type: final`."
+        event_log:
+          type: array
+          items: {}
+          description: "The session's event log. Present on `type: final`."
+        stats:
+          type: object
+          additionalProperties: {}
+          description: "Session counters (ticks, insights, skips, tool calls, errors, tokens). Present on `type: final`."
+        metrics:
+          type: object
+          additionalProperties: {}
+          description: "Detailed session telemetry. Present on `type: final`."
+        started_at:
+          type: integer
+          format: int64
+          description: "When the session started, as a Unix timestamp in microseconds. Present on `type: final`."
+        ended_at:
+          type: integer
+          format: int64
+          description: "When the session ended, as a Unix timestamp in microseconds. Present on `type: final`."
+        duration_ms:
+          type: integer
+          format: int64
+          description: "Session duration in milliseconds. Present on `type: final`."
+      required:
+        - type
+        - ts
+        - tick_id
+        - channel_data
+      description: |-
+        The sidecar event, carried on the wire under `sidecar_event`. Beyond the common fields, each
+        `type` adds its own type-specific fields — the optional fields below indicate which type they
+        belong to.
+
+        This is a real-time debug/observability stream: it surfaces the sidecar's internal activity —
+        model reasoning, tool calls and their results, history pruning, and an end-of-session rollup.
+        Treat its exact shape as unstable: individual `type` variants may carry additional fields, and
+        the set of fields can change between releases.
+    Calling.AiSidecarCallbackType:
+      type: string
+      enum:
+        - start
+        - turn
+        - request
+        - thought
+        - insight
+        - skip
+        - tool_call
+        - tool_result
+        - action
+        - global_data_change
+        - history_pruned
+        - error
+        - ask_request
+        - ask_answer
+        - stop
+        - final
     Fabric.FabricAiTranscribeUtteranceEvent:
       type: object
       properties:
@@ -11498,38 +11957,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiTranscribeUtteranceParams"
           required:
             - event_type
             - event_channel
@@ -11541,7 +11971,228 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when live transcription produces an utterance. Same fields as the Calling API's `calling.ai.transcribe.utterance` event.
+      description: Fires on a Call Fabric call leg when live transcription produces an utterance. Same fields as the Calling API's `calling.ai.transcribe.utterance` event. SWML or a server-side application starts live transcription on the leg; there is no client request that starts it.
+    Fabric.FabricAiTranscribeUtteranceParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        confidence:
+          oneOf:
+            - type: number
+              format: double
+            - {}
+          description: Recognition confidence for this utterance as reported by the engine, roughly 0.0-1.0. `null` when the engine reports none.
+          examples:
+            - 0.94
+        utterance:
+          description: The recognized utterance.
+          allOf:
+            - $ref: "#/components/schemas/Calling.TranscribeUtterance"
+        call_info:
+          description: Call/session context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiCallInfo"
+        channel_data:
+          description: Extended call/channel context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiChannelData"
+      required:
+        - call_id
+        - node_id
+        - room_session_id
+        - confidence
+        - utterance
+        - call_info
+        - channel_data
+    Calling.TranscribeUtterance:
+      type: object
+      properties:
+        role:
+          type: string
+          description: "Who spoke: `remote-caller` (the far end) or `local-caller` (your side)."
+          examples:
+            - remote-caller
+        content:
+          type: string
+          description: The transcribed text.
+          examples:
+            - Hello, I'd like to check my balance.
+        lang:
+          type: string
+          description: The language of the utterance as a BCP-47 language code (e.g. `en`, `es-ES`).
+          examples:
+            - en
+        utterance_id:
+          type: string
+          description: Unique identifier for this utterance, for correlation and de-duplication.
+          examples:
+            - f0a9b8c7-d6e5-4a3b-8e2d-1f0a9b8c7d6e
+        timestamp:
+          type: integer
+          format: int64
+          description: When the utterance was produced, as a Unix timestamp in microseconds.
+          examples:
+            - 1712345678123456
+        confidence:
+          type: number
+          format: double
+          description: Recognition confidence for the utterance, roughly 0.0-1.0. Omitted when the engine reports none.
+          examples:
+            - 0.94
+        tokens:
+          type: integer
+          format: int32
+          description: Number of tokens in the utterance.
+          examples:
+            - 7
+        char_count:
+          type: integer
+          format: int32
+          description: Number of characters in the utterance text.
+          examples:
+            - 38
+        word_count:
+          type: integer
+          format: int32
+          description: Number of words in the utterance text.
+          examples:
+            - 7
+        silence_before_ms:
+          type: integer
+          format: int32
+          description: Milliseconds since this speaker's previous utterance. Omitted on the speaker's first utterance.
+          examples:
+            - 850
+        filter_type:
+          type: string
+          description: The kind of content filter that matched this utterance, when one did.
+        filter_value:
+          type: string
+          description: The value the content filter matched, when one did.
+        start:
+          type: number
+          format: double
+          description: Engine-reported start offset of the utterance, in seconds. Present with `verbose_utterances`.
+        end:
+          type: number
+          format: double
+          description: Engine-reported end offset of the utterance, in seconds. Present with `verbose_utterances`.
+        duration:
+          type: number
+          format: double
+          description: Engine-reported duration of the utterance, in seconds. Present with `verbose_utterances`.
+        duration_ms:
+          type: number
+          format: double
+          description: Duration of the utterance, in milliseconds. Present with `verbose_utterances`.
+        words:
+          type: array
+          items: {}
+          description: Engine-reported word-level detail (timings, confidence). Present with `verbose_utterances`; the shape is engine-specific.
+        alternatives:
+          type: array
+          items: {}
+          description: Engine-reported alternative transcripts. Present with `verbose_utterances`; the shape is engine-specific.
+        request_id:
+          type: string
+          description: Engine request identifier. Present with `verbose_utterances`.
+        detected_language:
+          type: string
+          description: Language detected by the engine. Present with `verbose_utterances`.
+        speech_final:
+          type: boolean
+          description: Whether the engine marked this as the end of a spoken phrase. Present with `verbose_utterances`.
+        is_final:
+          type: boolean
+          description: Whether the engine marked this result as final. Present with `verbose_utterances`.
+      required:
+        - role
+        - content
+        - lang
+        - utterance_id
+        - timestamp
+      description: A single transcribed utterance from a live-transcription session.
+    Calling.AiChannelData:
+      type: object
+      properties:
+        project_id:
+          type: string
+          description: Your project ID.
+        space_id:
+          type: string
+          description: Your space ID.
+        content_type:
+          type: string
+          description: The content type of the delivery.
+        content_disposition:
+          type: string
+          description: The content disposition of the delivery.
+        call_id:
+          type: string
+          description: The call ID.
+        call_start_date:
+          type: integer
+          format: int64
+          description: When the call started, as a Unix timestamp in microseconds.
+          examples:
+            - 1712345670000000
+        call_answer_date:
+          type: integer
+          format: int64
+          description: When the call was answered, as a Unix timestamp in microseconds. `0` if not answered yet.
+          examples:
+            - 1712345675000000
+        call_end_date:
+          type: integer
+          format: int64
+          description: When the call ended, as a Unix timestamp in microseconds. `0` while the call is still up.
+          examples:
+            - 0
+        caller_id_name:
+          type: string
+          description: The caller's name.
+        caller_id_number:
+          type: string
+          description: The caller's number.
+        SWMLVars:
+          type: object
+          additionalProperties: {}
+          description: Custom variables set on the call during its SWML execution, as name/value pairs.
+        SWMLCall:
+          type: object
+          additionalProperties: {}
+          description: The SWML `call` object for this call — the call metadata (direction, from/to, headers, timing) available to your SWML document. See the SWML reference for its fields.
+      required:
+        - content_type
+        - content_disposition
+        - call_id
+      description: |-
+        Extended call/channel context attached to AI transcribe and translate deliveries — a superset of
+        `AiCallInfo` with call timing and caller-ID detail.
     Fabric.FabricAiTranscribeLiveSummarizeEvent:
       type: object
       properties:
@@ -11592,38 +12243,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiTranscribeLiveSummarizeParams"
           required:
             - event_type
             - event_channel
@@ -11635,7 +12257,101 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when live transcription produces a running summary. Same fields as the Calling API's `calling.ai.transcribe.live_summarize` event.
+      description: Fires on a Call Fabric call leg when live transcription produces a running summary. Same fields as the Calling API's `calling.ai.transcribe.live_summarize` event. SWML or a server-side application starts live transcription on the leg; there is no client request that starts it.
+    Fabric.FabricAiTranscribeLiveSummarizeParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        conversation_log:
+          type: array
+          items:
+            $ref: "#/components/schemas/Calling.ConversationLogEntry"
+          description: The conversation so far, one entry per turn.
+        conversation_summary:
+          type: string
+          description: An AI-generated summary of the conversation so far.
+          examples:
+            - The caller asked to check their balance and confirmed their identity.
+        call_info:
+          description: Call/session context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiCallInfo"
+        channel_data:
+          description: Extended call/channel context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiChannelData"
+      required:
+        - call_id
+        - node_id
+        - room_session_id
+        - conversation_log
+        - conversation_summary
+        - call_info
+        - channel_data
+    Calling.ConversationLogEntry:
+      type: object
+      properties:
+        role:
+          type: string
+          description: "Who spoke this turn: `remote-caller` (the far end) or `local-caller` (your side). Tool/function turns use the `tool` role."
+          examples:
+            - remote-caller
+        content:
+          type: string
+          description: The text of this turn.
+          examples:
+            - I'd like to check my balance.
+        confidence:
+          type: number
+          format: double
+          description: Recognition confidence for this turn, roughly 0.0-1.0. Absent for non-speech turns.
+          examples:
+            - 0.94
+        language:
+          type: string
+          description: BCP-47 language code of this turn (e.g. `en`, `es-ES`).
+          examples:
+            - en
+        filter_type:
+          type: string
+          description: The kind of content filter that matched this turn, when one did.
+        filter_value:
+          type: string
+          description: The value the content filter matched, when one did.
+        tool_call_id:
+          type: string
+          description: Correlation id for a tool/function-call turn. Present only on `tool`-role entries.
+      required:
+        - role
+        - content
+      description: |-
+        One turn in a conversation log. Shared by the summary and conversation-log events of
+        `calling.live_transcribe` and `calling.live_translate`. This is a slimmer record than a
+        per-utterance result — it carries the turn's text and speaker, not the low-level speech-recognition metadata.
     Fabric.FabricAiTranscribeConversationLogEvent:
       type: object
       properties:
@@ -11686,38 +12402,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiTranscribeConversationLogParams"
           required:
             - event_type
             - event_channel
@@ -11729,7 +12416,143 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when live transcription delivers its conversation log. Same fields as the Calling API's `calling.ai.transcribe.conversation_log` event.
+      description: Fires on a Call Fabric call leg when live transcription delivers its conversation log. Same fields as the Calling API's `calling.ai.transcribe.conversation_log` event. SWML or a server-side application starts live transcription on the leg; there is no client request that starts it.
+    Fabric.FabricAiTranscribeConversationLogParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        conversation_log:
+          type: array
+          items:
+            $ref: "#/components/schemas/Calling.ConversationLogEntry"
+          description: The full conversation, one entry per turn.
+        conversation_summary:
+          type: string
+          description: An AI-generated summary of the full conversation. Present only when the session was started with AI summary enabled.
+          examples:
+            - The caller checked their balance and updated their mailing address.
+        metrics:
+          description: Aggregate metrics for the session.
+          allOf:
+            - $ref: "#/components/schemas/Calling.TranscriptionMetrics"
+        call_info:
+          description: Call/session context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiCallInfo"
+        channel_data:
+          description: Extended call/channel context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiChannelData"
+      required:
+        - call_id
+        - node_id
+        - room_session_id
+        - conversation_log
+        - metrics
+        - call_info
+        - channel_data
+    Calling.TranscriptionMetrics:
+      type: object
+      properties:
+        total_utterances:
+          type: integer
+          format: int32
+          description: Total number of utterances recognized during the session.
+          examples:
+            - 42
+        first_utterance_ts:
+          type: number
+          format: double
+          description: When the first utterance was recognized, as a Unix timestamp in microseconds.
+          examples:
+            - 1712345678123456
+        last_utterance_ts:
+          type: number
+          format: double
+          description: When the last utterance was recognized, as a Unix timestamp in microseconds.
+          examples:
+            - 1712345799123456
+        remote_caller_turns:
+          type: integer
+          format: int32
+          description: Number of speaking turns from the far end.
+          examples:
+            - 20
+        local_caller_turns:
+          type: integer
+          format: int32
+          description: Number of speaking turns from your side.
+          examples:
+            - 22
+        remote_caller_words:
+          type: integer
+          format: int32
+          description: Total words spoken by the far end.
+        local_caller_words:
+          type: integer
+          format: int32
+          description: Total words spoken by your side.
+        remote_caller_avg_confidence:
+          type: number
+          format: double
+          description: Average recognition confidence across the far end's turns, roughly 0.0-1.0.
+        local_caller_avg_confidence:
+          type: number
+          format: double
+          description: Average recognition confidence across your side's turns, roughly 0.0-1.0.
+        customer_turns:
+          type: integer
+          format: int32
+          description: Number of speaking turns from the customer. Sidecar mode only.
+        agent_turns:
+          type: integer
+          format: int32
+          description: Number of speaking turns from the agent. Sidecar mode only.
+        customer_words:
+          type: integer
+          format: int32
+          description: Total words spoken by the customer. Sidecar mode only.
+        agent_words:
+          type: integer
+          format: int32
+          description: Total words spoken by the agent. Sidecar mode only.
+        customer_avg_confidence:
+          type: number
+          format: double
+          description: Average recognition confidence across the customer's turns, roughly 0.0-1.0. Sidecar mode only.
+        agent_avg_confidence:
+          type: number
+          format: double
+          description: Average recognition confidence across the agent's turns, roughly 0.0-1.0. Sidecar mode only.
+      description: |-
+        Aggregate metrics for a transcription session, included on the final
+        `calling.ai.transcribe.conversation_log` event. When an AI sidecar is attached, the
+        per-side keys are reported as `customer_*` / `agent_*` instead of
+        `remote_caller_*` / `local_caller_*`.
     Fabric.FabricAiTranslateTranscriptDeltaEvent:
       type: object
       properties:
@@ -11780,38 +12603,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiTranslateTranscriptDeltaParams"
           required:
             - event_type
             - event_channel
@@ -11823,7 +12617,74 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when live translation produces translated text. Same fields as the Calling API's `calling.ai.translate.transcript_delta` event.
+      description: Fires on a Call Fabric call leg when live translation produces translated text. Same fields as the Calling API's `calling.ai.translate.transcript_delta` event. SWML or a server-side application starts live translation on the leg; there is no client request that starts it.
+    Fabric.FabricAiTranslateTranscriptDeltaParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        input_utterance:
+          description: Present on source-language (input) fragments.
+          allOf:
+            - $ref: "#/components/schemas/Calling.TranslateUtterance"
+        output_utterance:
+          description: Present on translated (output) fragments.
+          allOf:
+            - $ref: "#/components/schemas/Calling.TranslateUtterance"
+        call_info:
+          description: Call/session context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiCallInfo"
+        channel_data:
+          description: Extended call/channel context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiChannelData"
+      required:
+        - call_id
+        - node_id
+        - room_session_id
+        - call_info
+        - channel_data
+    Calling.TranslateUtterance:
+      type: object
+      properties:
+        language:
+          type: string
+          description: The language of this fragment as a BCP-47 language code (e.g. `en`, `es-ES`).
+          examples:
+            - es
+        delta:
+          type: string
+          description: The incremental text for this fragment.
+          examples:
+            - Hola, quisiera
+      required:
+        - language
+        - delta
+      description: An incremental translated (or source) text fragment.
     Fabric.FabricAiTranslateLiveSummaryEvent:
       type: object
       properties:
@@ -11874,38 +12735,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiTranslateLiveSummaryParams"
           required:
             - event_type
             - event_channel
@@ -11917,7 +12749,65 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when live translation produces a running summary. Same fields as the Calling API's `calling.ai.translate.live_summary` event.
+      description: Fires on a Call Fabric call leg when live translation produces a running summary. Same fields as the Calling API's `calling.ai.translate.live_summary` event. SWML or a server-side application starts live translation on the leg; there is no client request that starts it.
+    Fabric.FabricAiTranslateLiveSummaryParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        primary_conversation_summary:
+          type: string
+          description: "The source-language side: raw transcript text in realtime mode, or an AI-generated summary in on-demand `summarize` mode."
+        secondary_conversation_summary:
+          type: string
+          description: "The translated side: raw transcript text in realtime mode, or an AI-generated summary in on-demand `summarize` mode."
+        primary_conversation_log:
+          type: array
+          items:
+            $ref: "#/components/schemas/Calling.ConversationLogEntry"
+          description: The source-language conversation, one entry per turn. Present only in on-demand `summarize` mode.
+        secondary_conversation_log:
+          type: array
+          items:
+            $ref: "#/components/schemas/Calling.ConversationLogEntry"
+          description: The translated conversation, one entry per turn. Present only in on-demand `summarize` mode.
+        call_info:
+          description: Call/session context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiCallInfo"
+        channel_data:
+          description: Extended call/channel context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiChannelData"
+      required:
+        - call_id
+        - node_id
+        - room_session_id
+        - call_info
+        - channel_data
     Fabric.FabricAiTranslateConversationLogEvent:
       type: object
       properties:
@@ -11968,38 +12858,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` you set when creating the call, echoed back so you can match the event to your request.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiTranslateConversationLogParams"
           required:
             - event_type
             - event_channel
@@ -12011,7 +12872,126 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when live translation delivers its conversation log. Same fields as the Calling API's `calling.ai.translate.conversation_log` event.
+      description: Fires on a Call Fabric call leg when live translation delivers its conversation log. Same fields as the Calling API's `calling.ai.translate.conversation_log` event. SWML or a server-side application starts live translation on the leg; there is no client request that starts it.
+    Fabric.FabricAiTranslateConversationLogParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        primary_conversation_log:
+          type: array
+          items:
+            $ref: "#/components/schemas/Calling.ConversationLogEntry"
+          description: The source-language conversation, one entry per turn.
+        primary_conversation_summary:
+          type: string
+          description: An AI-generated summary of the source-language side. Present only when the session was started with AI summary enabled.
+        secondary_conversation_log:
+          type: array
+          items:
+            $ref: "#/components/schemas/Calling.ConversationLogEntry"
+          description: The translated conversation, one entry per turn.
+        secondary_conversation_summary:
+          type: string
+          description: An AI-generated summary of the translated side. Present only when the session was started with AI summary enabled.
+        translate_data:
+          oneOf:
+            - $ref: "#/components/schemas/Calling.TranslateLegData"
+            - type: object
+              additionalProperties:
+                $ref: "#/components/schemas/Calling.TranslateLegData"
+            - {}
+          description: |-
+            Translation settings. The shape depends on how the session was started: with
+            `ai_summary`, a single `TranslateLegData` object for this leg; otherwise a map
+            keyed by leg role (`local-caller` = the inbound leg, `remote-caller` = the
+            outbound leg), or `null` if nothing was translated.
+        call_info:
+          description: Call/session context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiCallInfo"
+        channel_data:
+          description: Extended call/channel context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiChannelData"
+      required:
+        - call_id
+        - node_id
+        - room_session_id
+        - primary_conversation_log
+        - secondary_conversation_log
+        - translate_data
+        - call_info
+        - channel_data
+    Calling.TranslateLegData:
+      type: object
+      properties:
+        from_language:
+          type: string
+          description: The language spoken on this leg, as a language code (e.g. `en-US`).
+          examples:
+            - en-US
+        to_language:
+          type: string
+          description: The language this leg is translated into, as a language code (e.g. `es-ES`).
+          examples:
+            - es-ES
+        to_voice:
+          type: string
+          description: The voice used to speak this leg's translated audio.
+          examples:
+            - josh
+        role:
+          type: string
+          enum:
+            - local-caller
+            - remote-caller
+          description: "Which side of the call this entry describes — in the keyed map, the same value as its key: `local-caller` (the inbound leg) or `remote-caller` (the outbound leg)."
+          examples:
+            - local-caller
+        position:
+          type: string
+          enum:
+            - primary
+            - secondary
+          description: "This leg's position in the translation pair: `primary` or `secondary`."
+          examples:
+            - primary
+        translate_filter:
+          type: string
+          description: The tone/style filter applied to this leg's translation. Present only when a filter was configured.
+          examples:
+            - professional
+      required:
+        - from_language
+        - to_language
+        - to_voice
+        - role
+        - position
+      description: The translation settings for one call leg, as echoed on the `calling.ai.translate.conversation_log` event.
     Fabric.RoomStartedEvent:
       type: object
       properties:
@@ -13626,12 +14606,22 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/Signalwire.AuthorizationStateEvent"
-    disconnectEvent:
-      name: DisconnectEvent
-      title: Service is about to disconnect the client
+    signalwireConnectRequest:
+      name: signalwire.connect.request
+      title: signalwire.connect request
       contentType: application/json
+      correlationId:
+        location: $message.payload#/id
       payload:
-        $ref: "#/components/schemas/Signalwire.DisconnectEvent"
+        $ref: "#/components/schemas/Signalwire.ConnectRequest"
+    signalwireConnectResponse:
+      name: signalwire.connect.response
+      title: signalwire.connect response
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/Signalwire.ConnectReply"
     signalwirePingRequest:
       name: signalwire.ping.request
       title: signalwire.ping request
@@ -13654,22 +14644,12 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/Signalwire.ServerPingRequest"
-    signalwireConnectRequest:
-      name: signalwire.connect.request
-      title: signalwire.connect request
+    disconnectEvent:
+      name: DisconnectEvent
+      title: Service is about to disconnect the client
       contentType: application/json
-      correlationId:
-        location: $message.payload#/id
       payload:
-        $ref: "#/components/schemas/Signalwire.ConnectRequest"
-    signalwireConnectResponse:
-      name: signalwire.connect.response
-      title: signalwire.connect response
-      contentType: application/json
-      correlationId:
-        location: $message.payload#/id
-      payload:
-        $ref: "#/components/schemas/Signalwire.ConnectReply"
+        $ref: "#/components/schemas/Signalwire.DisconnectEvent"
     signalwireReauthenticateRequest:
       name: signalwire.reauthenticate.request
       title: signalwire.reauthenticate request

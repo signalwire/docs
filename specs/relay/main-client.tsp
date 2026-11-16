@@ -1,9 +1,9 @@
 import "@signalwire/typespec-asyncapi";
 import "./common/frames.tsp";
 
-// Shared connection lifecycle (connect / ping / disconnect)
+// Shared signalwire models and namespace
 import "./signalwire/main.tsp";
-// Client-only signalwire (reauthenticate)
+// Client signalwire: connect, ping both ways, disconnect, reauthenticate
 import "./signalwire/client.tsp";
 
 // Client-side services

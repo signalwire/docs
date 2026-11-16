@@ -110,9 +110,9 @@ model CallMember {
   @example("member")
   type: "member";
 
-  @doc("Display name: the subscriber's name when the leg belongs to a subscriber, otherwise the dialed number or address.")
+  @doc("Display name: the subscriber's name when the leg belongs to a subscriber, otherwise the dialed number or address. Absent when none of these is known.")
   @example("Alice")
-  name: string;
+  name?: string;
 
   @doc("The call that created this member's call, when there is one.")
   parent_id?: string;

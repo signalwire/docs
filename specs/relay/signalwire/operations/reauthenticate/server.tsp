@@ -21,9 +21,11 @@ model ReauthenticateRequest
   On success you get back your refreshed `authorization` and `ice_servers`, and a
   `signalwire.authorization.state` event is delivered on its own channel.
 
-  Failures arrive as a JSON-RPC `error`: `-32002` if the token is rejected, `-32602`
-  if `project` is missing, and `-32603` if `project` differs from the connection's
-  project. The connection stays open either way.
+  Failures arrive as a JSON-RPC `error`. `-32602` (`project` is missing) and `-32603`
+  (`project` differs from the connection's project) leave the connection open. If the
+  credentials themselves are rejected (`-32002`), or can't be checked (`-32000`,
+  `-32603`), the service closes the WebSocket after the error, as it does for a failed
+  `signalwire.connect`; reconnect with valid credentials.
   """)
 @channel(signalwireReauthenticate)
 @summary("Refresh credentials without reconnecting")

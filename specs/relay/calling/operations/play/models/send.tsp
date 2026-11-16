@@ -22,40 +22,8 @@ model PlayParams {
   @example(5)
   volume?: float64;
 
-  @doc("""
-    Which side of the call's audio the media is injected into: `listen` (played to the
-    remote party, so they hear it), `speak` (mixed into the remote party's own audio
-    channel), or `both`. Default `listen`.
-    """)
-  @example("listen")
-  direction?: "listen" | "speak" | "both" = "listen";
-
-  @doc("HTTP or HTTPS URL that status events are POSTed to.")
-  @example("https://example.com/webhooks/relay")
-  status_url?: url;
-
-  @doc("Default text-to-speech language for TTS items in `play` that do not set their own. Falls back to the platform default if unset.")
-  @example("en-US")
-  language?: string;
-
-  @doc("Default text-to-speech voice for TTS items in `play` that do not set their own. Falls back to the platform default if unset.")
-  @example("en-US-Standard-C")
-  voice?: string;
-
-  @doc("Default text-to-speech voice gender for TTS items in `play` that do not set their own. Falls back to the platform default if unset.")
-  @example("female")
-  gender?: TtsGender;
-
   @doc("Ordered list of media elements to play.")
   play: PlayMedia[];
-
-  @doc("""
-    Number of times to play the sequence. `0` loops until the call ends or the
-    play is stopped. Default `1`.
-    """)
-  @minValue(0)
-  @example(1)
-  loop?: int32 = 1;
 }
 
 model PlayPauseParams {

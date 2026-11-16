@@ -18,7 +18,11 @@ model AiHoldRequest is JsonRpcRequest<typeof callingAiHold, AiHoldParams>;
 @extension("x-fern-display-name", callingAiHoldResponse)
 @reply model AiHoldReply is JsonRpcResponse<AiHoldResult>;
 
-@doc("Put an AI agent session on hold.")
+@doc("""
+  Put an AI agent session on hold. Applies only to an agent started with
+  `calling.ai`; on a `calling.amazon_bedrock` session the request fails with `code`
+  `"400"`.
+  """)
 @channel(callingAiHold)
 @summary("Put an AI agent session on hold")
 @extension("x-fern-display-name", callingAiHold)
@@ -32,7 +36,11 @@ model AiUnholdRequest is JsonRpcRequest<typeof callingAiUnhold, AiUnholdParams>;
 @extension("x-fern-display-name", callingAiUnholdResponse)
 @reply model AiUnholdReply is JsonRpcResponse<AiUnholdResult>;
 
-@doc("Resume an AI agent session from hold.")
+@doc("""
+  Resume an AI agent session from hold. Applies only to an agent started with
+  `calling.ai`; on a `calling.amazon_bedrock` session the request fails with `code`
+  `"400"`.
+  """)
 @channel(callingAiUnhold)
 @summary("Resume an AI agent session from hold")
 @extension("x-fern-display-name", callingAiUnhold)

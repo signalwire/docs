@@ -1,6 +1,12 @@
-import { strictEqual } from "assert";
+import { deepStrictEqual, strictEqual } from "assert";
+import { compile, formatDiagnostic, NodeHost } from "@typespec/compiler";
+import { mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "vitest";
-import { asyncApiFor, Tester } from "./host.js";
+import { parse } from "yaml";
+import { asyncApiFor, FRAMES, Tester } from "./host.js";
 
 describe("@server", () => {
   it("emits an AsyncAPI server with host, protocol, and pathname", async () => {
@@ -17,6 +23,18 @@ describe("@server", () => {
     strictEqual(doc.servers.production.host, "relay.signalwire.com");
     strictEqual(doc.servers.production.protocol, "wss");
     strictEqual(doc.servers.production.pathname, "/api/relay/wss");
+    strictEqual(doc.info.version, "1.0.0");
+  });
+
+  it("takes info.version from @info on the service namespace", async () => {
+    // The in-memory Tester can't load the hoisted @typespec/openapi, so compile a fixture on disk.
+    const outDir = mkdtempSync(join(tmpdir(), "asyncapi-info-"));
+    const program = await compile(NodeHost, fileURLToPath(new URL("./fixtures/info-version.tsp", import.meta.url)), {
+      emit: ["@signalwire/typespec-asyncapi"],
+      options: { "@signalwire/typespec-asyncapi": { "emitter-output-dir": outDir } },
+    });
+    deepStrictEqual(program.diagnostics.map(formatDiagnostic), []);
+    strictEqual(parse(readFileSync(join(outDir, "asyncapi.yaml"), "utf8")).info.version, "2.4.0");
   });
 });
 
@@ -52,5 +70,38 @@ describe("diagnostics", () => {
       }
     `);
     strictEqual(diagnostics.some((d) => d.code.endsWith("duplicate-channel")), true);
+  });
+
+  it("errors when two distinct event models share a name across namespaces", async () => {
+    const diagnostics = await Tester.diagnose(`
+      @service(#{ title: "X" })
+      @server("p", #{ host: "h", protocol: "wss" })
+      namespace Relay;
+      ${FRAMES}
+      namespace Relay.Calling {
+        model StateEvent is SignalwireEvent<"calling.call.state", { state: string }>;
+        @channel("calling.watch") op watch(): StateEvent;
+      }
+      namespace Relay.Messaging {
+        model StateEvent is SignalwireEvent<"messaging.state", { status: string }>;
+        @channel("messaging.watch") op watch(): StateEvent;
+      }
+    `);
+    strictEqual(diagnostics.some((d) => d.code.endsWith("duplicate-message-id")), true);
+  });
+
+  it("does not flag one event model received on several channels", async () => {
+    const diagnostics = await Tester.diagnose(`
+      @service(#{ title: "X" })
+      @server("p", #{ host: "h", protocol: "wss" })
+      namespace Relay;
+      ${FRAMES}
+      namespace Relay.Calling {
+        model StateEvent is SignalwireEvent<"calling.call.state", { state: string }>;
+        @channel("calling.watch") op watch(): StateEvent;
+        @channel("calling.observe") op observe(): StateEvent;
+      }
+    `);
+    strictEqual(diagnostics.some((d) => d.code.endsWith("duplicate-message-id")), false);
   });
 });

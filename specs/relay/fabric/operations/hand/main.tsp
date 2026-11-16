@@ -17,7 +17,13 @@ model RaisehandResult { ...FabricResult; }
 @reply
 model RaisehandReply is JsonRpcResponse<RaisehandResult>;
 
-@doc("Raises a member's hand in a Call Fabric conference. Target yourself with `self` or another member with `target`. A `member.updated` event follows for the affected member.")
+@doc("""
+  Raises your hand in a Call Fabric conference. Set `target` equal to `self`. A
+  `member.updated` event follows.
+
+  Returns code `"403"` when `target` is another member, when the target is on a 1:1
+  call rather than in a conference, or when you lack permission.
+  """)
 @channel(callRaisehand)
 @summary("Raise a member's hand")
 @extension("x-fern-display-name", callRaisehand)
@@ -31,7 +37,13 @@ model LowerhandResult { ...FabricResult; }
 @reply
 model LowerhandReply is JsonRpcResponse<LowerhandResult>;
 
-@doc("Lowers a member's hand, reversing `call.raisehand`. Target yourself with `self` or another member with `target`. A `member.updated` event follows.")
+@doc("""
+  Lowers your hand, reversing `call.raisehand`. Set `target` equal to `self`. A
+  `member.updated` event follows.
+
+  Returns code `"403"` when `target` is another member, when the target is on a 1:1
+  call rather than in a conference, or when you lack permission.
+  """)
 @channel(callLowerhand)
 @summary("Lower a member's hand")
 @extension("x-fern-display-name", callLowerhand)

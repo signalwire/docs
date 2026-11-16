@@ -47,34 +47,6 @@ channels:
     x-fern-display-name: signalwire.authorization.state
     bindings:
       ws: {}
-  signalwire.disconnect:
-    address: /
-    title: signalwire.disconnect
-    description: Service is about to disconnect the client
-    servers:
-      - $ref: "#/servers/production"
-    messages:
-      disconnectEvent:
-        $ref: "#/components/messages/disconnectEvent"
-    x-fern-display-name: signalwire.disconnect
-    bindings:
-      ws: {}
-  signalwire.ping:
-    address: /
-    title: signalwire.ping
-    description: Keep the connection alive with a ping
-    servers:
-      - $ref: "#/servers/production"
-    messages:
-      signalwirePingRequest:
-        $ref: "#/components/messages/signalwirePingRequest"
-      signalwirePingResponse:
-        $ref: "#/components/messages/signalwirePingResponse"
-      serverPingRequest:
-        $ref: "#/components/messages/serverPingRequest"
-    x-fern-display-name: signalwire.ping
-    bindings:
-      ws: {}
   signalwire.connect:
     address: /
     title: signalwire.connect
@@ -87,6 +59,20 @@ channels:
       signalwireConnectResponse:
         $ref: "#/components/messages/signalwireConnectResponse"
     x-fern-display-name: signalwire.connect
+    bindings:
+      ws: {}
+  signalwire.ping:
+    address: /
+    title: signalwire.ping
+    description: Check the connection with a ping
+    servers:
+      - $ref: "#/servers/production"
+    messages:
+      signalwirePingRequest:
+        $ref: "#/components/messages/signalwirePingRequest"
+      signalwirePingResponse:
+        $ref: "#/components/messages/signalwirePingResponse"
+    x-fern-display-name: signalwire.ping
     bindings:
       ws: {}
   signalwire.reauthenticate:
@@ -1248,44 +1234,6 @@ operations:
     messages:
       - $ref: "#/channels/signalwire.authorization.state/messages/authorizationStateEvent"
     x-fern-display-name: signalwire.authorization.state
-  onSignalwireDisconnectDisconnectEvent:
-    action: receive
-    channel:
-      $ref: "#/channels/signalwire.disconnect"
-    title: Service is about to disconnect the client
-    messages:
-      - $ref: "#/channels/signalwire.disconnect/messages/disconnectEvent"
-    x-fern-display-name: signalwire.disconnect
-  signalwirePing:
-    action: send
-    channel:
-      $ref: "#/channels/signalwire.ping"
-    title: signalwire.ping
-    summary: Keep the connection alive with a ping
-    messages:
-      - $ref: "#/channels/signalwire.ping/messages/signalwirePingRequest"
-    reply:
-      channel:
-        $ref: "#/channels/signalwire.ping"
-      messages:
-        - $ref: "#/channels/signalwire.ping/messages/signalwirePingResponse"
-    x-fern-display-name: signalwire.ping
-  onSignalwirePingServerPingRequest:
-    action: receive
-    channel:
-      $ref: "#/channels/signalwire.ping"
-    title: Service keepalive ping
-    messages:
-      - $ref: "#/channels/signalwire.ping/messages/serverPingRequest"
-    x-fern-display-name: signalwire.ping
-  onSignalwirePingResponse:
-    action: receive
-    channel:
-      $ref: "#/channels/signalwire.ping"
-    title: signalwire.ping response
-    messages:
-      - $ref: "#/channels/signalwire.ping/messages/signalwirePingResponse"
-    x-fern-display-name: signalwire.ping response
   signalwireConnect:
     action: send
     channel:
@@ -1308,6 +1256,28 @@ operations:
     messages:
       - $ref: "#/channels/signalwire.connect/messages/signalwireConnectResponse"
     x-fern-display-name: signalwire.connect response
+  signalwirePing:
+    action: send
+    channel:
+      $ref: "#/channels/signalwire.ping"
+    title: signalwire.ping
+    summary: Check the connection with a ping
+    messages:
+      - $ref: "#/channels/signalwire.ping/messages/signalwirePingRequest"
+    reply:
+      channel:
+        $ref: "#/channels/signalwire.ping"
+      messages:
+        - $ref: "#/channels/signalwire.ping/messages/signalwirePingResponse"
+    x-fern-display-name: signalwire.ping
+  onSignalwirePingResponse:
+    action: receive
+    channel:
+      $ref: "#/channels/signalwire.ping"
+    title: signalwire.ping response
+    messages:
+      - $ref: "#/channels/signalwire.ping/messages/signalwirePingResponse"
+    x-fern-display-name: signalwire.ping response
   signalwireReauthenticate:
     action: send
     channel:
@@ -3386,269 +3356,6 @@ components:
       required:
         - authorization_state
       description: The payload of a `signalwire.authorization.state` event, carrying your latest authorization state.
-    Signalwire.DisconnectEvent:
-      type: object
-      properties:
-        jsonrpc:
-          type: string
-          enum:
-            - "2.0"
-          description: JSON-RPC version. Always `2.0`.
-        id:
-          type: string
-          description: Request id, echoed on the correlated response.
-        method:
-          type: string
-          enum:
-            - signalwire.disconnect
-          description: The name of the JSON-RPC method being invoked.
-        params:
-          description: The method's input parameters.
-          allOf:
-            - $ref: "#/components/schemas/Signalwire.DisconnectParams"
-      required:
-        - jsonrpc
-        - id
-        - method
-        - params
-      description: |-
-        A `signalwire.disconnect` request the service pushes to you when it is about to
-        close your connection — for example during a deployment. The frame carries a
-        single `restart` flag. Flush anything pending and reply with an empty result
-        `{}` to acknowledge; that reply should be the last thing you send before the
-        connection closes. If `restart` is `true`, reconnect afterward.
-
-        You receive this message; you do not send it (that is why this channel has no
-        send operation).
-    Signalwire.DisconnectParams:
-      type: object
-      properties:
-        restart:
-          type: boolean
-          description: Whether you should open a fresh connection after disconnecting. Always present.
-          examples:
-            - true
-      required:
-        - restart
-      description: The parameters delivered with the `signalwire.disconnect` request the service sends you.
-    Signalwire.PingRequest:
-      type: object
-      properties:
-        jsonrpc:
-          type: string
-          enum:
-            - "2.0"
-          description: JSON-RPC version. Always `2.0`.
-        id:
-          type: string
-          description: Request id, echoed on the correlated response.
-        method:
-          type: string
-          enum:
-            - signalwire.ping
-          description: The name of the JSON-RPC method being invoked.
-        params:
-          description: The method's input parameters.
-          allOf:
-            - $ref: "#/components/schemas/Signalwire.PingParams"
-      required:
-        - jsonrpc
-        - id
-        - method
-        - params
-      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
-    Signalwire.PingParams:
-      type: object
-      properties:
-        timestamp:
-          type: number
-          format: double
-          description: When the ping was sent, as a Unix timestamp in seconds. Echoed back unchanged in the reply.
-          examples:
-            - 1712345678.842
-        payload:
-          type: string
-          description: An opaque value echoed back unchanged in the reply. Use it to correlate a ping with its response.
-          examples:
-            - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
-      description: |-
-        The parameters carried by a `signalwire.ping`, in either direction. Both fields
-        are optional and are echoed back unchanged in the reply, so you can use them to
-        measure round-trip latency or correlate a ping with its response.
-    Signalwire.PingReply:
-      type: object
-      properties:
-        jsonrpc:
-          type: string
-          enum:
-            - "2.0"
-          description: JSON-RPC version. Always `2.0`.
-        id:
-          type: string
-          description: The id of the request this responds to.
-        result:
-          description: The method result. Present when the request succeeded.
-          allOf:
-            - $ref: "#/components/schemas/Signalwire.PingResult"
-        error:
-          description: Present instead of `result` when the request failed at the protocol level.
-          allOf:
-            - $ref: "#/components/schemas/JsonRpcError"
-      required:
-        - jsonrpc
-        - id
-      description: |-
-        A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
-        `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
-        method-level failures (for example most Calling failures) are reported the other way: a
-        normal `result` whose own `code` is not `"200"`. Each method documents which form its
-        failures take.
-
-        An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
-    Signalwire.PingResult:
-      type: object
-      properties:
-        timestamp:
-          type: number
-          format: double
-          description: The `timestamp` from the ping, echoed back unchanged.
-          examples:
-            - 1712345678.842
-        payload:
-          type: string
-          description: The `payload` from the ping, echoed back unchanged.
-          examples:
-            - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
-      description: "The result of a `signalwire.ping`: the `timestamp` and `payload` from the ping, echoed back unchanged."
-    JsonRpcError:
-      type: object
-      properties:
-        code:
-          description: The error code — a negative integer identifying the failure. See `JsonRpcErrorCode` for the full list of values and meanings.
-          examples:
-            - -32002
-          allOf:
-            - $ref: "#/components/schemas/JsonRpcErrorCode"
-        message:
-          type: string
-          description: A human-readable description of what went wrong.
-          examples:
-            - Authentication failed, invalid token
-        original_request:
-          type: object
-          additionalProperties: {}
-          description: |-
-            An echo of the request that failed — the full JSON-RPC frame you sent
-            (`jsonrpc`, `id`, `method`, `params`). Always present.
-          examples:
-            - jsonrpc: "2.0"
-              id: b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
-              method: signalwire.receive
-              params:
-                contexts:
-                  - office
-        requester_nodeid:
-          type: string
-          description: The node that sent the failed request. Present only on some routing errors.
-          examples:
-            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-        requester_identity:
-          type: string
-          description: The identity of the requester. Present only on some routing errors; same value as `requester_nodeid`.
-          examples:
-            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-        responder_nodeid:
-          type: string
-          description: The node that was handling the request. Present only on some routing errors.
-          examples:
-            - f47ac10b-58cc-4372-a567-0e02b2c3d479
-        responder_identity:
-          type: string
-          description: The identity of the responder. Present only on some routing errors; same value as `responder_nodeid`.
-          examples:
-            - f47ac10b-58cc-4372-a567-0e02b2c3d479
-        last_hop_timeout:
-          type: boolean
-          description: "`true` when the request timed out on its final hop inside SignalWire. Present only on some timeout errors."
-          examples:
-            - true
-      required:
-        - code
-        - message
-        - original_request
-      description: |-
-        A JSON-RPC 2.0 error object, delivered on the `error` field of a `JsonRpcResponse` when
-        a request fails at the protocol level (bad version, authentication, scope, params, or
-        service capacity). It replaces `result` — a frame carries one or the other, never both.
-    JsonRpcErrorCode:
-      oneOf:
-        - type: integer
-          enum:
-            - -32000
-        - type: integer
-          enum:
-            - -32001
-        - type: integer
-          enum:
-            - -32002
-        - type: integer
-          enum:
-            - -32003
-        - type: integer
-          enum:
-            - -32004
-        - type: integer
-          enum:
-            - -32005
-        - type: integer
-          enum:
-            - -32600
-        - type: integer
-          enum:
-            - -32601
-        - type: integer
-          enum:
-            - -32602
-        - type: integer
-          enum:
-            - -32603
-        - type: integer
-          enum:
-            - -32700
-    Signalwire.ServerPingRequest:
-      type: object
-      properties:
-        jsonrpc:
-          type: string
-          enum:
-            - "2.0"
-          description: JSON-RPC version. Always `2.0`.
-        id:
-          type: string
-          description: Request id, echoed on the correlated response.
-        method:
-          type: string
-          enum:
-            - signalwire.ping
-          description: The name of the JSON-RPC method being invoked.
-        params:
-          description: The method's input parameters.
-          allOf:
-            - $ref: "#/components/schemas/Signalwire.PingParams"
-      required:
-        - jsonrpc
-        - id
-        - method
-        - params
-      description: |-
-        A keepalive `signalwire.ping` the service pushes to you. Reply with a
-        `signalwire.ping` result, echoing back the `timestamp` and `payload` you
-        received. If you do not answer, the service closes your connection. SDKs answer
-        this for you; a direct Relay client must handle it itself.
     Signalwire.ConnectRequest:
       type: object
       properties:
@@ -3809,15 +3516,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Signalwire.ConnectResult:
       type: object
       properties:
@@ -3889,6 +3597,197 @@ components:
         - credentialType
         - username
       description: A STUN/TURN ICE server to use for media in WebRTC connections.
+    JsonRpcError:
+      type: object
+      properties:
+        code:
+          description: The error code — a negative integer identifying the failure. See `JsonRpcErrorCode` for the full list of values and meanings.
+          examples:
+            - -32001
+          allOf:
+            - $ref: "#/components/schemas/JsonRpcErrorCode"
+        message:
+          type: string
+          description: A human-readable description of what went wrong.
+          examples:
+            - SignalWire version is not compatible
+        original_request:
+          type: object
+          additionalProperties: {}
+          description: |-
+            An echo of the request that failed — the full JSON-RPC frame you sent
+            (`jsonrpc`, `id`, `method`, `params`). Always present.
+          examples:
+            - jsonrpc: "2.0"
+              id: b2a1c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+              method: signalwire.connect
+              params:
+                version:
+                  major: 4
+                  minor: 1
+                  revision: 0
+        requester_nodeid:
+          type: string
+          description: The node that sent the failed request. Present only on some routing errors.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        requester_identity:
+          type: string
+          description: The identity of the requester. Present only on some routing errors; same value as `requester_nodeid`.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        responder_nodeid:
+          type: string
+          description: The node that was handling the request. Present only on some routing errors.
+          examples:
+            - f47ac10b-58cc-4372-a567-0e02b2c3d479
+        responder_identity:
+          type: string
+          description: The identity of the responder. Present only on some routing errors; same value as `responder_nodeid`.
+          examples:
+            - f47ac10b-58cc-4372-a567-0e02b2c3d479
+        last_hop_timeout:
+          type: boolean
+          description: "`true` when the request timed out on its final hop inside SignalWire. Present only on some timeout errors."
+          examples:
+            - true
+      required:
+        - code
+        - message
+        - original_request
+      description: |-
+        A JSON-RPC 2.0 error object, delivered on the `error` field of a `JsonRpcResponse` when
+        a request fails at the protocol level (bad version, authentication, scope, params, or
+        your project's connection limit). It replaces `result` — a frame carries one or the other, never both.
+    JsonRpcErrorCode:
+      oneOf:
+        - type: integer
+          enum:
+            - -32000
+        - type: integer
+          enum:
+            - -32001
+        - type: integer
+          enum:
+            - -32002
+        - type: integer
+          enum:
+            - -32003
+        - type: integer
+          enum:
+            - -32004
+        - type: integer
+          enum:
+            - -32005
+        - type: integer
+          enum:
+            - -32600
+        - type: integer
+          enum:
+            - -32601
+        - type: integer
+          enum:
+            - -32602
+        - type: integer
+          enum:
+            - -32603
+        - type: integer
+          enum:
+            - -32700
+    Signalwire.PingRequest:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: Request id, echoed on the correlated response.
+        method:
+          type: string
+          enum:
+            - signalwire.ping
+          description: The name of the JSON-RPC method being invoked.
+        params:
+          description: The method's input parameters.
+          allOf:
+            - $ref: "#/components/schemas/Signalwire.PingParams"
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
+    Signalwire.PingParams:
+      type: object
+      properties:
+        timestamp:
+          type: number
+          format: double
+          description: When the ping was sent, as a Unix timestamp in seconds. Echoed back unchanged in the reply.
+          examples:
+            - 1712345678.842
+        payload:
+          type: string
+          description: An opaque value echoed back unchanged in the reply. Use it to correlate a ping with its response.
+          examples:
+            - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
+      description: |-
+        The parameters carried by a `signalwire.ping`, in either direction. Both fields
+        are optional and are echoed back unchanged in the reply, so you can use them to
+        measure round-trip latency or correlate a ping with its response.
+    Signalwire.PingReply:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: The id of the request this responds to.
+        result:
+          description: The method result. Present when the request succeeded.
+          allOf:
+            - $ref: "#/components/schemas/Signalwire.PingResult"
+        error:
+          description: Present instead of `result` when the request failed at the protocol level.
+          allOf:
+            - $ref: "#/components/schemas/JsonRpcError"
+      required:
+        - jsonrpc
+        - id
+      description: |-
+        A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
+        `result` (the method result). If the request fails at the protocol level — an
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
+        method-level failures (for example most Calling failures) are reported the other way: a
+        normal `result` whose own `code` is not `"200"`. Each method documents which form its
+        failures take.
+
+        An `error` returned for `signalwire.connect` is followed by the service closing the
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
+    Signalwire.PingResult:
+      type: object
+      properties:
+        timestamp:
+          type: number
+          format: double
+          description: The `timestamp` from the ping, echoed back unchanged.
+          examples:
+            - 1712345678.842
+        payload:
+          type: string
+          description: The `payload` from the ping, echoed back unchanged.
+          examples:
+            - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
+      description: "The result of a `signalwire.ping`: the `timestamp` and `payload` from the ping, echoed back unchanged."
     Signalwire.ReauthenticateRequest:
       type: object
       properties:
@@ -3952,15 +3851,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Signalwire.ReauthenticateResult:
       type: object
       properties:
@@ -4053,15 +3953,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Signalwire.Acknowledgement:
       type: object
       properties:
@@ -4145,15 +4046,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.DialRequest:
       type: object
       properties:
@@ -4232,7 +4134,6 @@ components:
           enum:
             - phone
             - sip
-            - fabric
       required:
         - type
       description: A device to dial (`calling.dial`). Discriminated on `type`.
@@ -4461,70 +4362,6 @@ components:
         - AMR-WB
         - VP8
         - H264
-    Calling.DialFabricDevice:
-      allOf:
-        - $ref: "#/components/schemas/Calling.DialDevice"
-        - type: object
-          properties:
-            type:
-              type: string
-              const: fabric
-            params:
-              $ref: "#/components/schemas/Calling.FabricDeviceParams"
-          required:
-            - type
-            - params
-          description: Dial a Call Fabric resource address.
-    Calling.FabricDeviceParams:
-      type: object
-      properties:
-        from:
-          type: string
-          description: Origination — E.164 or a resource address. When omitted, SignalWire fills in a caller ID.
-          examples:
-            - "+15551230001"
-        to:
-          type: string
-          description: Destination Call Fabric resource address, for example `/private/support`.
-          examples:
-            - /private/support
-        timeout:
-          type: integer
-          format: int32
-          description: Seconds to ring before giving up. Fractions are truncated. Defaults to the request's `timeout`, or 60 if neither is set.
-          minimum: 0
-          examples:
-            - 30
-        call_state_url:
-          type: string
-          format: uri
-          description: Webhook to receive call-state events for this leg.
-          examples:
-            - https://example.com/webhooks/relay
-        call_state_events:
-          type: array
-          items:
-            $ref: "#/components/schemas/Calling.CallStateEventName"
-          description: Which call states to deliver to `call_state_url`. Default `["ended"]`.
-          examples:
-            - - ended
-        confirm:
-          oneOf:
-            - type: string
-              format: uri
-            - type: array
-              items: {}
-          description: SWML to run on this leg after it answers and before it is bridged. Same forms and method subset as the phone device's `confirm`.
-        confirm_timeout:
-          type: integer
-          format: int32
-          description: Seconds to wait for `confirm` to complete before giving up. Defaults to this leg's `timeout`.
-          minimum: 0
-          examples:
-            - 30
-      required:
-        - to
-      description: Parameters for dialing or connecting a Call Fabric resource-address leg.
     Calling.DialReply:
       type: object
       properties:
@@ -4550,15 +4387,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.DialResult:
       type: object
       properties:
@@ -4694,9 +4532,9 @@ components:
           examples:
             - answered
         call:
-          description: The call that answered, as a call-state payload — largely the same shape as a `calling.call.state` event, but without the `start_time`/`answer_time`/`end_time`/`audio_in_mos` fields that only the state event itself adds. Present only when `dial_state` is `answered`; the winning leg is marked by `dial_winner`.
+          description: The call that answered. Present only when `dial_state` is `answered`; the winning leg is marked by `dial_winner`.
           allOf:
-            - $ref: "#/components/schemas/Calling.CallStateParams"
+            - $ref: "#/components/schemas/Calling.CallDialCall"
         reason:
           type: string
           description: Why the dial failed. Present when `dial_state` is `failed`.
@@ -4711,7 +4549,7 @@ components:
         - node_id
         - tag
         - dial_state
-    Calling.CallStateParams:
+    Calling.CallDialCall:
       type: object
       properties:
         node_id:
@@ -4758,24 +4596,6 @@ components:
             - outbound
           allOf:
             - $ref: "#/components/schemas/Calling.CallDirection"
-        start_time:
-          type: integer
-          format: int64
-          description: When the call started, in epoch milliseconds. Always emitted; `0` until known.
-          examples:
-            - 1712345678123
-        answer_time:
-          type: integer
-          format: int64
-          description: When the call was answered, in epoch milliseconds. Always emitted; `0` until known.
-          examples:
-            - 1712345680456
-        end_time:
-          type: integer
-          format: int64
-          description: When the call ended, in epoch milliseconds. Always emitted; `0` until known.
-          examples:
-            - 1712345695789
         end_reason:
           description: Why the call ended. Present once the call has ended.
           examples:
@@ -4799,12 +4619,6 @@ components:
           description: SIP addressing/header detail. Present only for SIP calls (`device.type == "sip"`).
           allOf:
             - $ref: "#/components/schemas/Calling.CallSipData"
-        audio_in_mos:
-          type: number
-          format: double
-          description: Inbound-audio Mean Opinion Score (voice quality, ~1.0-5.0). Present when media (RTP) quality stats are available.
-          examples:
-            - 4.4
         address_id:
           type: string
           description: For calls placed by or to a Call Fabric subscriber, the Fabric address ID involved. Absent otherwise.
@@ -4825,10 +4639,7 @@ components:
         - call_id
         - call_state
         - direction
-        - start_time
-        - answer_time
-        - end_time
-      description: "Payload of the `calling.call.state` event: the call's address, state, timing, and leg detail."
+      description: The call that answered a `calling.dial`. Same fields as a `calling.call.state` payload, except that it carries no `start_time`, `answer_time`, `end_time`, or `audio_in_mos`.
     Calling.CallDevice:
       type: object
       properties:
@@ -5136,7 +4947,7 @@ components:
         max_duration:
           type: integer
           format: int32
-          description: Maximum length of the call, in seconds, from 15 to 14400 (4 hours). The call ends automatically once this is reached. Defaults to 14400; values outside the range are rejected with `"400"`.
+          description: Maximum length of the call, in seconds, from 15 to 14400 (4 hours). The call ends automatically once this is reached. Defaults to 14400. A negative value is rejected with `"400"` before the call is answered. A value from 0 to 14, or above 14400, also returns `"400"`, but only after the call has been answered, so the call stays answered and keeps its existing limit.
           minimum: 15
           maximum: 14400
           examples:
@@ -5169,15 +4980,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.AnswerResult:
       type: object
       properties:
@@ -5267,15 +5079,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.RingResult:
       type: object
       properties:
@@ -5342,8 +5155,8 @@ components:
           examples:
             - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
         reason:
-          description: "Why the call is ending. Defaults to `hangup`. Only matters for an inbound call you have not answered: `hangup` and `busy` reject it as busy, and the other reasons decline it. An answered call always ends normally, and an unanswered outbound call is always canceled."
-          default: hangup
+          description: "Why the call is ending. Defaults to `busy`. Only matters for an inbound call you have not answered: `busy` and `hangup` reject it as busy, and the other reasons decline it. An answered call always ends normally, and an unanswered outbound call is always canceled."
+          default: busy
           examples:
             - hangup
           allOf:
@@ -5385,15 +5198,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.EndResult:
       type: object
       properties:
@@ -5836,6 +5650,56 @@ components:
             - type
             - params
           description: Connect to a Call Fabric resource address.
+    Calling.FabricDeviceParams:
+      type: object
+      properties:
+        from:
+          type: string
+          description: Origination — E.164 or a resource address. When omitted, SignalWire fills in a caller ID.
+          examples:
+            - "+15551230001"
+        to:
+          type: string
+          description: Destination Call Fabric resource address, for example `/private/support`.
+          examples:
+            - /private/support
+        timeout:
+          type: integer
+          format: int32
+          description: Seconds to ring before giving up. Fractions are truncated. Defaults to the request's `timeout`, or 60 if neither is set.
+          minimum: 0
+          examples:
+            - 30
+        call_state_url:
+          type: string
+          format: uri
+          description: Webhook to receive call-state events for this leg.
+          examples:
+            - https://example.com/webhooks/relay
+        call_state_events:
+          type: array
+          items:
+            $ref: "#/components/schemas/Calling.CallStateEventName"
+          description: Which call states to deliver to `call_state_url`. Default `["ended"]`.
+          examples:
+            - - ended
+        confirm:
+          oneOf:
+            - type: string
+              format: uri
+            - type: array
+              items: {}
+          description: SWML to run on this leg after it answers and before it is bridged. Same forms and method subset as the phone device's `confirm`.
+        confirm_timeout:
+          type: integer
+          format: int32
+          description: Seconds to wait for `confirm` to complete before giving up. Defaults to this leg's `timeout`.
+          minimum: 0
+          examples:
+            - 30
+      required:
+        - to
+      description: Parameters for connecting a Call Fabric resource-address leg with `calling.connect`. `calling.dial` does not support this device type.
     Calling.ConnectStreamDevice:
       allOf:
         - $ref: "#/components/schemas/Calling.ConnectDevice"
@@ -5930,15 +5794,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.ConnectResult:
       type: object
       properties:
@@ -6197,15 +6062,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.DisconnectResult:
       type: object
       properties:
@@ -6327,10 +6193,6 @@ components:
           default: false
           examples:
             - false
-        status_url:
-          type: string
-          format: uri
-          description: HTTP or HTTPS URL that collect events are also POSTed to as they occur.
       required:
         - node_id
         - call_id
@@ -6403,13 +6265,6 @@ components:
             - - sales
               - support
               - representative
-        engine:
-          description: (DEPRECATED — use `model` instead.) Pins recognition to a specific engine. Defaults to unset, which lets SignalWire choose.
-          examples:
-            - Google
-          deprecated: true
-          allOf:
-            - $ref: "#/components/schemas/Calling.CollectSpeechEngine"
         model:
           type: string
           description: |-
@@ -6418,12 +6273,6 @@ components:
           examples:
             - enhanced.phone_call
       description: Settings that control how the caller's speech is recognized and collected.
-    Calling.CollectSpeechEngine:
-      type: string
-      enum:
-        - Deepgram
-        - Google
-        - Google.V2
     Calling.CollectReply:
       type: object
       properties:
@@ -6449,15 +6298,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.CollectResult:
       type: object
       properties:
@@ -6807,15 +6657,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.CollectStopResult:
       type: object
       properties:
@@ -6920,15 +6771,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.CollectStartInputTimersResult:
       type: object
       properties:
@@ -7021,12 +6873,6 @@ components:
           description: What to listen for from the caller while the media plays.
           allOf:
             - $ref: "#/components/schemas/Calling.PlayAndCollectCollect"
-        status_url:
-          type: string
-          format: uri
-          description: HTTP or HTTPS URL that status events are POSTed to.
-          examples:
-            - https://example.com/webhooks/relay
       required:
         - node_id
         - call_id
@@ -7262,13 +7108,6 @@ components:
             - - sales
               - support
               - representative
-        engine:
-          description: (DEPRECATED — use `model` instead.) Pins recognition to a specific engine. Defaults to unset, which lets SignalWire choose.
-          examples:
-            - Google
-          deprecated: true
-          allOf:
-            - $ref: "#/components/schemas/Calling.CollectSpeechEngine"
         model:
           description: Recognition model to use. Not set by default.
           examples:
@@ -7311,15 +7150,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.PlayAndCollectResult:
       type: object
       properties:
@@ -7525,15 +7365,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.PlayAndCollectStopResult:
       type: object
       properties:
@@ -7647,15 +7488,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.PlayAndCollectVolumeResult:
       type: object
       properties:
@@ -7742,29 +7584,6 @@ components:
           description: HTTP or HTTPS URL where SignalWire POSTs queue status updates as the call moves through the queue.
           examples:
             - https://example.com/webhooks/relay
-        wait_url:
-          type: string
-          format: uri
-          description: URL of audio to play to the caller while they wait in the queue. Has no effect on calls controlled over Relay; it applies only when a call enters the queue from SWML.
-          examples:
-            - https://example.com/hold.mp3
-        wait_time:
-          type: integer
-          format: int32
-          description: How long, in seconds, to keep the caller in the queue before giving up. Default `180` (3 minutes). Has no effect on calls controlled over Relay; it applies only when a call enters the queue from SWML.
-          minimum: 1
-          examples:
-            - 180
-        execute_after_queue:
-          type: string
-          description: Where to send the call after it leaves the queue — a URL or inline SWML to execute. Has no effect on calls controlled over Relay; it applies only when a call enters the queue from SWML.
-          examples:
-            - https://example.com/swml/after-queue
-        whisper_url:
-          type: string
-          description: SWML to run on the queued call just before it is bridged — a URL to a SWML document or inline SWML (a JSON string starting with `{`). Has no effect on calls controlled over Relay; it applies only when a call enters the queue from SWML.
-          examples:
-            - https://example.com/swml/whisper
       required:
         - node_id
         - call_id
@@ -7795,15 +7614,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.QueueEnterResult:
       type: object
       properties:
@@ -8089,15 +7909,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.QueueLeaveResult:
       type: object
       properties:
@@ -8172,12 +7993,6 @@ components:
           description: What to record. Currently audio is the only option — set its parameters under `audio`.
           allOf:
             - $ref: "#/components/schemas/Calling.RecordSpec"
-        status_url:
-          type: string
-          format: uri
-          description: HTTP or HTTPS URL that status events are POSTed to.
-          examples:
-            - https://example.com/webhooks/relay
       required:
         - node_id
         - call_id
@@ -8265,14 +8080,6 @@ components:
           default: 44
           examples:
             - 44
-        max_length:
-          type: number
-          format: double
-          description: Maximum recording length, in whole seconds (fractions are dropped). Use `0` for no limit. Default `0`.
-          minimum: 0
-          default: 0
-          examples:
-            - 0
       description: Audio recording settings, passed under `record.audio`.
     Calling.RecordAudioDirection:
       type: string
@@ -8305,15 +8112,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.RecordResult:
       type: object
       properties:
@@ -8642,15 +8450,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.RecordPauseResult:
       type: object
       properties:
@@ -8755,15 +8564,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.RecordResumeResult:
       type: object
       properties:
@@ -8868,15 +8678,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.RecordStopResult:
       type: object
       properties:
@@ -9019,15 +8830,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.ReferResult:
       type: object
       properties:
@@ -9244,15 +9056,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.PassResult:
       type: object
       properties:
@@ -9635,15 +9448,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.PayResult:
       type: object
       properties:
@@ -9991,15 +9805,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.PayStopResult:
       type: object
       properties:
@@ -10083,56 +9898,11 @@ components:
           maximum: 40
           examples:
             - 5
-        direction:
-          type: string
-          enum:
-            - listen
-            - speak
-            - both
-          description: |-
-            Which side of the call's audio the media is injected into: `listen` (played to the
-            remote party, so they hear it), `speak` (mixed into the remote party's own audio
-            channel), or `both`. Default `listen`.
-          default: listen
-          examples:
-            - listen
-        status_url:
-          type: string
-          format: uri
-          description: HTTP or HTTPS URL that status events are POSTed to.
-          examples:
-            - https://example.com/webhooks/relay
-        language:
-          type: string
-          description: Default text-to-speech language for TTS items in `play` that do not set their own. Falls back to the platform default if unset.
-          examples:
-            - en-US
-        voice:
-          type: string
-          description: Default text-to-speech voice for TTS items in `play` that do not set their own. Falls back to the platform default if unset.
-          examples:
-            - en-US-Standard-C
-        gender:
-          description: Default text-to-speech voice gender for TTS items in `play` that do not set their own. Falls back to the platform default if unset.
-          examples:
-            - female
-          allOf:
-            - $ref: "#/components/schemas/Calling.TtsGender"
         play:
           type: array
           items:
             $ref: "#/components/schemas/Calling.PlayMedia"
           description: Ordered list of media elements to play.
-        loop:
-          type: integer
-          format: int32
-          description: |-
-            Number of times to play the sequence. `0` loops until the call ends or the
-            play is stopped. Default `1`.
-          minimum: 0
-          default: 1
-          examples:
-            - 1
       required:
         - node_id
         - call_id
@@ -10163,15 +9933,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.PlayResult:
       type: object
       properties:
@@ -10276,15 +10047,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.PlayPauseResult:
       type: object
       properties:
@@ -10389,15 +10161,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.PlayResumeResult:
       type: object
       properties:
@@ -10502,15 +10275,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.PlayStopResult:
       type: object
       properties:
@@ -10624,15 +10398,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.PlayVolumeResult:
       type: object
       properties:
@@ -10709,7 +10484,7 @@ components:
           examples:
             - d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e
         detect:
-          description: The detector to run. Set `type` to `machine`, `fax`, or `digit`, then supply that detector's `params`.
+          description: The detector to run. Set `type` to `machine`, `fax`, or `digit`, and supply that detector's `params` (send `{}` for the defaults).
           allOf:
             - $ref: "#/components/schemas/Calling.DetectConfig"
         timeout:
@@ -10719,10 +10494,6 @@ components:
           minimum: 0
           examples:
             - 30
-        status_url:
-          type: string
-          format: uri
-          description: HTTP(s) URL to POST detector events to.
       required:
         - node_id
         - call_id
@@ -10735,17 +10506,17 @@ components:
           type: string
           enum:
             - machine
-          description: "`machine` (answering machine / voicemail). Optional — omitting `type` selects this detector."
-          default: machine
+          description: "`machine` (answering machine / voicemail)."
           examples:
             - machine
         params:
-          description: Optional tuning for the machine detector. Every field is optional and defaults are used when omitted.
+          description: "Tuning for the machine detector. Required, but every field inside is optional: send `{}` to use the defaults."
           allOf:
             - $ref: "#/components/schemas/Calling.DetectMachineParams"
-      description: |-
-        Run the answering-machine (voicemail) detector. This is the default when `type`
-        is omitted.
+      required:
+        - type
+        - params
+      description: Run the answering-machine (voicemail) detector.
     Calling.DetectMachineParams:
       type: object
       properties:
@@ -10815,11 +10586,12 @@ components:
           examples:
             - fax
         params:
-          description: Optional tuning for the fax detector. Only `tone` is accepted.
+          description: "Tuning for the fax detector. Required, but `tone` is optional: send `{}` to use the default. Only `tone` is accepted."
           allOf:
             - $ref: "#/components/schemas/Calling.DetectFaxParams"
       required:
         - type
+        - params
       description: Run the fax-tone detector.
     Calling.DetectFaxParams:
       type: object
@@ -10849,11 +10621,12 @@ components:
           examples:
             - digit
         params:
-          description: Optional tuning for the digit detector. Only `digits` is accepted.
+          description: "Tuning for the digit detector. Required, but `digits` is optional: send `{}` to use the default. Only `digits` is accepted."
           allOf:
             - $ref: "#/components/schemas/Calling.DetectDigitParams"
       required:
         - type
+        - params
       description: Run the DTMF digit detector.
     Calling.DetectDigitParams:
       type: object
@@ -10894,15 +10667,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.DetectResult:
       type: object
       properties:
@@ -11210,15 +10984,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.DetectStopResult:
       type: object
       properties:
@@ -11343,15 +11118,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.SendFaxResult:
       type: object
       properties:
@@ -11678,15 +11454,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.SendFaxStopResult:
       type: object
       properties:
@@ -11791,15 +11568,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.ReceiveFaxResult:
       type: object
       properties:
@@ -11904,15 +11682,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.ReceiveFaxStopResult:
       type: object
       properties:
@@ -12167,15 +11946,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.TapResult:
       type: object
       properties:
@@ -12586,15 +12366,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.TapStopResult:
       type: object
       properties:
@@ -12758,15 +12539,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.StreamResult:
       type: object
       properties:
@@ -12991,15 +12773,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.StreamStopResult:
       type: object
       properties:
@@ -13108,15 +12891,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.TransferResult:
       type: object
       properties:
@@ -13387,15 +13171,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.JoinConferenceResult:
       type: object
       properties:
@@ -13750,15 +13535,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.LeaveConferenceResult:
       type: object
       properties:
@@ -13852,15 +13638,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.DenoiseResult:
       type: object
       properties:
@@ -14051,15 +13838,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.DenoiseStopResult:
       type: object
       properties:
@@ -14169,15 +13957,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.SendDigitsResult:
       type: object
       properties:
@@ -14384,15 +14173,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.TranscribeResult:
       type: object
       properties:
@@ -14650,15 +14440,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.TranscribeStopResult:
       type: object
       properties:
@@ -14770,15 +14561,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.EchoResult:
       type: object
       properties:
@@ -15005,15 +14797,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.BindDigitResult:
       type: object
       properties:
@@ -15112,15 +14905,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.ClearDigitBindingsResult:
       type: object
       properties:
@@ -15362,15 +15156,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.LiveTranscribeResult:
       type: object
       properties:
@@ -16366,15 +16161,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.LiveTranslateResult:
       type: object
       properties:
@@ -16919,15 +16715,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.JoinRoomResult:
       type: object
       properties:
@@ -17134,15 +16931,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.LeaveRoomResult:
       type: object
       properties:
@@ -37747,15 +37545,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.AiResult:
       type: object
       properties:
@@ -39198,15 +38997,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.AiStopResult:
       type: object
       properties:
@@ -39411,15 +39211,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.AiSidecarResult:
       type: object
       properties:
@@ -39869,15 +39670,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.AiSidecarPokeResult:
       type: object
       properties:
@@ -39981,15 +39783,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.AiSidecarAskResult:
       type: object
       properties:
@@ -40090,15 +39893,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.AiSidecarStopResult:
       type: object
       properties:
@@ -40197,15 +40001,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.AiSidecarStatusResult:
       type: object
       properties:
@@ -40414,15 +40219,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.AmazonBedrockResult:
       type: object
       properties:
@@ -40497,11 +40303,14 @@ components:
           examples:
             - The user's order has been confirmed.
         role:
-          description: Role of the message sender.
+          oneOf:
+            - $ref: "#/components/schemas/Calling.AiMessageRole"
+            - type: string
+          description: |-
+            Role of the message sender: `system`, `user`, or `assistant`. Any other value
+            is accepted and treated as `user`. Defaults to `user`.
           examples:
             - system
-          allOf:
-            - $ref: "#/components/schemas/Calling.AiMessageRole"
         reset:
           description: Conversation-reset configuration. When present, `message_text` and `global_data` in the same request are ignored.
           allOf:
@@ -40574,15 +40383,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.AiMessageResult:
       type: object
       properties:
@@ -40703,15 +40513,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.AiHoldResult:
       type: object
       properties:
@@ -40818,15 +40629,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.AiUnholdResult:
       type: object
       properties:
@@ -40992,15 +40804,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.AiAdjustResult:
       type: object
       properties:
@@ -41109,15 +40922,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Calling.UserEventResult:
       type: object
       properties:
@@ -41424,6 +41238,124 @@ components:
         - method
         - params
       description: Fires every time one of your calls changes state. Use the `call_state` field to track the call through its lifecycle, and `tag` to match the event back to the call you placed.
+    Calling.CallStateParams:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
+        device:
+          description: The device handling this call. Always present, but may be an empty object until the device type is determined.
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallDevice"
+        parent:
+          description: Present when this call was created by another call, describing that originating call.
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallParentRef"
+        peer:
+          description: Present when this call is bridged to another, describing the other call.
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallPeerRef"
+        call_state:
+          description: The state the call has just moved into.
+          examples:
+            - ended
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallState"
+        direction:
+          description: Whether the call is inbound or outbound.
+          examples:
+            - outbound
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallDirection"
+        start_time:
+          type: integer
+          format: int64
+          description: When the call started, in epoch milliseconds. Always emitted; `0` until known.
+          examples:
+            - 1712345678123
+        answer_time:
+          type: integer
+          format: int64
+          description: When the call was answered, in epoch milliseconds. Always emitted; `0` until known.
+          examples:
+            - 1712345680456
+        end_time:
+          type: integer
+          format: int64
+          description: When the call ended, in epoch milliseconds. Always emitted; `0` until known.
+          examples:
+            - 1712345695789
+        end_reason:
+          description: Why the call ended. Present once the call has ended.
+          examples:
+            - hangup
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallStateEndReason"
+        end_source:
+          description: Which side ended the call — `inbound` or `outbound` — or `none` when not applicable. Present once the call has ended.
+          examples:
+            - outbound
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallStateEndSource"
+        dial_winner:
+          type: string
+          enum:
+            - "true"
+          description: Set to the string `"true"` on the call that won a `calling.dial` race. Absent otherwise. Note the value is the string `"true"`, not a JSON boolean.
+          examples:
+            - "true"
+        sip_data:
+          description: SIP addressing/header detail. Present only for SIP calls (`device.type == "sip"`).
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallSipData"
+        audio_in_mos:
+          type: number
+          format: double
+          description: Inbound-audio Mean Opinion Score (voice quality, ~1.0-5.0). Present when media (RTP) quality stats are available.
+          examples:
+            - 4.4
+        address_id:
+          type: string
+          description: For calls placed by or to a Call Fabric subscriber, the Fabric address ID involved. Absent otherwise.
+          examples:
+            - f1e2d3c4-b5a6-4978-8a9b-0c1d2e3f4a5b
+        subscriber_id:
+          type: string
+          description: For calls placed by or to a Call Fabric subscriber, the subscriber's ID. Absent otherwise.
+          examples:
+            - 0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
+        subscriber_name:
+          type: string
+          description: For calls placed by or to a Call Fabric subscriber, the subscriber's display name. Absent otherwise.
+          examples:
+            - Alice
+      required:
+        - node_id
+        - call_id
+        - call_state
+        - direction
+        - start_time
+        - answer_time
+        - end_time
+      description: "Payload of the `calling.call.state` event: the call's address, state, timing, and leg detail."
     Calling.CallErrorEvent:
       type: object
       properties:
@@ -41606,7 +41538,17 @@ components:
             - "+15551230002"
         from_number:
           type: string
-          description: "The number to send from: an E.164 phone number or a 5–6 digit short code. Must be on your account."
+          description: |-
+            The sender, which also picks the channel. One of:
+
+            - A phone number on your project, in E.164 format, to send SMS or MMS.
+            - A 5–6 digit short code on your project, to send SMS or MMS.
+            - Your registered WhatsApp business number, prefixed with `whatsapp:` (for
+              example, `whatsapp:+15551230001`), to send over WhatsApp.
+            - The ID of your RCS agent, to send over RCS. The agent must be in review,
+              launching, or launched, and RCS must be enabled for your space.
+
+            A verified caller ID can't be used as the sender.
           examples:
             - "+15551230001"
         body:
@@ -41631,7 +41573,8 @@ components:
           description: |-
             One or more media URLs to send as an MMS. You must include `body`, `media`,
             or both — at least one is required. Each URL must be HTTP or HTTPS. Up to
-            8 URLs; defaults to an empty array.
+            8 URLs; defaults to an empty array. Not supported when sending from an RCS
+            agent.
           maxItems: 8
           examples:
             - - https://example.com/receipt.png
@@ -41650,7 +41593,7 @@ components:
           description: |-
             For a WhatsApp media or interactive message, the kind of WhatsApp message to
             send. Required when sending from a WhatsApp number unless you supply a
-            `template_id` instead. Leave unset for SMS/MMS.
+            `template_id` instead. Leave unset for SMS, MMS, and RCS.
           examples:
             - whatsapp_media_image
           allOf:
@@ -41748,15 +41691,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Messaging.SendResult:
       type: object
       properties:
@@ -41858,8 +41802,9 @@ components:
       description: |-
         Fires each time a message's delivery state changes. Match `message_id` to the
         one you got from `messaging.send` and read `message_state` to see where the
-        message is in its journey. The event keeps firing until the message reaches a
-        final state of `delivered`, `undelivered`, or `failed`.
+        message is in its journey. An SMS or MMS stops at `delivered`, `undelivered`,
+        or `failed`. An RCS message can also report `read`, including after
+        `delivered`. A WhatsApp message gets no updates after `sent`.
     Messaging.StateEventData:
       type: object
       properties:
@@ -41895,7 +41840,7 @@ components:
             - []
         from_number:
           type: string
-          description: "The sender: an E.164 phone number or a short code."
+          description: "The sender, as given in `messaging.send`: an E.164 phone number, a short code, a `whatsapp:`-prefixed WhatsApp business number, or an RCS agent ID."
           examples:
             - "+15551230001"
         to_number:
@@ -41924,7 +41869,7 @@ components:
           examples:
             - 1
         message_state:
-          description: The message's new delivery state.
+          description: The message's new delivery state. `read` is reported for RCS messages only.
           examples:
             - delivered
           allOf:
@@ -41939,8 +41884,8 @@ components:
           description: |-
             A machine-readable error code describing the failure, such as
             `unrouteable_message`, `insufficient_balance_to_send_message`,
-            `carrier_violation`, or `unknown_destination_handset`. For WhatsApp, the
-            platform's numeric error code. Included only when an error occurred.
+            `carrier_violation`, or `unknown_destination_handset`. Included only when an
+            error occurred.
           examples:
             - carrier_violation
         error_message:
@@ -41974,6 +41919,7 @@ components:
         - delivered
         - undelivered
         - failed
+        - read
     Messaging.ReceiveEvent:
       type: object
       properties:
@@ -42076,7 +42022,7 @@ components:
             - "+15551230002"
         to_number:
           type: string
-          description: The number it was sent to, in E.164 format.
+          description: "Where it was sent: your phone number in E.164 format, your WhatsApp business number with its `whatsapp:` prefix, or your RCS agent's ID."
           examples:
             - "+15551230001"
         body:
@@ -42277,15 +42223,16 @@ components:
       description: |-
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
-        incompatible version, failed authentication, insufficient scope, invalid params, or the
-        service being at capacity — the frame carries `error` instead of `result`. Many
+        incompatible version, failed authentication, insufficient scope, invalid params, or your
+        project's connection limit — the frame carries `error` instead of `result`. Many
         method-level failures (for example most Calling failures) are reported the other way: a
         normal `result` whose own `code` is not `"200"`. Each method documents which form its
         failures take.
 
         An `error` returned for `signalwire.connect` is followed by the service closing the
-        WebSocket; open a new connection to try again. Errors on any later request leave the
-        connection open.
+        WebSocket; open a new connection to try again. The same happens when
+        `signalwire.reauthenticate` sends credentials that are rejected, except for a
+        Subscriber Access Token. Errors on any other request leave the connection open.
     Provisioning.ProvisionResult:
       type: object
       properties:
@@ -42319,34 +42266,6 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/Signalwire.AuthorizationStateEvent"
-    disconnectEvent:
-      name: DisconnectEvent
-      title: Service is about to disconnect the client
-      contentType: application/json
-      payload:
-        $ref: "#/components/schemas/Signalwire.DisconnectEvent"
-    signalwirePingRequest:
-      name: signalwire.ping.request
-      title: signalwire.ping request
-      contentType: application/json
-      correlationId:
-        location: $message.payload#/id
-      payload:
-        $ref: "#/components/schemas/Signalwire.PingRequest"
-    signalwirePingResponse:
-      name: signalwire.ping.response
-      title: signalwire.ping response
-      contentType: application/json
-      correlationId:
-        location: $message.payload#/id
-      payload:
-        $ref: "#/components/schemas/Signalwire.PingReply"
-    serverPingRequest:
-      name: ServerPingRequest
-      title: Service keepalive ping
-      contentType: application/json
-      payload:
-        $ref: "#/components/schemas/Signalwire.ServerPingRequest"
     signalwireConnectRequest:
       name: signalwire.connect.request
       title: signalwire.connect request
@@ -42363,6 +42282,22 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/Signalwire.ConnectReply"
+    signalwirePingRequest:
+      name: signalwire.ping.request
+      title: signalwire.ping request
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/Signalwire.PingRequest"
+    signalwirePingResponse:
+      name: signalwire.ping.response
+      title: signalwire.ping response
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/Signalwire.PingReply"
     signalwireReauthenticateRequest:
       name: signalwire.reauthenticate.request
       title: signalwire.reauthenticate request

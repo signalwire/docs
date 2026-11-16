@@ -16,11 +16,14 @@ model ServerOptions {
 extern dec server(target: Namespace, name: valueof string, options: valueof ServerOptions);
 
 /**
- * Place an operation on its own AsyncAPI channel. The string is the channel id (camelized,
- * e.g. `calling.dial` -> `callingDial`) and the channel title; the channel address defaults
- * to the root WebSocket connection `/`. Every operation thus becomes its own root-addressed
- * channel — the AsyncAPI 3.0 per-operation-channel idiom. Channel identity only: the protocol
- * `method` constant (if any) lives in the request message payload, authored in the spec.
+ * Place an operation on its own AsyncAPI channel. The string is the method name, used verbatim
+ * as the channel key and title (e.g. `#/channels/calling.dial`); the channel address is the root
+ * WebSocket connection `/`. Every operation thus becomes its own root-addressed channel — the
+ * AsyncAPI 3.0 per-operation-channel idiom. (With `channel-mode: single`, every operation lands
+ * on one shared `relay` channel instead.) The camelized form (`calling.dial` -> `callingDial`)
+ * names only the send operation and its `callingDialRequest` / `callingDialResponse` messages.
+ * Channel identity only: the protocol `method` constant (if any) lives in the request message
+ * payload, authored in the spec.
  */
 extern dec channel(target: Operation, method: valueof string);
 

@@ -1,6 +1,6 @@
 ---
 title: Events and subscriptions
-slug: /relay/client/events
+slug: relay/client/events
 description: How Relay pushes call, member, and room events to your client, and how to subscribe to a room's event feed.
 max-toc-depth: 3
 ---
@@ -11,10 +11,10 @@ Relay is event-driven. Once your connection is open, SignalWire pushes events to
 
 Every event reaches you the same way — pushed over the open socket. As a client, they fall into a few groups:
 
-- **Call state** — `call.state` (and `call.joined` / `call.left`) track the call you placed as it progresses. They carry the `{ node_id, call_id, member_id }` that identify your leg.
+- **Call state** — `call.state` tracks each call leg as it progresses and carries the `call_id` and `node_id` that identify the leg. `call.joined` and `call.left` mark when you join and leave the call, and also carry your `member_id`.
 - **Member events** — `member.joined`, `member.left`, `member.updated`, and `member.talking` report who is in the room and what changed for them, including the active speaker.
 - **Room events** — `room.updated` and `layout.changed` report changes to the room itself, such as a new video layout.
-- **Verto signaling** — if you drive calling through the lower-level WebRTC/Verto path, inbound Verto frames (an incoming call, the far end hanging up, media updates) arrive on the receive-only `webrtc.message` channel, passed through as-is; you can also name conference event channels in the `subscribe` list of your `webrtc.verto` request.
+- **Verto signaling** — if you drive calling through the lower-level WebRTC/Verto path, inbound Verto frames (an incoming call, the far end hanging up, media updates) arrive on the receive-only `webrtc.message` channel, passed through as-is. Room and member events don't travel on this channel; they arrive as their own events.
 
 <Note>
 Every event is documented on its own receive-only channel in the API reference under this tab — `call.state`, `member.joined`, `room.updated`, `webrtc.message`, and the rest.
@@ -22,30 +22,42 @@ Every event is documented on its own receive-only channel in the API reference u
 
 ## How you receive events
 
-Call Fabric events are **receive-only** — SignalWire pushes them to you as your call and room change state, so there's no separate request to turn them on. Once you place or join a call you receive its `call.state` changes; once you're in a room you receive that room's `member.*` and `room.updated` events. When you join a room, a `room.subscribed` event delivers the room's current state and your member and call identifiers.
+Call Fabric events are **receive-only**: SignalWire pushes them to you as your call and room change state, with no separate request to turn them on. Once you place or join a call you receive its `call.state` changes, and when you join a room, a `room.subscribed` event delivers the room's current state and your member and call identifiers.
+
+When your `webrtc.verto` invite joins a Video Room resource, that room's events are opt-in instead. Apart from `room.subscribed`, they reach you only if their event types are named in the `subscribe` list of that invite; an event you leave out of the list never arrives. The Browser SDK sends this list for you.
 
 ## What an event looks like
 
-Each event carries an `event_type` that names it and a `params` payload whose fields depend on the event:
+Every event arrives as a JSON-RPC request with the method `signalwire.event`. Its `params` is an envelope: `event_type` names the event, and the inner `params` holds the payload, whose fields depend on the event. This `call.state` event is shortened to a few payload fields:
 
 ```json
 {
-  "event_type": "call.state",
+  "jsonrpc": "2.0",
+  "id": "7d1e2f3a-4b5c-4d6e-8f9a-0b1c2d3e4f5a",
+  "method": "signalwire.event",
   "params": {
-    "call_id": "c1a2b3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
-    "call_state": "answered"
+    "event_type": "call.state",
+    "event_channel": "signalwire_c1d2e3f4a5b6",
+    "timestamp": 1712345678.842,
+    "project_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "space_id": "c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f",
+    "params": {
+      "call_id": "c1a2b3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "node_id": "a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "call_state": "answered"
+    }
   }
 }
 ```
 
-The exact `params` for each event live on that event's page in the API reference. If you use the Browser SDK, you don't parse this shape by hand — the SDK delivers each event as a typed object or a callback.
+Events are notifications, so you don't reply to them. The exact envelope and payload for each event live on that event's page in the API reference. If you use the Browser SDK, you don't parse this shape by hand — the SDK delivers each event as a typed object or a callback.
 
 ## Correlate events to your call
 
 Client events carry the identifiers that address your call, so you can tie each one back to the call or member it belongs to:
 
 - **`call_id`** — the call the event is for.
-- **`member_id`** — the specific member (participant) the event is about, on member events.
+- **`member_id`** — the specific member (participant) the event is about, on member events and on `call.joined` and `call.left`.
 
 ## Next steps
 

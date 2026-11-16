@@ -13,11 +13,16 @@ const signalwireDisconnect = "signalwire.disconnect";
 
 @doc("""
   A `signalwire.disconnect` request the service pushes to you when it is about to
-  close your connection — for example during a deployment. The frame carries a
-  single `restart` flag. Flush anything pending and reply with an empty result
-  `{}` to acknowledge; that reply should be the last thing you send before the
-  connection closes. If `restart` is `true`, reconnect afterward.
-  
+  close your connection — for example during a deployment. Stop sending new
+  requests on this connection. A few seconds later the service closes the socket;
+  it does not wait for a reply, so the close comes on schedule whether or not you
+  answer. You may reply with an empty result `{}`.
+
+  `restart` tells you how to reconnect. When it is `false`, reconnect and restore
+  your session by passing your saved `protocol` and `authorization_state` to
+  `signalwire.connect`. When it is `true`, reconnect as a fresh connection, without
+  them.
+
   You receive this message; you do not send it (that is why this channel has no
   send operation).
   """)
@@ -28,8 +33,8 @@ model DisconnectEvent
 
 @doc("""
   Delivers the server-initiated `signalwire.disconnect` request.
-  This channel is receive-only: the SDK receives the disconnect and replies with
-  an empty acknowledgement — it never sends a disconnect.
+  This channel is receive-only: you receive the disconnect and may reply with an
+  empty result — you never send a disconnect.
   """)
 @channel(signalwireDisconnect)
 @summary("Service is about to disconnect the client")

@@ -21,9 +21,10 @@ model SendRequest is JsonRpcRequest<typeof messagingSend, SendParams>;
 model SendReply is JsonRpcResponse<SendResult>;
 
 @doc("""
-  Send an SMS or MMS to a phone number. Include `body`, `media`, or both. A
-  successful response means SignalWire accepted the message and returns its
-  `message_id` — it does not mean the message was delivered yet. Watch for
+  Send an SMS, MMS, WhatsApp, or RCS message to a phone number; `from_number`
+  picks the channel. Include `body`, `media`, or both. A successful response
+  means SignalWire accepted the message and returns its `message_id` — it does
+  not mean the message was delivered yet. Watch for
   `messaging.state` events on the same `context` to follow delivery.
 
   A rejected message comes back as a normal result with `code` `"400"` and the

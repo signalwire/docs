@@ -21,9 +21,15 @@ model AmazonBedrockRequest is JsonRpcRequest<typeof callingAmazonBedrock, Amazon
 
 @doc("""
   Connect the call to an Amazon Bedrock AI agent. The request stays open for the
-  whole conversation: the result arrives only after the Bedrock session ends
-  (hangup, error, or stop), and it reports `success` even if the agent failed to
-  run. Watch the `calling.ai.*` events to follow the session.
+  whole conversation: the result arrives only after the Bedrock session ends, and
+  it reports `success` even if the agent failed to run. Watch the `calling.ai.*`
+  events to follow the session.
+
+  The session ends when the call hangs up, when the agent ends the conversation
+  (including by transferring the call), or on an error. There's no request that
+  stops the agent and keeps the call up: `calling.ai.stop`, `calling.ai_hold`,
+  `calling.ai_unhold`, and `calling.ai_adjust` apply only to agents started with
+  `calling.ai`. `calling.ai_message` can send the agent a message while it runs.
   """)
 @channel(callingAmazonBedrock)
 @summary("Connect to an Amazon Bedrock AI agent")

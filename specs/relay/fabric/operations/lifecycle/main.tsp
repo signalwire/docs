@@ -17,7 +17,17 @@ model EndResult { ...FabricResult; }
 @reply
 model EndReply is JsonRpcResponse<EndResult>;
 
-@doc("Ends a Call Fabric call leg. Target your own leg with `self` or another member's with `target`. Fires `call.left`, `member.left`, and `call.state` as the leg tears down.")
+@doc("""
+  Ends the call that `target` is on. What that means depends on the call:
+
+  - **1:1 call** — hangs up the `target` leg. Fires `call.left`, `member.left`, and
+    `call.state` as the leg tears down.
+  - **Conference** — removes **every** member from the conference, not just `target`.
+    To remove one member and leave the rest in place, use `call.member.remove`; to
+    leave yourself, use `call.hangup`.
+
+  Returns code `"403"` when you lack permission to end the call.
+  """)
 @channel(callEnd)
 @summary("End a call leg")
 @extension("x-fern-display-name", callEnd)

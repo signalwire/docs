@@ -21,7 +21,7 @@ model MemberRemoveParams {
   @doc("The call leg you're operating from — your own leg on this call.")
   self: Target;
 
-  @doc("The call legs to remove. Must contain at least one complete target.")
+  @doc("The call legs to remove. Must contain at least one complete target. On a 1:1 call only the first target is used.")
   @minItems(1)
   targets: Target[];
 }

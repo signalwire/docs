@@ -12,14 +12,15 @@ const webrtcMessageResponse = "${webrtcMessage} response";
   Delivers a Verto frame from SignalWire to your client. This fires when SignalWire
   has a Verto response to one of your `webrtc.verto` frames, but also when
   SignalWire initiates signaling on its own — an incoming `verto.invite`, a
-  `verto.bye` when the far end hangs up, `verto.media`/`verto.display` updates, or a
-  conference/room event on a channel you subscribed to — so it can arrive without
-  you sending anything.
+  `verto.bye` when the far end hangs up, `verto.media`/`verto.display` updates — so
+  it can arrive without you sending anything.
 
   The Verto frame arrives at `params.params`, passed through as-is (the surrounding
   `params` object is the event envelope: `node_id`, `event_channel`, timestamps).
-  Each frame is a Verto-protocol signaling message whose contents depend on the
-  Verto method it carries.
+  Only these Verto methods are delivered: `verto.invite`, `verto.answer`,
+  `verto.attach`, `verto.bye`, `verto.media`, `verto.mediaParams`, `verto.display`,
+  and `verto.ping`. Conference and room events arrive as their own event types,
+  such as `member.joined` and `room.updated`, never inside `webrtc.message`.
   """)
 @summary("Inbound Verto frame")
 @extension("x-fern-display-name", webrtcMessage)

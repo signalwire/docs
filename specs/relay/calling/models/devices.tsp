@@ -113,7 +113,7 @@ model SipDeviceParams {
   confirm_timeout?: int32;
 }
 
-@doc("Parameters for dialing or connecting a Call Fabric resource-address leg.")
+@doc("Parameters for connecting a Call Fabric resource-address leg with `calling.connect`. `calling.dial` does not support this device type.")
 @summary("Call Fabric device parameters")
 model FabricDeviceParams {
   @doc("Origination — E.164 or a resource address. When omitted, SignalWire fills in a caller ID.")
@@ -212,7 +212,7 @@ model StreamDeviceParams {
 @doc("A device to dial (`calling.dial`). Discriminated on `type`.")
 @discriminator("type")
 model DialDevice {
-  type: "phone" | "sip" | "fabric";
+  type: "phone" | "sip";
 }
 
 @doc("Dial a phone number over the PSTN.")
@@ -229,14 +229,6 @@ model DialSipDevice extends DialDevice {
   type: "sip";
 
   params: SipDeviceParams;
-}
-
-@doc("Dial a Call Fabric resource address.")
-model DialFabricDevice extends DialDevice {
-  @example("fabric")
-  type: "fabric";
-
-  params: FabricDeviceParams;
 }
 
 @doc("A device to connect to an active call (`calling.connect`). Discriminated on `type`.")

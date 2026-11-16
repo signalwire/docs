@@ -46,11 +46,13 @@ model VertoParams {
   message: Record<unknown>;
 
   @doc("""
-    Event channels to subscribe to alongside this request — useful when you
-    join a conference and want its event feed. Values are conference/room event
-    channels such as `member.joined`, `member.left`, `room.ended`,
-    `room.updated`, `layout.changed`, and `member.updated` (illustrative, not
-    exhaustive).
+    The room events to receive, by event type. Read only when this frame is a
+    participant `verto.invite` that joins a Video Room: from then on, that room's
+    events reach this connection only if their type is in this list, except
+    `room.subscribed`, which always arrives. A screen-share or additional-device
+    invite reuses the list from the participant invite. Calls to any other kind of
+    address deliver their call, member, and room events without this list, so you
+    can omit it.
     """)
   @example(#["member.joined", "member.left", "room.ended"])
   subscribe?: string[];

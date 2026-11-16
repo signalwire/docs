@@ -47,9 +47,12 @@ model AiMessageParams {
   @example("The user's order has been confirmed.")
   message_text?: string;
 
-  @doc("Role of the message sender.")
+  @doc("""
+    Role of the message sender: `system`, `user`, or `assistant`. Any other value
+    is accepted and treated as `user`. Defaults to `user`.
+    """)
   @example("system")
-  role?: AiMessageRole;
+  role?: AiMessageRole | string;
 
   @doc("Conversation-reset configuration. When present, `message_text` and `global_data` in the same request are ignored.")
   reset?: AiMessageReset;

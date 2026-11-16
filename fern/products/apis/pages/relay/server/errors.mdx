@@ -1,6 +1,6 @@
 ---
 title: Errors
-slug: /relay/server/errors
+slug: relay/server/errors
 description: Every Relay response carries a code and message your backend checks for success or failure.
 max-toc-depth: 3
 ---
@@ -27,7 +27,7 @@ A typical result looks like this:
 
 | Field | Description |
 |---|---|
-| `code` | The result code, as a **string**. `"200"` means success; any other value means the request failed. If the call couldn't be reached in time, `code` is a lowercase identifier such as `response_timeout` instead of a number. |
+| `code` | The result code, as a **string**. `"200"` means success; any other value means the request failed. Most failures carry a numeric code such as `"404"`; a failure SignalWire hits before your request is carried out carries a lowercase identifier such as `response_timeout` instead (see [Identifier codes](#identifier-codes)). |
 | `message` | A human-readable description of the result. On failure, it explains what went wrong. The exact text varies by command. |
 | `call_id` | The call this result is for, echoed from your request. Present when the command acts on a call. |
 | `control_id` | Your control identifier for the started action, echoed when your request included one. |
@@ -45,7 +45,7 @@ if result.code != "200":
     print(f"Play failed: {result.message}")
 ```
 
-The codes mirror familiar HTTP status conventions, so a `"4xx"` value means the request was rejected and a `"5xx"` value means something went wrong on SignalWire's side.
+Numeric codes mirror familiar HTTP status conventions, so a `"4xx"` value means the request was rejected and a `"5xx"` value means something went wrong on SignalWire's side.
 
 ## Common codes
 
@@ -53,9 +53,30 @@ The codes mirror familiar HTTP status conventions, so a `"4xx"` value means the 
 |---|---|
 | `"200"` | **Success.** The command was accepted. |
 | `"400"` | **Bad request.** A parameter was missing or invalid — for example, requesting a codec the call type doesn't support. Fix the request before retrying. |
+| `"403"` | **Forbidden.** The call the request targets belongs to a different project than your credentials. |
 | `"404"` | **Not found.** The call or resource the request targeted doesn't exist — often because it has already ended. |
+| `"405"` | **Not allowed.** The command can't run on the call as it stands — for example, a command sent to a call that hasn't started yet. |
 | `"409"` | **Conflict.** The request clashes with the call's current state — for example, starting transcription on a call that already has it running. |
+| `"410"` | **Gone.** The call existed but has ended. |
 | `"500"` | **Server error.** Something went wrong on SignalWire's side. |
+
+## Identifier codes
+
+When SignalWire can't carry out your request at all, for example because the service that handles it didn't answer in time, `code` is a lowercase identifier instead of a number. Treat any of these as a failure:
+
+| Code | Meaning |
+|---|---|
+| `"response_timeout"` | The request timed out before it was carried out. |
+| `"not_available"` | The service that handles this request couldn't be reached. Retry later. |
+| `"internal_error"` | Something went wrong on SignalWire's side. |
+| `"parse_error"` | SignalWire couldn't read the response to your request. |
+| `"invalid_params"` | A required parameter is missing or malformed. |
+| `"invalid_request"` | The request doesn't apply to this connection. |
+| `"method_not_found"` | The method isn't recognized. |
+| `"not_allowed"` | The request isn't permitted for your credentials. |
+| `"authentication_failed"` | Your credentials were rejected. |
+| `"version_incompatible"` | The protocol `version` your connection sent doesn't support this request. |
+| `"unknown:<n>"` | Any other failure, where `<n>` is the underlying JSON-RPC error code. |
 
 ## Examples
 
@@ -86,18 +107,22 @@ When a request is rejected before it runs, the response has an `error` object in
 }
 ```
 
-`code` is a negative integer and `original_request` echoes the request that failed. The codes you're most likely to see:
+`code` is a negative integer and `original_request` echoes the request that failed. The codes you can see:
 
 | Code | Meaning |
 |---|---|
+| `-32000` | **Timeout.** The request timed out inside SignalWire. Retry it. |
 | `-32001` | **Version incompatible.** The protocol `version` your connection sent doesn't support this request. |
 | `-32002` | **Authentication failed.** Your credentials were rejected. |
 | `-32003` | **Not allowed.** Your credentials don't carry the scope this request needs. |
+| `-32004` | **Not available.** The service that handles this request couldn't be reached. Retry later. |
+| `-32005` | **Connection limit reached.** Your project already has the maximum number of open Relay connections. Returned on `signalwire.connect`. |
+| `-32601` | **Method not found.** The method isn't recognized. |
 | `-32602` | **Invalid params.** A required parameter is missing or malformed. |
 | `-32603` | **Internal error.** Something went wrong on SignalWire's side. |
 
 <Note>
-A JSON-RPC `error` on `signalwire.connect` closes the socket — fix the request and open a new connection. Errors on later requests leave the connection open.
+A JSON-RPC `error` on `signalwire.connect` closes the socket, and so does a `signalwire.reauthenticate` whose credentials are rejected. Fix the request and open a new connection. Errors on other requests leave the connection open.
 </Note>
 
 ## Using an SDK

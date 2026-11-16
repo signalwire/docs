@@ -11,7 +11,8 @@ namespace Relay.Fabric;
 @doc("""
   Receive-only. Fires every time a Call Fabric call leg changes state — created,
   ringing, answered, ending, ended. Track a call through its lifecycle with
-  `call_state`, and match `tag` to the call you created.
+  `call_state`. A leg that a server-side application dialed with a `tag` carries it
+  here too.
   """)
 @channel(fabricCallState)
 @summary("Receive Call Fabric call-state changes")
@@ -66,61 +67,61 @@ op roomUpdated(): RoomUpdatedEvent;
 @extension("x-fern-display-name", fabricLayoutChanged)
 op layoutChanged(): LayoutChangedEvent;
 
-@doc("Receive-only. Fires when audio playback on a Call Fabric call starts, pauses, resumes, finishes, or errors. Track a play action through to completion with `state`.")
+@doc("Receive-only. Fires when audio playback on a Call Fabric call starts, pauses, resumes, finishes, or errors. Track the playback through to completion with `state`. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @channel(fabricCallPlay)
 @summary("Receive call.play events")
 @extension("x-fern-display-name", fabricCallPlay)
 op callPlay(): CallPlayEvent;
 
-@doc("Receive-only. Fires as a connect request progresses, telling you whether your Call Fabric call has been bridged to the peer. Watch `connect_state`.")
+@doc("Receive-only. Fires as a connect progresses, telling you whether your Call Fabric call has been bridged to the peer. Watch `connect_state`. SWML or a server-side application starts the connect; there is no client request that starts it.")
 @channel(fabricCallConnect)
 @summary("Receive call.connect events")
 @extension("x-fern-display-name", fabricCallConnect)
 op callConnect(): CallConnectEvent;
 
-@doc("Receive-only. Fires when a recording on a Call Fabric call starts, pauses, resumes, or finishes. Every state carries the recording URL; the finished event adds the duration and file size.")
+@doc("Receive-only. Fires when a recording on a Call Fabric call starts, pauses, resumes, or finishes. Every state carries the recording URL; the finished event adds the duration and file size. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @channel(fabricCallRecord)
 @summary("Receive call.record events")
 @extension("x-fern-display-name", fabricCallRecord)
 op callRecord(): CallRecordEvent;
 
-@doc("Receive-only. Fires as you collect input from a caller on a Call Fabric call — DTMF digits or speech — reporting partial and final results.")
+@doc("Receive-only. Fires as input is collected from the caller on a Call Fabric call — DTMF digits or speech — reporting partial and final results. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @channel(fabricCallCollect)
 @summary("Receive call.collect events")
 @extension("x-fern-display-name", fabricCallCollect)
 op callCollect(): CallCollectEvent;
 
-@doc("Receive-only. Fires when a tap starts streaming Call Fabric call audio and again when it stops. Check `state` to tell which.")
+@doc("Receive-only. Fires when a tap starts streaming Call Fabric call audio and again when it stops. Check `state` to tell which. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @channel(fabricCallTap)
 @summary("Receive call.tap events")
 @extension("x-fern-display-name", fabricCallTap)
 op callTap(): CallTapEvent;
 
-@doc("Receive-only. Fires when a media stream on a Call Fabric call starts and again when it stops. Check `state` to tell which.")
+@doc("Receive-only. Fires when a media stream on a Call Fabric call starts and again when it stops. Check `state` to tell which. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @channel(fabricCallStream)
 @summary("Receive call.stream events")
 @extension("x-fern-display-name", fabricCallStream)
 op callStream(): CallStreamEvent;
 
-@doc("Receive-only. Fires when a detector on a Call Fabric call reports a result — a fax tone, an answering machine versus a human, or a DTMF digit.")
+@doc("Receive-only. Fires when a detector on a Call Fabric call reports a result — a fax tone, an answering machine versus a human, or a DTMF digit. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @channel(fabricCallDetect)
 @summary("Receive call.detect events")
 @extension("x-fern-display-name", fabricCallDetect)
 op callDetect(): CallDetectEvent;
 
-@doc("Receive-only. Fires when a dial reaches a Call Fabric call leg, reporting whether it was answered or failed.")
+@doc("Receive-only. Fires when a dial reaches a Call Fabric call leg, reporting whether it was answered or failed. A server-side application starts the dial; there is no client request that starts it.")
 @channel(fabricCallDial)
 @summary("Receive call.dial events")
 @extension("x-fern-display-name", fabricCallDial)
 op callDial(): CallDialEvent;
 
-@doc("Receive-only. Fires when sending DTMF digits on a Call Fabric call leg finishes or fails.")
+@doc("Receive-only. Fires when sending DTMF digits on a Call Fabric call leg finishes or fails. SWML or a server-side application sends the digits on the leg; digits you send with `call.digit.send` do not fire this event.")
 @channel(fabricCallSendDigits)
 @summary("Receive call.send_digits events")
 @extension("x-fern-display-name", fabricCallSendDigits)
 op callSendDigits(): CallSendDigitsEvent;
 
-@doc("Receive-only. Fires each time a SIP REFER transfer of a Call Fabric call leg changes state.")
+@doc("Receive-only. Fires each time a SIP REFER transfer of a Call Fabric call leg changes state. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @channel(fabricCallRefer)
 @summary("Receive call.refer events")
 @extension("x-fern-display-name", fabricCallRefer)
@@ -144,31 +145,31 @@ op callEcho(): CallEchoEvent;
 @extension("x-fern-display-name", fabricCallRoom)
 op callRoom(): CallRoomEvent;
 
-@doc("Receive-only. Fires when transcription on a Call Fabric call leg starts and again when it finishes.")
+@doc("Receive-only. Fires when transcription on a Call Fabric call leg starts and again when it finishes. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @channel(fabricCallTranscribe)
 @summary("Receive call.transcribe events")
 @extension("x-fern-display-name", fabricCallTranscribe)
 op callTranscribe(): CallTranscribeEvent;
 
-@doc("Receive-only. Fires as a Call Fabric call leg moves through a queue, plus periodic position updates.")
+@doc("Receive-only. Fires as a Call Fabric call leg moves through a queue, plus periodic position updates. SWML or a server-side application places the leg in the queue; there is no client request that does.")
 @channel(fabricCallQueue)
 @summary("Receive call.queue events")
 @extension("x-fern-display-name", fabricCallQueue)
 op callQueue(): CallQueueEvent;
 
-@doc("Receive-only. Fires as a fax on a Call Fabric call leg progresses: once per page, then once when it finishes.")
+@doc("Receive-only. Fires as a fax on a Call Fabric call leg progresses: once per page, then once when it finishes. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @channel(fabricCallFax)
 @summary("Receive call.fax events")
 @extension("x-fern-display-name", fabricCallFax)
 op callFax(): CallFaxEvent;
 
-@doc("Receive-only. Fires as a pay session on a Call Fabric call leg progresses and once more when it completes.")
+@doc("Receive-only. Fires as a pay session on a Call Fabric call leg progresses and once more when it completes. SWML or a server-side application starts it on the leg; there is no client request that starts it.")
 @channel(fabricCallPay)
 @summary("Receive call.pay events")
 @extension("x-fern-display-name", fabricCallPay)
 op callPay(): CallPayEvent;
 
-@doc("Receive-only. Fires when an AI agent session on a Call Fabric call leg ends.")
+@doc("Receive-only. Fires when an AI agent session on a Call Fabric call leg ends. SWML or a server-side application starts the agent on the leg; there is no client request that starts it.")
 @channel(fabricCallAi)
 @summary("Receive call.ai events")
 @extension("x-fern-display-name", fabricCallAi)
@@ -180,115 +181,115 @@ op callAi(): CallAiEvent;
 @extension("x-fern-display-name", fabricUserEvent)
 op userEvent(): FabricUserEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when the agent completes a response turn, with the response `text` and whether it was `barged`.")
+@doc("Receive-only. Fires on a Call Fabric call leg when the agent completes a response turn, with the response `text` and whether it was `barged`. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @channel(fabricAiCompletion)
 @summary("Receive ai.completion events")
 @extension("x-fern-display-name", fabricAiCompletion)
 op aiCompletion(): FabricAiCompletionEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when the agent produces its full response text for a turn.")
+@doc("Receive-only. Fires on a Call Fabric call leg when the agent produces its full response text for a turn. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @channel(fabricAiResponse)
 @summary("Receive ai.response events")
 @extension("x-fern-display-name", fabricAiResponse)
 op aiResponse(): FabricAiResponseEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when the agent speaks one segment of its response.")
+@doc("Receive-only. Fires on a Call Fabric call leg when the agent speaks one segment of its response. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @channel(fabricAiResponseUtterance)
 @summary("Receive ai.response_utterance events")
 @extension("x-fern-display-name", fabricAiResponseUtterance)
 op aiResponseUtterance(): FabricAiResponseUtteranceEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when the caller's final transcript for a turn is recognized.")
+@doc("Receive-only. Fires on a Call Fabric call leg when the caller's final transcript for a turn is recognized. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @channel(fabricAiSpeechDetect)
 @summary("Receive ai.speech_detect events")
 @extension("x-fern-display-name", fabricAiSpeechDetect)
 op aiSpeechDetect(): FabricAiSpeechDetectEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when an interim transcript of the caller's speech is available.")
+@doc("Receive-only. Fires on a Call Fabric call leg when an interim transcript of the caller's speech is available. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @channel(fabricAiPartialResult)
 @summary("Receive ai.partial_result events")
 @extension("x-fern-display-name", fabricAiPartialResult)
 op aiPartialResult(): FabricAiPartialResultEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when speaking starts in the AI session.")
+@doc("Receive-only. Fires on a Call Fabric call leg when speaking starts in the AI session. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @channel(fabricAiBeginSpeaking)
 @summary("Receive ai.begin_speaking events")
 @extension("x-fern-display-name", fabricAiBeginSpeaking)
 op aiBeginSpeaking(): FabricAiBeginSpeakingEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when the AI session reports a non-fatal warning.")
+@doc("Receive-only. Fires on a Call Fabric call leg when the AI session reports a non-fatal warning. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @channel(fabricAiWarning)
 @summary("Receive ai.warning events")
 @extension("x-fern-display-name", fabricAiWarning)
 op aiWarning(): FabricAiWarningEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when the caller interrupts the agent and the turn is handled as a transparent barge.")
+@doc("Receive-only. Fires on a Call Fabric call leg when the caller interrupts the agent and the turn is handled as a transparent barge. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @channel(fabricAiTransparentBarge)
 @summary("Receive ai.transparent_barge events")
 @extension("x-fern-display-name", fabricAiTransparentBarge)
 op aiTransparentBarge(): FabricAiTransparentBargeEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when the AI session stops, with session timing and billing detail.")
+@doc("Receive-only. Fires on a Call Fabric call leg when the AI session stops, with session timing and billing detail. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @channel(fabricAiStop)
 @summary("Receive ai.stop events")
 @extension("x-fern-display-name", fabricAiStop)
 op aiStop(): FabricAiStopEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when the end-of-call summary is produced.")
+@doc("Receive-only. Fires on a Call Fabric call leg when the end-of-call summary is produced. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @channel(fabricAiPostPrompt)
 @summary("Receive ai.post_prompt events")
 @extension("x-fern-display-name", fabricAiPostPrompt)
 op aiPostPrompt(): FabricAiPostPromptEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when a SWAIG function is called.")
+@doc("Receive-only. Fires on a Call Fabric call leg when a SWAIG function is called. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @channel(fabricAiSwaig)
 @summary("Receive ai.swaig events")
 @extension("x-fern-display-name", fabricAiSwaig)
 op aiSwaig(): FabricAiSwaigEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when a SWAIG function returns an action.")
+@doc("Receive-only. Fires on a Call Fabric call leg when a SWAIG function returns an action. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @channel(fabricAiSwaigAction)
 @summary("Receive ai.swaig_action events")
 @extension("x-fern-display-name", fabricAiSwaigAction)
 op aiSwaigAction(): FabricAiSwaigActionEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when the AI sidecar reports activity.")
+@doc("Receive-only. Fires on a Call Fabric call leg when the AI sidecar reports activity. SWML or a server-side application attaches the sidecar to the leg; there is no client request that attaches it.")
 @channel(fabricAiSidecar)
 @summary("Receive ai.sidecar events")
 @extension("x-fern-display-name", fabricAiSidecar)
 op aiSidecar(): FabricAiSidecarEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when live transcription produces an utterance.")
+@doc("Receive-only. Fires on a Call Fabric call leg when live transcription produces an utterance. SWML or a server-side application starts live transcription on the leg; there is no client request that starts it.")
 @channel(fabricAiTranscribeUtterance)
 @summary("Receive ai.transcribe.utterance events")
 @extension("x-fern-display-name", fabricAiTranscribeUtterance)
 op aiTranscribeUtterance(): FabricAiTranscribeUtteranceEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when live transcription produces a running summary.")
+@doc("Receive-only. Fires on a Call Fabric call leg when live transcription produces a running summary. SWML or a server-side application starts live transcription on the leg; there is no client request that starts it.")
 @channel(fabricAiTranscribeLiveSummarize)
 @summary("Receive ai.transcribe.live_summarize events")
 @extension("x-fern-display-name", fabricAiTranscribeLiveSummarize)
 op aiTranscribeLiveSummarize(): FabricAiTranscribeLiveSummarizeEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when live transcription delivers its conversation log.")
+@doc("Receive-only. Fires on a Call Fabric call leg when live transcription delivers its conversation log. SWML or a server-side application starts live transcription on the leg; there is no client request that starts it.")
 @channel(fabricAiTranscribeConversationLog)
 @summary("Receive ai.transcribe.conversation_log events")
 @extension("x-fern-display-name", fabricAiTranscribeConversationLog)
 op aiTranscribeConversationLog(): FabricAiTranscribeConversationLogEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when live translation produces translated text.")
+@doc("Receive-only. Fires on a Call Fabric call leg when live translation produces translated text. SWML or a server-side application starts live translation on the leg; there is no client request that starts it.")
 @channel(fabricAiTranslateTranscriptDelta)
 @summary("Receive ai.translate.transcript_delta events")
 @extension("x-fern-display-name", fabricAiTranslateTranscriptDelta)
 op aiTranslateTranscriptDelta(): FabricAiTranslateTranscriptDeltaEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when live translation produces a running summary.")
+@doc("Receive-only. Fires on a Call Fabric call leg when live translation produces a running summary. SWML or a server-side application starts live translation on the leg; there is no client request that starts it.")
 @channel(fabricAiTranslateLiveSummary)
 @summary("Receive ai.translate.live_summary events")
 @extension("x-fern-display-name", fabricAiTranslateLiveSummary)
 op aiTranslateLiveSummary(): FabricAiTranslateLiveSummaryEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when live translation delivers its conversation log.")
+@doc("Receive-only. Fires on a Call Fabric call leg when live translation delivers its conversation log. SWML or a server-side application starts live translation on the leg; there is no client request that starts it.")
 @channel(fabricAiTranslateConversationLog)
 @summary("Receive ai.translate.conversation_log events")
 @extension("x-fern-display-name", fabricAiTranslateConversationLog)

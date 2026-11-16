@@ -33,7 +33,14 @@ model MemberRemoveResult { ...FabricResult; }
 @reply
 model MemberRemoveReply is JsonRpcResponse<MemberRemoveResult>;
 
-@doc("Removes one or more members from the room. Fires `member.left` for each removed member. If any target cannot be removed, the whole request fails.")
+@doc("""
+  Removes one or more members from the room. Fires `member.left` for each removed
+  member. If any target cannot be removed, the whole request fails. Removing anyone
+  other than yourself needs permission; without it the reply has code `"403"`.
+
+  On a 1:1 call there is no room to remove a member from: the first target's leg is
+  hung up together with the leg it's connected to, which ends the call.
+  """)
 @channel(callMemberRemove)
 @summary("Remove members from the room")
 @extension("x-fern-display-name", callMemberRemove)

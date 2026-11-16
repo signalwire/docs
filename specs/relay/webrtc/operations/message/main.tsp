@@ -23,14 +23,15 @@ model VertoRequest is JsonRpcRequest<typeof webrtcVerto, VertoParams>;
   Send a Verto frame to SignalWire over the Relay connection — this is how you
   place, answer, modify, or end a peer call from the browser. Pass the frame in
   `message`; the call's `callID` lives inside that frame, at
-  `dialogParams.callID`, not at the top level. Optionally subscribe to
-  conference/room event channels in the same request.
+  `dialogParams.callID`, not at the top level. When the invite joins a Video Room,
+  name the room events you want in `subscribe`.
 
   The reply carries the Verto outcome in `result` (for example the answer to a
   `verto.invite`), along with the `node_id` now hosting the call. Capture that
   `node_id` and send it on later frames for the same call. Asynchronous and
   server-initiated Verto frames (an incoming call, the far end hanging up, media
-  updates) arrive separately as `webrtc.message` events.
+  updates) arrive separately as `webrtc.message` events. Call, member, and room
+  events arrive as their own event types, such as `call.state` and `member.joined`.
 
   Authentication: this channel is available only to connections authenticated with
   a Subscriber Access Token (SAT). Any other credential — a project + API token, or
@@ -66,12 +67,15 @@ model WebRTCMessageRequest is JsonRpcRequest<typeof webrtcMessage, WebRTCMessage
 
   **Receiving.** These include asynchronous responses to your Verto frames, but also
   frames SignalWire initiates on its own — an incoming `verto.invite`, a
-  `verto.bye` when the far end hangs up, `verto.media`/`verto.display` updates, and
-  conference/room events on channels you subscribed to — so they arrive without you
-  sending anything. The Verto frame arrives at `params.params`, passed through
-  as-is (the surrounding `params` object is the event envelope: `node_id`,
-  `event_channel`, timestamps). Each frame is a Verto-protocol signaling message
-  whose contents depend on the Verto method it carries.
+  `verto.bye` when the far end hangs up, `verto.media`/`verto.display` updates — so
+  they arrive without you sending anything. The Verto frame arrives at
+  `params.params`, passed through as-is (the surrounding `params` object is the
+  event envelope: `node_id`, `event_channel`, timestamps).
+
+  Only these Verto methods are delivered: `verto.invite`, `verto.answer`,
+  `verto.attach`, `verto.bye`, `verto.media`, `verto.mediaParams`, `verto.display`,
+  and `verto.ping`. Conference and room events never arrive inside `webrtc.message`;
+  they arrive as their own event types, such as `member.joined` and `room.updated`.
   """)
 @channel(webrtcMessage)
 @summary("Send and receive Verto frames")

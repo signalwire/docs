@@ -18,7 +18,7 @@ model LayoutListRequest
 @reply
 model LayoutListReply is JsonRpcResponse<FabricLayoutListResult>;
 
-@doc("Lists the video layouts available for the room.")
+@doc("Lists the video layouts available for the room. On a 1:1 call the list is just `1x1`.")
 @channel(callLayoutList)
 @summary("List available layouts")
 @extension("x-fern-display-name", callLayoutList)
@@ -32,7 +32,12 @@ model LayoutSetResult { ...FabricResult; }
 @reply
 model LayoutSetReply is JsonRpcResponse<LayoutSetResult>;
 
-@doc("Applies a video layout to the room by name. A `layout.changed` event follows.")
+@doc("""
+  Applies a video layout to the room by name. A `layout.changed` event follows.
+
+  Returns code `"403"` when the target is on a 1:1 call rather than in a conference,
+  or when you lack permission.
+  """)
 @channel(callLayoutSet)
 @summary("Set the room layout")
 @extension("x-fern-display-name", callLayoutSet)

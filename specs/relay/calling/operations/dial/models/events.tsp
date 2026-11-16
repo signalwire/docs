@@ -10,6 +10,18 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
+// The dial event embeds the call as the platform serializes it before the
+// state-event-only fields (timestamps and inbound MOS) are added, so it shares
+// `CallStateParams` minus those four properties.
+@doc("The call that answered a `calling.dial`. Same fields as a `calling.call.state` payload, except that it carries no `start_time`, `answer_time`, `end_time`, or `audio_in_mos`.")
+@summary("Answered dial call")
+model CallDialCall {
+  ...OmitProperties<
+    CallStateParams,
+    "start_time" | "answer_time" | "end_time" | "audio_in_mos"
+  >;
+}
+
 @summary("Dial event payload")
 model CallDialParams {
   @doc("Opaque identifier that, paired with `call_id`, scopes this dial and its resulting call. Echo it back on follow-up commands; treat it as opaque.")
@@ -24,8 +36,8 @@ model CallDialParams {
   @example("answered")
   dial_state: "dialing" | "answered" | "failed";
 
-  @doc("The call that answered, as a call-state payload — largely the same shape as a `calling.call.state` event, but without the `start_time`/`answer_time`/`end_time`/`audio_in_mos` fields that only the state event itself adds. Present only when `dial_state` is `answered`; the winning leg is marked by `dial_winner`.")
-  call?: CallStateParams;
+  @doc("The call that answered. Present only when `dial_state` is `answered`; the winning leg is marked by `dial_winner`.")
+  call?: CallDialCall;
 
   @doc("Why the dial failed. Present when `dial_state` is `failed`.")
   @example("noAnswer")

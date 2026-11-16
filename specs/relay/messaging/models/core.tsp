@@ -31,8 +31,14 @@ union MessageDirection {
 
 @doc("""
   The delivery state of a message, reported through `messaging.state` events.
-  An outbound message moves through `queued`, `initiated`, and `sent`, then
-  settles on one of the final states: `delivered`, `undelivered`, or `failed`.
+  An outbound message starts at `queued` and moves to `sent` once it's handed off
+  for delivery, or to `failed` or `undelivered` if it can't be sent. After `sent`,
+  what you receive depends on the channel:
+
+  - **SMS and MMS** settle on `delivered` or `undelivered`.
+  - **RCS** reports `delivered` or `undelivered`. When the recipient reads the
+    message, `read` follows, either after `delivered` or straight after `sent`.
+  - **WhatsApp** reports no further states after `sent`.
   """)
 union MessageState {
   @doc("Accepted and waiting to be processed.")
@@ -44,7 +50,7 @@ union MessageState {
   @doc("Handed off to the carrier for delivery.")
   "sent",
 
-  @doc("Confirmed delivered to the recipient's phone. A final state.")
+  @doc("Confirmed delivered to the recipient's device. Final for SMS and MMS; an RCS message can still move to `read`.")
   "delivered",
 
   @doc("The carrier could not deliver the message. A final state.")
@@ -52,4 +58,7 @@ union MessageState {
 
   @doc("The message failed before reaching the carrier. A final state.")
   "failed",
+
+  @doc("The recipient read the message. Reported for RCS messages only. A final state.")
+  "read",
 }

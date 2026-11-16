@@ -30,7 +30,7 @@ model StateEventData {
   @example(#[])
   tags: string[];
 
-  @doc("The sender: an E.164 phone number or a short code.")
+  @doc("The sender, as given in `messaging.send`: an E.164 phone number, a short code, a `whatsapp:`-prefixed WhatsApp business number, or an RCS agent ID.")
   @example("+15551230001")
   from_number: string;
 
@@ -50,7 +50,7 @@ model StateEventData {
   @example(1)
   segments: int32;
 
-  @doc("The message's new delivery state.")
+  @doc("The message's new delivery state. `read` is reported for RCS messages only.")
   @example("delivered")
   message_state: MessageState;
 
@@ -61,8 +61,8 @@ model StateEventData {
   @doc("""
     A machine-readable error code describing the failure, such as
     `unrouteable_message`, `insufficient_balance_to_send_message`,
-    `carrier_violation`, or `unknown_destination_handset`. For WhatsApp, the
-    platform's numeric error code. Included only when an error occurred.
+    `carrier_violation`, or `unknown_destination_handset`. Included only when an
+    error occurred.
     """)
   @example("carrier_violation")
   error_code?: string;
@@ -76,8 +76,9 @@ const messagingState = "messaging.state";
 @doc("""
   Fires each time a message's delivery state changes. Match `message_id` to the
   one you got from `messaging.send` and read `message_state` to see where the
-  message is in its journey. The event keeps firing until the message reaches a
-  final state of `delivered`, `undelivered`, or `failed`.
+  message is in its journey. An SMS or MMS stops at `delivered`, `undelivered`,
+  or `failed`. An RCS message can also report `read`, including after
+  `delivered`. A WhatsApp message gets no updates after `sent`.
   """)
 @summary(messagingState)
 @extension("x-fern-display-name", messagingState)
@@ -105,7 +106,7 @@ model ReceiveEventData {
   @example("+15551230002")
   from_number: string;
 
-  @doc("The number it was sent to, in E.164 format.")
+  @doc("Where it was sent: your phone number in E.164 format, your WhatsApp business number with its `whatsapp:` prefix, or your RCS agent's ID.")
   @example("+15551230001")
   to_number: string;
 

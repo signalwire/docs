@@ -58,7 +58,10 @@ model AiStopRequest is JsonRpcRequest<typeof callingAiStop, AiStopParams>;
 @reply
 model AiStopReply is JsonRpcResponse<AiStopResult>;
 
-@doc("Stop the AI agent session running on the call.")
+@doc("""
+  Stop the AI agent session running on the call. Applies only to an agent started
+  with `calling.ai`: it can't stop a `calling.amazon_bedrock` session.
+  """)
 @channel(callingAiStop)
 @summary("Stop an active AI agent session")
 @extension("x-fern-display-name", callingAiStop)
