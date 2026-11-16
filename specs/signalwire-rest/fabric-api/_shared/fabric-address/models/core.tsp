@@ -14,7 +14,7 @@ model FabricAddressID {
 
 // Fields shared by the project-scoped address returned under a resource
 // (FabricAddress, adds resource_id) and the Subscriber-facing address at
-// /addresses (FabricClientAddress, adds codecs and created_at).
+// /subscriber/addresses (FabricClientAddress, adds codecs and created_at).
 model FabricAddressCommon {
   @doc("Unique ID of the Fabric Address.")
   @example("691af061-cd86-4893-a605-173f47afc4c2")
