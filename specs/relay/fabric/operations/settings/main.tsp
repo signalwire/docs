@@ -19,16 +19,14 @@ model VmutedHideSetResult { ...FabricResult; }
 model VmutedHideSetReply is JsonRpcResponse<VmutedHideSetResult>;
 
 @doc("""
-  Hides video-muted members from the room layout. A `room.updated` event follows.
-
-  Send `hide: true`. The request always hides video-muted members, whatever value
-  `hide` carries, so it can't be used to show them again.
+  Hides video-muted members from the room layout. Send `hide: true`. A `room.updated`
+  event follows.
 
   Returns code `"403"` when the target is on a 1:1 call rather than in a conference,
   or when you lack permission.
   """)
 @channel(callVmutedHideSet)
-@summary("Hide or show video-muted members")
+@summary("Hide video-muted members")
 @extension("x-fern-display-name", callVmutedHideSet)
 op vmutedHideSet(...VmutedHideSetRequest): VmutedHideSetReply;
 

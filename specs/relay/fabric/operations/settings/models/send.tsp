@@ -14,7 +14,7 @@ model VmutedHideSetParams {
   @doc("The call leg addressing the room to act on — required. Normally set `target` equal to `self`.")
   target: Target;
 
-  @doc("Send `true`. Video-muted members are hidden whatever value you send, so `false` does not show them again.")
+  @doc("Send `true` to hide video-muted members from the room layout.")
   @example(true)
   hide: boolean;
 }

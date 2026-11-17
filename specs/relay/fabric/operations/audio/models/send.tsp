@@ -25,7 +25,7 @@ model UnmuteParams {
   @doc("The call leg you're operating from — your own leg on this call.")
   self: Target;
 
-  @doc("The member to unmute — required. Set `target` equal to `self`; targeting another member returns code `\"403\"`.")
+  @doc("The member to unmute — required. Set `target` equal to `self`; targeting another member returns code `\"403\"` unless your token grants that capability.")
   target: Target;
 
   @doc("Which media channels to unmute: `audio`, `video`, or both.")

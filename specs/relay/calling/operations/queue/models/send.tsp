@@ -20,6 +20,10 @@ model QueueEnterParams {
   @doc("HTTP or HTTPS URL where SignalWire POSTs queue status updates as the call moves through the queue.")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
+
+  @doc("HTTP or HTTPS URL of hold audio for the queue.")
+  @example("https://example.com/hold.mp3")
+  wait_url?: url;
 }
 
 model QueueLeaveParams {

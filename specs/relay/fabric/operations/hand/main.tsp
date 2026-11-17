@@ -21,8 +21,9 @@ model RaisehandReply is JsonRpcResponse<RaisehandResult>;
   Raises your hand in a Call Fabric conference. Set `target` equal to `self`. A
   `member.updated` event follows.
 
-  Returns code `"403"` when `target` is another member, when the target is on a 1:1
-  call rather than in a conference, or when you lack permission.
+  Returns code `"403"` when `target` is another member, unless your token grants that
+  capability. It also returns `"403"` when the target is on a 1:1 call rather than in a
+  conference, or when you lack permission.
   """)
 @channel(callRaisehand)
 @summary("Raise a member's hand")
@@ -41,8 +42,9 @@ model LowerhandReply is JsonRpcResponse<LowerhandResult>;
   Lowers your hand, reversing `call.raisehand`. Set `target` equal to `self`. A
   `member.updated` event follows.
 
-  Returns code `"403"` when `target` is another member, when the target is on a 1:1
-  call rather than in a conference, or when you lack permission.
+  Returns code `"403"` when `target` is another member, unless your token grants that
+  capability. It also returns `"403"` when the target is on a 1:1 call rather than in a
+  conference, or when you lack permission.
   """)
 @channel(callLowerhand)
 @summary("Lower a member's hand")

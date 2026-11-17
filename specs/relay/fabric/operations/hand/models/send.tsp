@@ -11,7 +11,7 @@ model RaisehandParams {
   @doc("The call leg you're operating from — your own leg on this call.")
   self: Target;
 
-  @doc("The member whose hand to raise — required. Set `target` equal to `self`; targeting another member returns code `\"403\"`.")
+  @doc("The member whose hand to raise — required. Set `target` equal to `self`; targeting another member returns code `\"403\"` unless your token grants that capability.")
   target: Target;
 }
 
@@ -21,6 +21,6 @@ model LowerhandParams {
   @doc("The call leg you're operating from — your own leg on this call.")
   self: Target;
 
-  @doc("The member whose hand to lower — required. Set `target` equal to `self`; targeting another member returns code `\"403\"`.")
+  @doc("The member whose hand to lower — required. Set `target` equal to `self`; targeting another member returns code `\"403\"` unless your token grants that capability.")
   target: Target;
 }
