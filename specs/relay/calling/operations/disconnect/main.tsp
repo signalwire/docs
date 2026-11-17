@@ -1,0 +1,30 @@
+import "@signalwire/typespec-asyncapi";
+import "../../../common/frames.tsp";
+import "@typespec/openapi";
+
+import "./models/send.tsp";
+import "./models/reply.tsp";
+
+using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
+
+namespace Relay.Calling;
+
+const callingDisconnect = "calling.disconnect";
+const callingDisconnectResponse = "${callingDisconnect} response";
+
+model DisconnectRequest is JsonRpcRequest<typeof callingDisconnect, DisconnectParams>;
+
+@extension("x-fern-display-name", callingDisconnectResponse)
+@reply model DisconnectReply is JsonRpcResponse<DisconnectResult>;
+
+@doc("""
+  Splits apart legs that were joined with `calling.connect`, separating the calls
+  without hanging up on either one. Each call stays live so you can keep
+  controlling it or connect it elsewhere. Fails with `"409"` if the call is not
+  connected.
+  """)
+@channel(callingDisconnect)
+@summary("Disconnect connected legs without hanging up")
+@extension("x-fern-display-name", callingDisconnect)
+op disconnect(...DisconnectRequest): DisconnectReply;
