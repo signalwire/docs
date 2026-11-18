@@ -458,14 +458,6 @@ model PhoneNumberLookup {
 
 @doc("Carrier lookup information.")
 model CarrierLookupInfo {
-  @doc("The Location Routing Number (LRN) associated with the number. Carriers use the LRN to route calls to a number that has been ported.")
-  @example("15551230000")
-  lrn?: string | null;
-
-  @doc("The Service Provider ID (SPID) of the carrier that currently serves the number.")
-  @example("1234")
-  spid?: string | null;
-
   @doc("The Operating Company Number associated with the number.")
   @example("12345")
   ocn?: string;
