@@ -1,0 +1,76 @@
+---
+title: Connection lifecycle
+slug: relay/server/connection-lifecycle
+description: How a backend Relay connection lives — from connect through detecting a dropped socket, rotating credentials, and reconnecting.
+max-toc-depth: 3
+---
+
+A Relay connection is long-lived: you open one WebSocket, authenticate, and then send commands and receive events over it for as long as it stays up. This page covers that lifecycle — how to notice when the connection has stopped working, how to rotate credentials in place, and how to come back quickly after a drop.
+
+## The connection at a glance
+
+1. **Open** the WebSocket to `wss://relay.signalwire.com`.
+2. **Authenticate** with `signalwire.connect` as your first message. See [Authentication](/docs/apis/relay/server/authentication).
+3. **Exchange** commands and events over the open socket. This is the steady state, and it lasts until either side closes the connection.
+4. **Reconnect** if the socket drops, restoring your session with the `authorization_state` you saved.
+
+Keep to **one connection** and reuse it — every command and every event share it. If you use an SDK, it opens the socket, keeps it alive, and reconnects for you.
+
+## Detecting a dropped connection
+
+On a connection opened with protocol version `2.0.0`, SignalWire doesn't send you keepalive pings or a warning before it closes the socket. When the service restarts, during a routine redeploy for example, your socket simply closes.
+
+Watch for two signals instead:
+
+- **The socket closes.** Reconnect right away.
+- **Your own pings go unanswered.** Send `signalwire.ping` periodically; the service replies with the `timestamp` and `payload` you sent. A ping with no reply means the socket has stopped working even though it hasn't closed, so close it and reconnect.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "9b2c4d6e-8f0a-4b1c-9d2e-3f4a5b6c7d8e",
+  "method": "signalwire.ping",
+  "params": { "timestamp": 1712345678.842 }
+}
+```
+
+The [Server SDKs](/docs/server-sdks) send these pings and reconnect for you.
+
+## Rotating your API token
+
+To switch a live connection to a new API token without reconnecting, send **`signalwire.reauthenticate`** with your Project ID and the new token:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e6f",
+  "method": "signalwire.reauthenticate",
+  "params": {
+    "authentication": {
+      "project": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "token": "PT9a8b7c6d5e4f3a2b1c..."
+    }
+  }
+}
+```
+
+The `project` must be the one the connection already authenticated with. On success you get back your refreshed `authorization`, and a new `signalwire.authorization.state` event follows; save its `authorization_state` as usual. If `project` is missing or doesn't match, you get a JSON-RPC `error` and the connection stays open. If the token itself is rejected, you get a JSON-RPC `error` and the service then closes the socket, as it does for a failed `signalwire.connect`; reconnect with valid credentials.
+
+## Reconnecting
+
+Right after you connect, and periodically after that, you receive a `signalwire.authorization.state` event carrying an `authorization_state` value. Save the latest one.
+
+If the connection drops, reconnect by sending `signalwire.connect` again with your credentials, plus that saved `authorization_state` and the `protocol` you were given. This restores your permissions and state on the new connection without re-running your full setup.
+
+A saved `authorization_state` can restore your session for up to 7 days after you received it. When it can't be used, because it's too old or the credentials behind it are no longer valid, the service authenticates you with the credentials in the same message instead. That's why the reconnect message always carries them. The [Authentication](/docs/apis/relay/server/authentication) page has the full reconnect message.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/docs/apis/relay/server/authentication">
+    The connect message, credentials, and the reconnect flow in full.
+  </Card>
+  <Card title="Events and subscriptions" icon="bell" href="/docs/apis/relay/server/events">
+    How Relay pushes events to you, and how to subscribe with contexts.
+  </Card>
+</CardGroup>
