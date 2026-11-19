@@ -589,16 +589,19 @@ that event:
 
 | `content_disposition` | Sent | Fields to read |
 |---|---|---|
-| `translate.translate_utterance` | Once per translated utterance, when `live_events` is `true` | `primary_utterance`, `secondary_utterance` |
-| `translate.live_summary` | When you send `summarize` | `primary_conversation_summary`, `secondary_conversation_summary` |
-| `translate.conversation_log` | Once, when the session ends | `primary_conversation_log`, `secondary_conversation_log`, and their summaries when `ai_summary` is `true` |
+| `translate.translate_utterance` | Once per translated utterance, when `live_events` is `true` | `primary_utterance`, `secondary_utterance`, `translate_data` |
+| `translate.live_summary` | When you send `summarize` | `primary_conversation_summary`, `secondary_conversation_summary`, `primary_conversation_log`, `secondary_conversation_log` |
+| `translate.conversation_log` | Once, when the session ends | `primary_conversation_log`, `secondary_conversation_log`, `translate_data`, and their summaries when `ai_summary` is `true` |
 
 Every event carries the conversation in both languages. The `primary_` fields hold it in
 `from_lang`, and the `secondary_` fields hold it in `to_lang`. `role` says which side of the call
 spoke, using the values you passed in `direction`. Every event also carries `channel_data.call_id`,
 so one server can follow several calls at once.
 
-An utterance event looks like this, shortened to the fields the translation server reads:
+SignalWire sends an utterance event once each utterance is translated, and sends no partial results
+before it. `primary_utterance` and `secondary_utterance` are the latest entries in each language:
+one is usually what the person said, and the other its translation. Each entry has its own
+`utterance_id`. An utterance event looks like this, shortened to the fields this section describes:
 
 ```json
 {
@@ -617,20 +620,35 @@ An utterance event looks like this, shortened to the fields the translation serv
     "role": "remote-caller",
     "lang": "en-US",
     "content": "I need a taxi to the airport.",
-    "utterance_id": "0b6f3c1e-8a52-4a8f-9a8e-2f1d7c9e4b10"
+    "utterance_id": "5d2e9a74-1c3b-4f60-b8d1-7a4e0c6f2b93",
+    "filter_type": "none"
   }
 }
 ```
 
-Each utterance can also carry `confidence`, the recognizer's confidence in the text, and
-`filter_type` and `filter_value` when a [tone filter](#translation-options-voices-tone-filters-and-speech-detection)
-rewrote it.
+Each utterance and each conversation log entry can also carry `confidence`, the recognizer's
+confidence in the text. An entry that holds a translation carries `filter_type`: `preset` or `custom`
+when a [tone filter](#translation-options-voices-tone-filters-and-speech-detection) rewrote it, with
+the preset name or your instruction in `filter_value`, or `none` when no filter ran. An entry that
+holds what the person said has neither field.
 
-The event sent when the session ends carries the whole conversation in order, in each language. It
-also carries `translate_data`, which lists each translated side with the language it was spoken in
-and the language it was translated to. With `ai_summary` set to `true`, `translate_data` is instead a
-flat object for the first-listed side only, with `from_language`, `to_language`, `to_voice`, `role`,
-and `position`. Log entries name their language in `language`:
+`translate_data` describes how each side is translated, in an object keyed by role. Each side
+carries `from_language`, the language spoken on that side; `to_language`, the language it's
+translated into; `to_voice`, the voice setting that speaks its translation; `role`; and `position`,
+`primary` for the side listed first in `direction` and `secondary` for the other. A side with a
+filter also carries `translate_filter`, the filter value you set.
+
+The event sent when the session ends carries the whole conversation in order, in each language.
+Log entries name their language in `language`. On this event, `translate_data` takes one of two
+shapes:
+
+- Without summaries, it's keyed by role, as on utterance events. It's `null` if nothing the side
+  listed first in `direction` said was ever translated.
+- With summaries, it's a flat object for the side listed first in `direction` only, with the same
+  fields. When `ai_summary` is `true` but no summary could be made, the event has no summaries and
+  `translate_data` is keyed by role.
+
+A session-end event without summaries looks like this, shortened:
 
 ```json
 {
@@ -640,15 +658,15 @@ and `position`. Log entries name their language in `language`:
     "call_id": "76ac3c36-56da-4a3e-a0d6-b5f8df6da9ad"
   },
   "translate_data": {
-    "remote-caller": { "role": "remote-caller", "from_language": "es-ES", "to_language": "en-US" },
-    "local-caller": { "role": "local-caller", "from_language": "en-US", "to_language": "es-ES" }
+    "local-caller": { "role": "local-caller", "from_language": "en-US", "to_language": "es-ES", "position": "primary" },
+    "remote-caller": { "role": "remote-caller", "from_language": "es-ES", "to_language": "en-US", "position": "secondary" }
   },
   "primary_conversation_log": [
     { "role": "remote-caller", "language": "es-ES", "content": "Necesito un taxi al aeropuerto." },
-    { "role": "local-caller", "language": "es-ES", "content": "Claro. ¿Cuál es la dirección de recogida?" }
+    { "role": "local-caller", "language": "es-ES", "content": "Claro. ¿Cuál es la dirección de recogida?", "filter_type": "none" }
   ],
   "secondary_conversation_log": [
-    { "role": "remote-caller", "language": "en-US", "content": "I need a taxi to the airport." },
+    { "role": "remote-caller", "language": "en-US", "content": "I need a taxi to the airport.", "filter_type": "none" },
     { "role": "local-caller", "language": "en-US", "content": "Sure. What's the pickup address?" }
   ]
 }
@@ -657,11 +675,12 @@ and `position`. Log entries name their language in `language`:
 SignalWire sends this event whenever the session has a `webhook`, whether the session ended because
 you stopped it or because the call ended. A summary you request mid-call carries
 `primary_conversation_summary` and `secondary_conversation_summary`, one summary for each
-conversation log.
+conversation log, along with both conversation logs so far.
 
-Answer each request with a `2xx` status, and do slow work after you respond. SignalWire retries an
-utterance event that fails to connect or gets a `5xx` status, so a slow handler can receive the same
-utterance more than once. Use `utterance_id` to ignore repeats.
+Answer each request with a `2xx` status, and do slow work after you respond. SignalWire retries a
+request that can't connect, gets no response within 10 seconds, or gets a `5xx` status, up to three
+times, so a slow handler can receive the same event more than once. Use `utterance_id` to ignore
+repeated utterances.
 
 <Tip title="Protect your webhooks">
 Requests carry an `X-SignalWire-Signature` header, so your server can confirm they came from
