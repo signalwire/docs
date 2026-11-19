@@ -46,4 +46,12 @@ model Subscriber {
   @doc("Company name of the Subscriber, or `null` when not set.")
   @example("SignalWire")
   company_name: string | null;
+
+  @doc("""
+    The purchased or verified number this Subscriber sends as its From number when calling a phone
+    number. When the Subscriber has no number of its own, this field returns the SIP profile's
+    `default_send_as`, which is `random` when that is not set either.
+    """)
+  @example("+15551234567")
+  send_as: string;
 }

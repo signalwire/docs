@@ -4,12 +4,12 @@ import "../../_shared/const.tsp";
 import "../../_shared/enums.tsp";
 
 model SubscriberResponse {
-  @doc("Unique ID of the request.")
-  @example("d369a402-7b43-4512-8735-9d5e1f387814")
+  @doc("Unique ID of the Subscriber resource. This is the `id` that the `/api/fabric/resources/subscribers/{id}` endpoints take, including the Subscriber's addresses and SIP endpoints. It differs from `subscriber.id`.")
+  @example("993ed018-9e79-4e50-b97b-984bd5534095")
   id: string;
 
   @doc("Unique ID of the project.")
-  @example("d369a402-7b43-4512-8735-9d5e1f387814")
+  @example("1313fe58-5e14-4c11-bbe7-6fdfa11fe780")
   project_id: string;
 
   @doc("Display name of the Subscriber.")

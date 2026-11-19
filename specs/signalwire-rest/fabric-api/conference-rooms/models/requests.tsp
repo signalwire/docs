@@ -2,9 +2,9 @@ import "./core.tsp";
 import "./enums.tsp";
 
 model ConferenceRoomCreateRequest {
-  @doc("The name of the Conference Room")
+  @doc("The name of the Conference Room. Must be unique among the project's Conference Rooms. A random name is generated when omitted.")
   @example("coffee_cafe")
-  name: string;
+  name?: string;
 
   @doc("Display name of the Conference Room")
   @example("Reception")
@@ -53,7 +53,7 @@ model ConferenceRoomCreateRequest {
 
   @doc("Enables live video room previews for the conference.")
   @example(true)
-  enable_room_previews: boolean;
+  enable_room_previews?: boolean = false;
 
   @doc("Metadata of the conference.")
   @example(#{ foo: "bar" })
@@ -128,9 +128,9 @@ model ConferenceRoomUpdateRequest {
   @example(true)
   record_on_start?: boolean;
 
-  @doc("Enables live video room previews for the conference.")
+  @doc("Enables live video room previews for the conference. Omit to keep the current setting.")
   @example(true)
-  enable_room_previews: boolean;
+  enable_room_previews?: boolean;
 
   @doc("Metadata of the conference.")
   @example(#{ foo: "bar" })
