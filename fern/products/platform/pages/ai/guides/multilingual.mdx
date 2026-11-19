@@ -1,0 +1,391 @@
+---
+title: Build multilingual voice applications
+sidebar-title: Multilingual voice
+slug: ai/multilingual
+description: Choose among the ways SignalWire handles more than one language on a call, then build an AI agent that answers each caller in the language they speak, tune when it switches, translate its fillers, and offer a fixed set of languages instead.
+max-toc-depth: 3
+---
+
+[quickstart]: /docs/platform/ai/quickstart
+[server-sdks]: /docs/server-sdks
+[tts]: /docs/platform/voice/tts
+[multilingual-ref]: /docs/swml/reference/calling/ai/multilingual
+[languages-ref]: /docs/swml/reference/calling/ai/languages
+[languages-code]: /docs/swml/reference/calling/ai/languages#languagescode
+[languages-enabled]: /docs/swml/reference/calling/ai/params#paramslanguages_enabled
+[filler-codes]: /docs/swml/reference/calling/ai/swaig#filler-language-codes
+[function-fillers]: /docs/swml/reference/calling/ai/swaig/functions#functionsfillers
+[live-translate]: /docs/swml/reference/calling/live-translate
+[translate-calls]: /docs/platform/voice/translate-calls
+[cxml-ssml]: /docs/compatibility-api/cxml/reference/voice/say#speech-synthesis-markup-language-ssml
+
+Bayview Taxi's riders don't all speak English, and some switch languages partway through a
+call. Ada, Bayview's AI dispatcher, can follow them: she hears which language each caller
+speaks and answers in it, in a voice you choose for that language. Start by choosing the right
+option from the seven SignalWire offers, then give Ada a voice per language and call her to hear the
+switch. After that, tune when she switches, translate her fillers, and offer a fixed set of
+languages instead.
+
+## Pick the right option for multilingual calls
+
+Seven settings affect the language of a call. They live in different places and don't do the same
+job, so choose by what the caller should experience:
+
+| Option | Where you set it | What the caller gets | Choose it when |
+|---|---|---|---|
+| [`ai.multilingual`][multilingual-ref] | SWML `ai`, or the [Server SDKs][server-sdks] | The agent hears which language each turn was spoken in and answers in it, with that language's voice | Callers may speak any of several languages, or switch mid-call |
+| Several [`ai.languages`][languages-ref] entries | SWML `ai`, or the Server SDKs | The agent opens in the first entry's language and moves to another listed language when the caller asks. Its voice and the language it listens for change with it | Each call stays in one language, picked from a fixed list |
+| [`code: "multi"`][languages-code] on one `ai.languages` entry | SWML `ai`, or the Server SDKs | The agent understands callers who mix languages, and answers in the entry's one voice | The agent should understand several languages but reply in one |
+| The `auto` key in a filler map | Any language-keyed filler map on the agent | Fillers you wrote once are translated into the language being spoken | You use either of the first two options and don't want to write fillers per language |
+| [`live_translate`][live-translate] | SWML, Relay, or the REST Calling API | Two people on a call each hear the other in their own language | Two people talk to each other, with no AI agent in the conversation |
+| [`params.languages_enabled`][languages-enabled] | SWML `ai.params`, or the **Languages Enabled** setting on an AI Agent in the Dashboard | Nothing: the setting has no effect | Never. Leave it out |
+| The SSML `<lang>` tag in a cXML `<Say>` | [cXML `<Say>`][cxml-ssml] | One word or phrase of a scripted prompt is spoken in another language | A cXML script reads fixed text, with no AI agent |
+
+`ai.multilingual` and `ai.languages` are mutually exclusive. When an agent sets both, SignalWire
+uses `multilingual` and ignores `languages`. Language handling is switched on by setting one of the
+two, which is why `languages_enabled` changes nothing. The `auto` key works with either.
+
+## Prepare for multilingual calls
+
+This guide extends the agent from the [AI quickstart][quickstart]. Have these ready:
+
+- The quickstart's public URL, its External URL resource, and the phone number assigned to it.
+- A phone to call that number from.
+- Enough Spanish to say a short sentence. Any two languages from the list below work if you change
+  the codes and voices to match.
+
+`ai.multilingual` runs speech recognition in code-switching mode, which by default covers English,
+Spanish, French, German, Hindi, Russian, Portuguese, Japanese, Italian, and Dutch. Use the
+two-letter codes `en`, `es`, `fr`, `de`, `hi`, `ru`, `pt`, `ja`, `it`, and `nl`.
+
+## Answer each caller in their own language
+
+Give Ada a `multilingual` configuration with one voice per language. The entry whose `language` is
+`default` is the voice she opens the call with, and the one she uses for any language without an
+entry of its own. Here it is English, with a Spanish voice beside it:
+
+<CodeBlocks>
+<CodeBlock title="Python — Agents">
+```python
+# Install: python -m pip install signalwire-sdk
+# Save as multilingual_agent.py and run: python multilingual_agent.py
+from signalwire import AgentBase
+
+agent = AgentBase(name="ada")
+agent.set_prompt_text(
+    "You are Ada, the dispatcher for Bayview Taxi. "
+    "Ask where the caller is and where they're going, then book the ride."
+)
+agent.set_multilingual({
+    "start_language": "en",
+    "allowed": ["en", "es"],
+    "languages": [
+        {"language": "default", "voice": "rime.spore:coda"},
+        {"language": "es", "voice": "azure.es-ES-ElviraNeural"},
+    ],
+})
+
+if __name__ == "__main__":
+    agent.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Agents">
+```typescript
+// Install: npm install @signalwire/sdk
+// This sample also runs as JavaScript: save as multilingual-agent.mjs,
+// then run: node multilingual-agent.mjs
+import { AgentBase } from "@signalwire/sdk";
+
+const agent = new AgentBase({ name: "ada" });
+agent.setPromptText(
+  "You are Ada, the dispatcher for Bayview Taxi. " +
+    "Ask where the caller is and where they're going, then book the ride.",
+);
+agent.setMultilingual({
+  start_language: "en",
+  allowed: ["en", "es"],
+  languages: [
+    { language: "default", voice: "rime.spore:coda" },
+    { language: "es", voice: "azure.es-ES-ElviraNeural" },
+  ],
+});
+
+agent.run();
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - ai:
+        prompt:
+          text: >-
+            You are Ada, the dispatcher for Bayview Taxi. Ask where the caller is and where
+            they're going, then book the ride.
+        multilingual:
+          start_language: en
+          allowed:
+            - en
+            - es
+          languages:
+            - language: default
+              voice: rime.spore:coda
+            - language: es
+              voice: azure.es-ES-ElviraNeural
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      {
+        "ai": {
+          "prompt": {
+            "text": "You are Ada, the dispatcher for Bayview Taxi. Ask where the caller is and where they're going, then book the ride."
+          },
+          "multilingual": {
+            "start_language": "en",
+            "allowed": ["en", "es"],
+            "languages": [
+              { "language": "default", "voice": "rime.spore:coda" },
+              { "language": "es", "voice": "azure.es-ES-ElviraNeural" }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Run the Server SDK sample the way the quickstart runs `agent.py`, on the same port and behind the
+same tunnel, so the number you already assigned reaches Ada. To serve the SWML by hand instead,
+replace the quickstart's `swml.json` with the JSON above.
+
+Speech recognition reports the language of every caller turn. When it changes, SignalWire tells
+the model which language the caller is now speaking and switches to that language's voice, so the
+prompt doesn't need to mention languages at all. Name the engine in every `voice` string, as
+`rime.spore:coda` does: a bare voice name resolves against a default engine that can change. The
+[text-to-speech guide][tts] lists the voices each engine offers.
+
+<Tip>
+If one voice can speak every language you allow, such as an ElevenLabs voice on a multilingual
+model, give `multilingual` a single `default` entry. Ada then keeps the same voice all call, and
+only her language changes.
+</Tip>
+
+### Call Ada and switch languages
+
+Call your number and speak to Ada in English. She answers in English, in the Rime voice. Then
+say a full sentence in Spanish, such as "Necesito un taxi al aeropuerto, por favor." Ada answers in
+Spanish, and her voice changes to the Azure voice. Switch back with a sentence in English, and she
+follows you back.
+
+If the call doesn't go that way, match what you hear:
+
+- **Ada answers only in English, in a voice you didn't configure.** Multilingual mode didn't
+  start, and the agent fell back to a single English voice. A code in `allowed` or in `languages`
+  isn't one that speech recognition supports, or the `default` entry has no `voice`. Check the
+  codes against the list in [Prepare for multilingual calls](#prepare-for-multilingual-calls).
+- **A one-word answer like "Sí" doesn't switch her.** That's by design: a single word is often the
+  same in several languages, so Ada waits for at least two. See
+  [Control when Ada switches languages](#control-when-ada-switches-languages).
+- **Ada switches to Spanish but keeps the English voice.** The Spanish entry has no `voice`, or its
+  `language` isn't `es`, so the `default` entry speaks Spanish too.
+- **Ada doesn't follow you into a third language.** It isn't in `allowed`. She hears what you
+  said and answers it, but stays in the language she was speaking.
+
+## Control when Ada switches languages
+
+Three properties decide when Ada changes language. All three are on the
+[`multilingual` reference][multilingual-ref].
+
+- `allowed` lists the languages she may switch into. A caller who speaks another language is still
+  heard, but Ada keeps her current language. Leave `allowed` out to let her follow a caller into any
+  language speech recognition detects.
+- `min_switch_words` is how many words a turn needs before it can switch the language, `2` by
+  default. Set it to `1` when callers often answer in single words and those words aren't shared
+  between your languages. A turn that speech recognition isn't confident about doesn't switch the
+  language either, however long it is.
+- `start_language` is the language Ada opens the call in, before the caller has said anything,
+  `en` by default. For a line that mostly serves Spanish speakers, set it to `es` and make the
+  Spanish voice the `default` entry.
+
+<CodeBlocks>
+<CodeBlock title="Python — Agents">
+```python {2-3}
+agent.set_multilingual({
+    "start_language": "es",
+    "min_switch_words": 1,
+    "allowed": ["en", "es"],
+    "languages": [
+        {"language": "default", "voice": "azure.es-ES-ElviraNeural"},
+        {"language": "en", "voice": "rime.spore:coda"},
+    ],
+})
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Agents">
+```typescript {2-3}
+agent.setMultilingual({
+  start_language: "es",
+  min_switch_words: 1,
+  allowed: ["en", "es"],
+  languages: [
+    { language: "default", voice: "azure.es-ES-ElviraNeural" },
+    { language: "en", voice: "rime.spore:coda" },
+  ],
+});
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml {2-3}
+multilingual:
+  start_language: es
+  min_switch_words: 1
+  allowed:
+    - en
+    - es
+  languages:
+    - language: default
+      voice: azure.es-ES-ElviraNeural
+    - language: en
+      voice: rime.spore:coda
+```
+</CodeBlock>
+</CodeBlocks>
+
+## Translate fillers into the caller's language
+
+Fillers are the short phrases Ada says to cover a pause, such as "One moment while I check." With
+several languages, each filler has to exist in each of them. The `auto` key saves you writing them
+all: put phrases under `auto` in any language, and when Ada needs a filler in a language with no
+entry of its own, SignalWire translates the `auto` phrases into it. The translation runs the first
+time each language needs it and is reused for the rest of the call.
+
+Under `multilingual`, `fillers` and `function_fillers` accept a plain array, which is treated as
+`auto`. This change to the first sample gives Ada a filler for whenever one of her SWAIG functions
+runs, said in the caller's language:
+
+<CodeBlocks>
+<CodeBlock title="Python — Agents">
+```python {8}
+agent.set_multilingual({
+    "start_language": "en",
+    "allowed": ["en", "es"],
+    "languages": [
+        {"language": "default", "voice": "rime.spore:coda"},
+        {"language": "es", "voice": "azure.es-ES-ElviraNeural"},
+    ],
+    "function_fillers": ["One moment while I check that."],
+})
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Agents">
+```typescript {8}
+agent.setMultilingual({
+  start_language: "en",
+  allowed: ["en", "es"],
+  languages: [
+    { language: "default", voice: "rime.spore:coda" },
+    { language: "es", voice: "azure.es-ES-ElviraNeural" },
+  ],
+  function_fillers: ["One moment while I check that."],
+});
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml {11-12}
+multilingual:
+  start_language: en
+  allowed:
+    - en
+    - es
+  languages:
+    - language: default
+      voice: rime.spore:coda
+    - language: es
+      voice: azure.es-ES-ElviraNeural
+  function_fillers:
+    - One moment while I check that.
+```
+</CodeBlock>
+</CodeBlocks>
+
+The same key works in the language-keyed filler maps on a SWAIG function, such as its
+[`fillers`][function-fillers], with or without `multilingual`. Ada looks for an entry matching the
+current language first, then `auto`, then `default`, so you can write the languages that matter
+most by hand and let `auto` cover the rest. Under `ai.languages`, the current language is the
+active entry's `code`. An entry whose `code` is `multi` never has its fillers translated, because
+`multi` doesn't name a language. [Filler language codes][filler-codes] covers the lookup in full.
+
+`turn_fillers`, the short backchannels Ada plays while a caller is still talking, are never
+translated. Write them per language.
+
+## Offer a fixed set of languages instead
+
+When each call stays in one language, `ai.languages` is the simpler choice. List one entry per
+language, each with a `name`, a speech recognition `code`, and a `voice`. Ada opens in the first
+entry's language and is told to switch to another listed language only when the caller asks for
+it. When she switches, her voice changes and speech recognition starts listening for the new
+entry's `code`.
+
+<CodeBlocks>
+<CodeBlock title="Python — Agents">
+```python
+agent.add_language("English", "en-US", "rime.spore:coda")
+agent.add_language("Spanish", "es", "azure.es-ES-ElviraNeural")
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Agents">
+```typescript
+agent.addLanguage({ name: "English", code: "en-US", voice: "rime.spore:coda" });
+agent.addLanguage({ name: "Spanish", code: "es", voice: "azure.es-ES-ElviraNeural" });
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+languages:
+  - name: English
+    code: en-US
+    voice: rime.spore:coda
+  - name: Spanish
+    code: es
+    voice: azure.es-ES-ElviraNeural
+```
+</CodeBlock>
+</CodeBlocks>
+
+To test it, replace the multilingual configuration in the first sample with these lines, call
+Ada, and ask in English whether she can speak Spanish. She answers in Spanish, in the Azure voice, and keeps
+to Spanish until you ask to change back.
+
+Setting one entry's `code` to `multi` makes speech recognition transcribe whichever of its
+code-switching languages the caller speaks, but Ada still answers in that entry's single voice, and
+she doesn't move to another entry. Use it on an agent with one `languages` entry, when Ada should
+understand callers who mix languages but reply in one. `multi` needs Deepgram speech recognition,
+the default; the [`code` reference][languages-code] lists what each Deepgram model covers.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="multilingual reference" icon="regular list" href="/docs/swml/reference/calling/ai/multilingual">
+    Every `multilingual` property, including the speech recognition engine, model, and provider.
+  </Card>
+  <Card title="languages reference" icon="regular list" href="/docs/swml/reference/calling/ai/languages">
+    Per-language voices, fillers, pronunciation rules, and engine parameters.
+  </Card>
+  <Card title="Text-to-speech voices" icon="regular waveform-lines" href="/docs/platform/voice/tts">
+    Compare engines and find a voice for each language Ada speaks.
+  </Card>
+  <Card title="Translate calls" icon="regular language" href="/docs/platform/voice/translate-calls">
+    Let two people on one call each hear the other in their own language.
+  </Card>
+</CardGroup>
