@@ -100,11 +100,11 @@ model SWAIGFunctionBase {
     """)
   web_hook_auth_pass?: string;
 
-  @doc("A file to play while the function is running. `wait_file_loops` can specify the amount of times that files should continously play. Default is not set.")
+  @doc("A file to play while the function is running. It plays once unless `wait_file_loops` says otherwise, and stops when the function returns. If a filler is still playing at that point, the file keeps playing under it until the filler finishes or the agent starts its reply.")
   @example("https://cdn.signalwire.com/default-music/welcome.mp3")
   wait_file?: url;
 
-  @doc("The number of times to loop playing the file. Default is not set.")
+  @doc("How many more times `wait_file` replays after it first finishes. When omitted or `0`, the file plays once. `-1` or `\"endless\"` replays it until the function returns.")
   @example(5)
   wait_file_loops?: integer | string;
 

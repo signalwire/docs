@@ -31,8 +31,8 @@ each.
 
 | Function | SWML | REST |
 |---|---|---|
-| Attach a sidecar as a call starts | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
-| Attach a sidecar to a call that's already in progress | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Attach a sidecar from the call's own SWML, at whatever point the document reaches it | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Attach a sidecar to a live call by its ID, from outside the call | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 | Give the sidecar tools that run on your server | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 | Receive the sidecar's tips at a webhook | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 | Ask the sidecar a question during the call | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
@@ -230,8 +230,9 @@ For a full list of callback types, see the [callback catalog][callback-types].
 
 ## Attach a sidecar to a call
 
-A sidecar can join a call as it starts, from the call's SWML, or join a call that's already
-connected, from the REST Calling API. Either way it reports to the server you just started.
+A sidecar joins a call when the call's SWML reaches `ai_sidecar`, usually as the call starts, or
+when you send the REST Calling API a command with the call's ID, which also works on a call that's
+already connected. Either way it reports to the server you just started.
 
 ### Attach a sidecar via SWML
 
@@ -373,10 +374,15 @@ Tip: Globex renews 120 seats in 30 days and is comparing ACME, so ask what they 
 
 When you hang up, the server prints `Sidecar finished: transcribe_close`.
 
-If the call connects but the server prints nothing, the sidecar didn't attach. The call connects
-either way, without an error, so check the document in the script, that the tunnel is running, and
-the password in `url`. If `Sidecar started` appears but no `Tool call` follows, SignalWire can't
-reach your server's `/swaig` route: check the host and password in `web_hook_url`.
+If the call connects but the server prints nothing, either the sidecar's callbacks aren't reaching
+your server or the sidecar didn't attach. Check that the tunnel is running and that `url` has the
+right host and password. If those are right, check the document in the script: when the sidecar
+can't attach, the document carries on, so the call still connects without an error.
+
+`Tool call` prints as soon as the model calls the tool, before SignalWire sends the request to your
+`/swaig` route, so it appears even when that request fails. If the tip doesn't reflect the account
+record, check the host and password in `web_hook_url`. If no `Tool call` appears, the model didn't
+call the tool, so make sure the customer says their customer ID.
 
 ### Attach a sidecar via REST
 
@@ -385,8 +391,10 @@ Send `calling.ai_sidecar` with the call's ID to attach a sidecar to a call that'
 `hints`, and `SWAIG` from the document in [Attach a sidecar via SWML](#attach-a-sidecar-via-swml),
 so the sidecar reports to your server and can call your tool.
 
-A call runs one sidecar at a time, and the request fails while another sidecar is attached. A call
-from the previous section already has one, so to try this request on it,
+A call runs one sidecar at a time, so SignalWire doesn't attach a new one while another is
+attached. The request still returns the call without an error, and the only sign is that no new
+`Sidecar started` line appears. A call from the previous section already has a sidecar, so to try
+this request on it,
 [stop that sidecar](#stop-the-sidecar-while-the-call-continues) first, then send the request with
 the same call ID:
 
