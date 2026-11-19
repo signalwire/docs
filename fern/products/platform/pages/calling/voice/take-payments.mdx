@@ -112,7 +112,7 @@ Replace these values in the samples you run:
 | `<YOUR_API_TOKEN>` | Your API token with the Voice permission, used only in server code |
 | `<YOUR_CALLER_ID>` | Your SignalWire phone number, or a [verified caller ID][caller-id], in E.164 format |
 | `<YOUR_DESTINATION>` | The phone you'll answer, in E.164 format |
-| `<YOUR_PAYMENT_CONNECTOR_URL>` | The public `https://` URL of your payment connector, exactly as you pass it in `payment_connector_url`. SignalWire signs requests against this string, minus any `user:password@` credentials in it. |
+| `<YOUR_PAYMENT_CONNECTOR_URL>` | The public `https://` URL of your payment connector, ending in `/` if it has no path. Use the same URL in `payment_connector_url` and in your connector, because SignalWire signs requests against it, minus any `user:password@` credentials. |
 | `<YOUR_SIGNING_KEY>` | Your project's Signing Key, used only in your payment connector |
 | `<YOUR_STATUS_WEBHOOK_URL>` | An HTTPS endpoint you control that receives payment progress |
 
@@ -179,7 +179,6 @@ details arrive in full:
   "method": "credit-card",
   "cardnumber": "4111111111111111",
   "cvv": "123",
-  "postal_code": "94107",
   "description": "Bayview Taxi fare",
   "chargeAmount": "24.50",
   "token_type": "reusable",
@@ -198,7 +197,7 @@ details arrive in full:
 | `method` | The payment method, `credit-card` |
 | `cardnumber` | The full card number |
 | `cvv` | The security code |
-| `postal_code` | The postal code |
+| `postal_code` | The postal code, left out when `postal_code` on `pay` is `"false"` |
 | `expiry_month`, `expiry_year` | The expiration date, two digits each |
 | `description` | The `description` you set on `pay`, left out when you set none |
 | `chargeAmount` | The amount to charge. A zero amount means save the card instead of charging it. |
@@ -208,7 +207,9 @@ details arrive in full:
 
 Reply with HTTP `200` and a JSON body. For a charge, return the processor's charge ID in
 `charge_id`. For a zero amount, return the saved card's token in `token_id`. To decline, return
-`error_code` and `error_message` with no ID.
+`error_code` and `error_message` with no ID. The caller still hears SignalWire's payment-completed
+prompt for any `200` reply, so override the `payment-completed` prompt or follow it with your own
+message when the result isn't `success`.
 
 <CodeBlocks>
 
@@ -246,7 +247,9 @@ SignalWire signs each request with your project's [Signing Key][signing-key]. Th
 `X-SignalWire-Signature` header holds the lowercase hex HMAC-SHA1 of the connector URL you passed in
 `payment_connector_url`, followed by the raw request body. If that URL carries credentials, as
 `https://user:password@pay.example.com/` does, SignalWire removes them before signing and sends them
-as HTTP Basic authentication instead, so the signed URL is `https://pay.example.com/`. An
+as HTTP Basic authentication instead, so the signed URL is `https://pay.example.com/`. SignalWire
+also normalizes the URL before signing: a URL without a path gets a trailing `/`, the scheme is
+lowercased, and `.` and `..` path segments are resolved. An
 `X-SignalWire-SHA256-Signature` header carries the same value computed with HMAC-SHA256. Compute
 the signature yourself and reject any request whose header doesn't match. The samples check it with
 the Server SDKs' webhook signature helper. Both compare against the URL you passed, because a
@@ -375,10 +378,10 @@ In a terminal, put a tunnel in front of port `8080`:
 ngrok http 8080
 ```
 
-ngrok prints an `https://` **Forwarding** URL. That URL is your `<YOUR_PAYMENT_CONNECTOR_URL>`.
-Use the same string, character for character, in the connector and in the call, because the
-signature covers it. Keep the tunnel running while you test; a new tunnel usually means a new
-hostname.
+ngrok prints an `https://` **Forwarding** URL. Add a trailing `/` to it, as in
+`https://<id>.ngrok-free.app/`, and use that as your `<YOUR_PAYMENT_CONNECTOR_URL>` in the connector
+and in the call. The signature covers the URL, and SignalWire signs a URL with no path as if it ended
+in `/`. Keep the tunnel running while you test; a new tunnel usually means a new hostname.
 
 </Step>
 
@@ -453,10 +456,10 @@ const swml = new SwmlBuilder()
     description: "Bayview Taxi fare",
   })
   .say("The payment result is ${pay_result}.")
-  .build();
+  .render(); // JSON text; parse it to pass the document object to dial()
 
 const call = await client.calling.dial("<YOUR_CALLER_ID>", "<YOUR_DESTINATION>", {
-  swml,
+  swml: JSON.parse(swml),
 });
 console.log(call.id);
 ```
@@ -645,7 +648,7 @@ If you hear a different result, find it here:
   the connector printed nothing, check that the tunnel and the connector are both running and that
   `<YOUR_PAYMENT_CONNECTOR_URL>` is the tunnel's current `https://` URL. If they are, the connector
   rejected the signature: check `<YOUR_SIGNING_KEY>`, and that the connector's
-  `<YOUR_PAYMENT_CONNECTOR_URL>` matches the URL in the call exactly.
+  `<YOUR_PAYMENT_CONNECTOR_URL>` ends in `/` and matches the URL in the call exactly.
 - `payment-connector-error`: SignalWire got no response from that URL, because the host couldn't be
   reached or your connector took too long to reply.
 - `too-many-failed-attempts`: an entry failed SignalWire's check. Re-enter the test card number and
@@ -1184,8 +1187,8 @@ SignalWire collects and how it asks:
 | `valid_card_types` | `"visa mastercard amex"` | The card types you accept, space-separated. Also accepts `maestro`, `discover`, `jcb`, and `diners-club`. |
 | `security_code` | `"true"` | Whether to ask for the security code. Takes the string `"true"` or `"false"`. |
 | `postal_code` | `"true"` | Whether to ask for the postal code. Takes `"true"` or `"false"`, or a postal code you already have, which SignalWire sends to your connector without asking the caller. |
-| `max_attempts` | `1` | How many tries the caller gets at each entry, up to `3`. An entry that fails the check or times out uses a try. |
-| `timeout` | `5` | How many seconds SignalWire waits for the caller's next key press before it checks the entry. The minimum is `3`. |
+| `max_attempts` | `1` | How many tries the caller gets at each entry, up to `3`. An entry that fails the check or times out uses a try. Values above `3` fall back to `1`. |
+| `timeout` | `5` | How many seconds SignalWire waits for the caller's next key press before it checks the entry. The minimum is `3`. Lower values fall back to `5`. |
 | `charge_amount` | `"0.00"` | The amount to charge. Zero saves the card. |
 | `currency` | `usd` | The currency of `charge_amount`. |
 | `token_type` | `reusable` | `reusable` or `one-time`, passed to your connector. |
@@ -1686,11 +1689,10 @@ Every payment ends with one result value. SWML stores it in `pay_result`, and Re
 | `too-many-failed-attempts` | An entry failed SignalWire's check, or timed out, on every one of the caller's `max_attempts` tries |
 | `payment-connector-error` | SignalWire couldn't reach your payment connector, or got no response from it |
 | `internal-error` | The payment didn't complete. When your connector declines the card or replies without a valid ID, `payment_error` is `card-declined`. |
-| `validation-error` | The payment stopped before collection because `payment_method` or `bank_account_type` held a value SignalWire doesn't support |
 | `caller-interrupted-with-star` | The caller pressed `*` to cancel |
 | `relay-pay-stop` | Your Relay code [stopped collection](#stop-collecting-a-payment-via-websocket-relay) |
 | `caller-hung-up` | The caller hung up during the payment |
-| `failed` | SWML only: the `pay` method couldn't start the payment |
+| `failed` | SWML only: the `pay` method couldn't start the payment, for example because `payment_method` holds an unsupported value |
 
 Alongside the result, SignalWire returns the card type, the card details masked as
 [Payments and PCI compliance](#payments-and-pci-compliance) describes, the connector's `charge_id`
@@ -1766,6 +1768,9 @@ returned.
 The final `calling.call.pay` event carries the same fields in `params`, with your connector's error
 in `payment_connector_error_code` and `payment_connector_error_message`.
 [Charge a card via WebSocket (Relay)](#charge-a-card-via-websocket-relay) shows how to wait for it.
+
+SignalWire rejects a `call.pay` request it can't start, such as one whose `payment_method` holds an
+unsupported value. `call.pay` then fails with an error, and no `calling.call.pay` event follows.
 
 <CodeBlocks>
 
@@ -2050,9 +2055,9 @@ await agent.run();
 
 </CodeBlocks>
 
-The tool returns this result. Its SWML sets `ai_response`, which tells the agent the payment's
-`pay_result` once collection ends, then runs `pay` with your options and the SDK's defaults filled
-in. To change what the agent is told, pass your own AI response to `pay`.
+The tool returns this result. Its SWML runs `pay` with your options and the SDK's defaults filled
+in, then sets `ai_response`, which tells the agent the payment's `pay_result`. To change what the
+agent is told, pass your own AI response to `pay`.
 
 ```json title="JSON"
 {
@@ -2063,11 +2068,6 @@ in. To change what the agent is told, pass your own AI response to `pay`.
         "version": "1.0.0",
         "sections": {
           "main": [
-            {
-              "set": {
-                "ai_response": "The payment status is ${pay_result}, do not mention anything else about collecting payment if successful."
-              }
-            },
             {
               "pay": {
                 "payment_connector_url": "<YOUR_PAYMENT_CONNECTOR_URL>",
@@ -2085,6 +2085,11 @@ in. To change what the agent is told, pass your own AI response to `pay`.
                 "postal_code": "true",
                 "charge_amount": "24.50",
                 "description": "Bayview Taxi fare"
+              }
+            },
+            {
+              "set": {
+                "ai_response": "The payment status is ${pay_result}, do not mention anything else about collecting payment if successful."
               }
             }
           ]
