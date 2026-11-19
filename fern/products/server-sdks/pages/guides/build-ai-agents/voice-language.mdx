@@ -128,9 +128,9 @@ self.add_language(
 
 ## Multi-language support
 
-Set the language code to `multi` to have speech recognition transcribe whichever of its supported languages the caller speaks. The agent still answers in that entry's single voice, so choose a voice that can speak the languages you expect. To answer each caller in their own language with a voice per language, use [multilingual configuration](/docs/swml/reference/calling/ai/multilingual) instead.
+Set the language code to `multi` to have speech recognition transcribe whichever of its supported languages the caller speaks. The agent still answers in that entry's single voice, so choose a voice that can speak the languages you expect. To give each language its own voice, use [`set_multilingual()`](#switch-voices-as-the-caller-switches-languages) instead.
 
-Speech recognition hints are not used with multilingual configuration, or with `multi` on Deepgram speech recognition, the only engine where `multi` switches languages. Pattern hints still rewrite what the agent hears, so use them for terms the recognizer gets wrong. See [`ai.hints`](/docs/swml/reference/calling/ai#aihints) for how each kind of hint works.
+Speech recognition hints are not used with `set_multilingual()`, or with `multi` on Deepgram speech recognition, the only engine where `multi` switches languages. Pattern hints still rewrite what the agent hears, so use them for terms the recognizer gets wrong. See [`ai.hints`](/docs/swml/reference/calling/ai#aihints) for how each kind of hint works.
 
 ```python
 class MultilingualAgent(AgentBase):
@@ -188,6 +188,65 @@ class CustomMultilingualAgent(AgentBase):
             "prompting or asking them to verify."
         )
 ```
+
+### Switch voices as the caller switches languages
+
+With `multi`, one voice answers in every language. To give each language its own voice, call `set_multilingual()` (`setMultilingual()` in TypeScript) instead of `add_language()`. Speech recognition runs in the same code-switching mode, and the agent answers in the language the caller just spoke, in that language's voice. The platform picks the reply language from the caller's speech, so the model doesn't choose it.
+
+The method takes the SWML [`ai.multilingual`](/docs/swml/reference/calling/ai/multilingual) object and passes it to the platform unchanged:
+
+- `languages` lists one voice per language. The entry whose `language` is `default` is the catch-all: the agent opens the call in its voice, and uses it for any detected language without an entry of its own.
+- `allowed` limits the languages the agent switches into, and `start_language` sets the language it opens in, `en` by default.
+- `fillers` and `function_fillers` are set once on the object, not on each `languages` entry. An array of fillers is translated into whichever language the caller is speaking, and an object keyed by language code sets them per language as written.
+
+<CodeBlocks>
+<CodeBlock title="Python — Server SDK">
+```python
+from signalwire import AgentBase
+
+class PerLanguageVoiceAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="per-language-voices")
+
+        self.set_multilingual({
+            "start_language": "en",
+            "allowed": ["en", "es", "fr"],
+            "languages": [
+                {"language": "default", "voice": "elevenlabs.rachel"},
+                {"language": "es", "voice": "elevenlabs.maria"},
+                {"language": "fr", "voice": "gcloud.fr-FR-Neural2-B"},
+            ],
+            "function_fillers": ["One moment please", "Let me check that"],
+        })
+
+        self.prompt_add_section("Role", "You are a friendly customer service agent.")
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Server SDK">
+```typescript
+import { AgentBase } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'per-language-voices' });
+
+agent.setMultilingual({
+  start_language: 'en',
+  allowed: ['en', 'es', 'fr'],
+  languages: [
+    { language: 'default', voice: 'elevenlabs.rachel' },
+    { language: 'es', voice: 'elevenlabs.maria' },
+    { language: 'fr', voice: 'gcloud.fr-FR-Neural2-B' },
+  ],
+  function_fillers: ['One moment please', 'Let me check that'],
+});
+
+agent.promptAddSection('Role', { body: 'You are a friendly customer service agent.' });
+```
+</CodeBlock>
+</CodeBlocks>
+
+Use `set_multilingual()` or `add_language()`, not both. If both are set, the platform uses the multilingual configuration and ignores every language added with `add_language()`.
+
+Every code in `languages` and `allowed` must be one the speech recognition model supports, or multilingual mode does not start. The agent also waits for a turn of at least two words before it switches, because a single word such as a name or "OK" is often the same in several languages. Set `min_switch_words` to `1` to switch on single words. See the [`set_multilingual()` reference](/docs/server-sdks/reference/python/agents/agent-base/set-multilingual) for the method and the [`ai.multilingual` reference](/docs/swml/reference/calling/ai/multilingual) for every key.
 
 ## Pronunciation rules
 
