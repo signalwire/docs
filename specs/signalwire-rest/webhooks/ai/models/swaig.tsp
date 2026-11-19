@@ -117,7 +117,12 @@ model AiSwaigToolWebhookPayload {
   @example("my-token")
   meta_data_token: string;
 
-  @doc("Metadata scoped to `meta_data_token`. An empty object when the function has none yet.")
+  @doc("""
+    The metadata stored under `meta_data_token`, sent on every call because every function has a
+    token. It starts as the AI session's initial `global_data` merged with the `meta_data` set for the
+    function in SWAIG `defaults`, an `includes` entry, or the function itself, and changes as
+    `set_meta_data` and `unset_meta_data` actions update it.
+    """)
   @example(#{ order_number: "12345" })
   meta_data: Record<unknown>;
 
@@ -341,7 +346,11 @@ model BedrockSwaigToolWebhookPayload {
   @example("d742c5d1d969d9fdbbd9bd1c52499f2d")
   meta_data_token: string;
 
-  @doc("Metadata scoped to `meta_data_token`. An empty object when the function has none yet.")
+  @doc("""
+    The metadata stored under `meta_data_token`, sent on every call because every function has a
+    token. It starts as the function's `meta_data` and changes as `set_meta_data` and
+    `unset_meta_data` actions update it. An empty object when nothing is stored.
+    """)
   @example(#{ order_number: "12345" })
   meta_data: Record<unknown>;
 }

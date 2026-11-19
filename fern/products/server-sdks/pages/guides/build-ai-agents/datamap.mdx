@@ -257,13 +257,13 @@ DataMap supports these variable patterns:
 
 | Pattern | Description |
 |---------|-------------|
-| `${args.param}` | Function argument value (webhook URL, params, and body) |
-| `${input.args.param}` | Function argument value (webhook output, expressions, and foreach) |
+| `${args.param}` | Function argument value (webhook URL, params, and body; top-level expressions; fallback output) |
+| `${input.args.param}` | Function argument value (a webhook's output, expressions, and foreach) |
 | `${enc:args.param}` | URL-encoded argument (use in webhook URLs) |
 | `${lc:args.param}` | Lowercase argument value |
 | `${fmt_ph:args.phone}` | Format as phone number |
-| `${field}` | Field in the webhook response, at the root (webhook output only) |
-| `${arr[0]}` | Array element in the webhook response (webhook output only) |
+| `${field}` | Field of the webhook's JSON response, read from the root (a webhook's output, expressions, and foreach) |
+| `${array[0].field}` | Element of a webhook response that is a JSON array (a webhook's output, expressions, and foreach) |
 | `${global_data.key}` | Global session data |
 | `${meta_data.key}` | Call metadata |
 
@@ -280,8 +280,8 @@ Modifiers are applied right-to-left:
 
 | Pattern | Result |
 |---------|--------|
-| `${args.city}` | "Seattle" (in URL, params, body, and fallback output) |
-| `${input.args.city}` | "Seattle" (in webhook output) |
+| `${args.city}` | "Seattle" (in URL, params, body, top-level expressions, and fallback output) |
+| `${input.args.city}` | "Seattle" (in a webhook's output, expressions, and foreach) |
 | `${enc:args.city}` | "Seattle" URL-encoded (in URLs) |
 | `${lc:args.city}` | "seattle" (lowercase) |
 | `${enc:lc:args.city}` | "seattle" lowercased then URL-encoded |
@@ -735,7 +735,7 @@ When using DataMap, keep these performance factors in mind:
 When DataMap functions don't work as expected, use these debugging strategies:
 
 1. **Test the API directly**: Use curl or Postman to verify the API works with your parameters
-2. **Check variable substitution**: Ensure `${args.param}` (URL, params, body) and `${input.args.param}` (webhook output) match your parameter names exactly
+2. **Check variable substitution**: Ensure `${args.param}` (URL, params, body, top-level expressions, fallback output) and `${input.args.param}` (a webhook's output, expressions, foreach) match your parameter names exactly
 3. **Verify JSON paths**: Response field access like `${data.items[0].name}` in a webhook output must match the actual response structure
 4. **Use swaig-test**: The testing tool shows you exactly what SWML is generated
 
@@ -770,7 +770,7 @@ weather_dm = (
     .parameter("city", "string", "City name", required=True)
     .webhook("GET", "https://api.weather.com?city=${enc:args.city}&key=API_KEY")
     .output(FunctionResult(
-        "Weather in ${args.city}: ${temp} degrees F, ${condition}"
+        "Weather in ${input.args.city}: ${temp} degrees F, ${condition}"
     ))
     .fallback_output(FunctionResult("Couldn't get weather for ${args.city}"))
 )
