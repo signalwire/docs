@@ -1,16 +1,17 @@
 ---
 id: 07af2f82-a8e9-4a94-a679-1be31dfe0a2e
 slug: reference/messaging
-description: Reference for Messaging SWML — document modes, webhook payload, variable expansion, and methods for handling inbound SMS and MMS.
+description: Reference for Messaging SWML — document modes, webhook payload, variable expansion, and methods for handling inbound SMS, MMS, WhatsApp, and RCS messages.
 title: Messaging SWML overview
 sidebar-title: Overview
 position: 0
 max-toc-depth: 3
 ---
 
-Messaging SWML is the flavor of SWML used to handle **inbound SMS and MMS messages**. When a
-message arrives on a phone number configured with a SWML message handler, SignalWire fetches and
-processes the SWML document, optionally sending an outbound reply.
+Messaging SWML is the flavor of SWML used to handle **inbound SMS, MMS, WhatsApp, and RCS
+messages**. When a message arrives on a phone number, WhatsApp number, or RCS agent configured with
+a SWML message handler, SignalWire fetches and processes the SWML document, optionally sending an
+outbound reply on the same channel.
 
 For handling voice calls, see the [Calling SWML overview](/docs/swml/reference/calling).
 
@@ -81,23 +82,29 @@ See the [SWML inbound message webhook reference](/docs/apis/rest/webhooks/inboun
   </ParamField>
 
   <ParamField path="message.type" type="string" toc={true}>
-    The message type. Possible values: `sms`, `mms`.
+    The channel the message arrived on. Possible values: `sms`, `mms`, `whatsapp`, `rcs`.
   </ParamField>
 
   <ParamField path="message.from" type="string" toc={true}>
-    Sender phone number in E.164 format.
+    Sender phone number. In E.164 format for SMS, MMS, and RCS. For WhatsApp, the number as
+    WhatsApp reports it: country code and number with no leading `+`, for example `15551231234`.
   </ParamField>
 
   <ParamField path="message.to" type="string" toc={true}>
-    Recipient phone number in E.164 format (the SignalWire number that received the message).
+    The number or agent that received the message: your phone number in E.164 format for SMS and
+    MMS, your WhatsApp number prefixed with `whatsapp:` (for example `whatsapp:+15553214321`), or
+    your RCS agent's ID.
   </ParamField>
 
   <ParamField path="message.body" type="string" toc={true}>
-    The text content of the inbound message.
+    The text content of the inbound message. For a WhatsApp reply button tap or list selection,
+    the ID of the button or list row the customer chose. `null` for WhatsApp media, location, and
+    contact messages, and for media-only MMS without a text body.
   </ParamField>
 
   <ParamField path="message.media" type="object[]" toc={true}>
-    Media attachments on the inbound message. Empty array when no media is attached.
+    Media attachments on the inbound message. Empty array when no media is attached. Always empty
+    for WhatsApp, which reports media in `message.whatsapp_context` instead.
   </ParamField>
 
   <Indent>
@@ -117,11 +124,46 @@ See the [SWML inbound message webhook reference](/docs/apis/rest/webhooks/inboun
   </Indent>
 
   <ParamField path="message.segments" type="integer" toc={true}>
-    Number of SMS segments the inbound message was split into.
+    Number of segments the inbound message was split into. Always `1` for WhatsApp.
   </ParamField>
 
   <ParamField path="message.timestamp" type="string" toc={true}>
     ISO 8601 timestamp of when the inbound message was received.
+  </ParamField>
+
+  <ParamField path="message.message_type" type="string" toc={true}>
+    WhatsApp and RCS messages only. For WhatsApp, the kind of message the customer sent:
+    `whatsapp_image`, `whatsapp_video`, `whatsapp_audio`, `whatsapp_document`, `whatsapp_sticker`,
+    `whatsapp_location`, `whatsapp_contacts`, `whatsapp_interactive_button` (a reply button tap),
+    or `whatsapp_interactive_list` (a list selection). `null` for a text message. Always `null`
+    for RCS.
+  </ParamField>
+
+  <ParamField path="message.tag" type="string" toc={true}>
+    WhatsApp messages only. For a reply button tap or list selection, the title of the button or
+    list row the customer chose. `null` otherwise.
+  </ParamField>
+
+  <ParamField path="message.whatsapp_context" type="string | object" toc={true}>
+    WhatsApp messages only. Its form depends on what the customer sent:
+
+    - Text message: the string `default`.
+    - Reply button tap or list selection: the ID of the WhatsApp message that carried the button
+      or list, or `null` when WhatsApp doesn't provide it.
+    - Image, video, audio, document, or sticker: an object with `type`, `media_id`, `mime_type`,
+      `sha256`, and `url`. A document also has `filename`, and a sticker has `animated`.
+    - Location: an object with `type`, `latitude`, `longitude`, `name`, and `address`, plus
+      `context_id` and `context_from` when the location replies to an earlier message.
+    - Contacts: an object with `type` and a `contacts` array, each entry holding
+      `name_information` and `phones_information`.
+
+    Object fields WhatsApp doesn't provide are omitted. Read nested fields with dot notation, for
+    example `%{message.whatsapp_context.url}`.
+  </ParamField>
+
+  <ParamField path="message.agent_id" type="string" toc={true}>
+    RCS messages only. The ID of the RCS agent that received the message, the same value as
+    `message.to`.
   </ParamField>
 
 </Indent>
@@ -193,7 +235,7 @@ Decide what to do with the inbound message — send an outbound reply, or accept
 
 <CardGroup cols={2}>
   <Card title="reply" href="/docs/swml/reference/messaging/reply">
-    Send an SMS or MMS back to the sender of the inbound message. Use for auto-replies, confirmations, and keyword responses.
+    Send a message back to the sender of the inbound message, on the channel it arrived on. Use for auto-replies, confirmations, and keyword responses.
   </Card>
   <Card title="receive" href="/docs/swml/reference/messaging/receive">
     Accept the inbound message without sending a reply. Use to acknowledge the message without an outbound response.

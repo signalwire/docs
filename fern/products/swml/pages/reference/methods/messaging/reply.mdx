@@ -6,9 +6,12 @@ description: Create and send an outbound message in response to an inbound messa
 max-toc-depth: 3
 ---
 
-Create and send an outbound message in response to the inbound message. `reply` accepts three
-shapes: a string shorthand, an object with body/media/routing fields, or an inline `switch` that
-branches the reply body on a variable's value.
+Create and send an outbound message in response to the inbound message. The reply goes out on the
+channel the inbound message arrived on: SMS or MMS, WhatsApp, or RCS. `reply` accepts three shapes:
+a string shorthand, an object with content and routing fields, or an inline `switch` that branches
+the reply body on a variable's value. WhatsApp and RCS replies take extra fields and follow their
+own rules for `from` and `to`; see [WhatsApp replies](#whatsapp-replies) and
+[RCS replies](#rcs-replies).
 
 `reply` does **not** end execution — subsequent steps in the section continue to run after the reply
 is queued.
@@ -21,7 +24,8 @@ is queued.
 <Tab title="String shorthand">
 
 A single string used as the reply body. The reply is sent to the inbound
-message's `from` number, using the inbound `to` as the sender.
+message's `from`, using the inbound `to` as the sender. On WhatsApp it is a text message, and on
+RCS a plain-text message.
 
 <ParamField path="reply" type="string" required={true} toc={true}>
   The body of the reply message. After variable expansion it must contain at least one
@@ -34,10 +38,11 @@ message's `from` number, using the inbound `to` as the sender.
 </Tab>
 <Tab title="Object">
 
-Full control over the reply — set the body, attach media, override the routing fields, or configure
-a delivery status callback. The reply needs content: either a `body` with at least one
-non-whitespace character after variable expansion, or a `media` array with at least one URL.
-`{ "reply": { "media": [] } }` has neither.
+Full control over the reply — set the body, attach media, send WhatsApp or RCS content, override
+the routing fields, or configure a delivery status callback. An SMS or MMS reply needs content:
+either a `body` with at least one non-whitespace character after variable expansion, or a `media`
+array with at least one URL. `{ "reply": { "media": [] } }` has neither. A WhatsApp reply needs a
+`body` or a `template_id`, and an RCS reply needs a `body` or `content`.
 
 <ParamField path="reply" type="object" required={true} toc={true}>
   An object containing the properties below.
@@ -45,14 +50,18 @@ non-whitespace character after variable expansion, or a `media` array with at le
 
 <Indent>
 
-<ParamField path="reply.body" type="string" toc={true}>
+<ParamField path="reply.body" type="string | object | object[]" toc={true}>
   Text body of the outbound message. Required when `media` is not set. When no media is
   attached, the body must contain at least one non-whitespace character after variable
   expansion.
 
-  Body length is checked before the reply is queued. The limit depends on whether the reply is SMS
-  or MMS and on the route SignalWire uses to send it, and length is counted according to the
-  message encoding. A body over the limit fails the reply with a
+  On WhatsApp, `body` can also be an object or an array, in the shape that
+  [`message_type`](#whatsapp-replies) calls for. Omit it when you set `template_id`. On RCS, set
+  `body` for plain text or `content` for rich content, never both.
+
+  Body length is checked before the reply is queued. The limit depends on the channel and on the
+  route SignalWire uses to send the reply, and length is counted according to the message
+  encoding. A body over the limit fails the reply with a
   `swml_reply_character_limit_exceeded` [error](/docs/swml/reference/errors) whose message states
   the limit.
 </ParamField>
@@ -61,20 +70,66 @@ non-whitespace character after variable expansion, or a `media` array with at le
   Array of HTTP or HTTPS media URLs to attach. Converts the message to MMS. Maximum 8 attachments.
   Required if `body` is not present, and must then contain at least one URL. Media is fetched after
   the reply is queued, so a `queued` result does not confirm that the media could be retrieved.
+
+  SMS and MMS only. A WhatsApp reply ignores `media`, and an RCS reply that sets it fails with
+  `rcs_media_not_supported`. To send media on those channels, use a WhatsApp media `message_type`
+  or an RCS `content` of type `media`.
 </ParamField>
 
 <ParamField path="reply.to" type="string" default="message.from" toc={true}>
-  Destination phone number in E.164 format.
+  Destination phone number in E.164 format. For channel rules, see
+  [WhatsApp replies](#whatsapp-replies) and [RCS replies](#rcs-replies).
 </ParamField>
 
 <ParamField path="reply.from" type="string" default="message.to" toc={true}>
-  Sending phone number or short code. Must be owned by your project and have messaging capability.
+  Sender of the reply. For SMS and MMS, a phone number or short code owned by your project with
+  messaging capability. For WhatsApp, a WhatsApp number in your project, prefixed with
+  `whatsapp:`. For RCS, the ID of an RCS agent in your project.
 </ParamField>
 
 <ParamField path="reply.status_url" type="string" toc={true}>
   HTTP or HTTPS URL to receive delivery status callbacks for the outbound reply message.
   Callbacks are delivered after the reply is queued, so a `queued` result does not confirm that a
   callback reached this URL. See [Status callbacks](#status-callbacks) below.
+</ParamField>
+
+<ParamField path="reply.message_type" type="string" default="whatsapp_media_text" toc={true}>
+  WhatsApp only. The kind of WhatsApp message to send, which sets the shape of `body`. One of
+  `whatsapp_media_text`, `whatsapp_media_image`, `whatsapp_media_video`, `whatsapp_media_audio`,
+  `whatsapp_media_document`, `whatsapp_media_sticker`, `whatsapp_media_location`,
+  `whatsapp_media_contacts`, `whatsapp_media_reaction`, `whatsapp_interactive_reply_button`,
+  `whatsapp_interactive_list`, `whatsapp_interactive_cta`, `whatsapp_interactive_flow`, or
+  `whatsapp_interactive_location_request_message`. The `body` shapes are the same as for
+  [sending a WhatsApp message](/docs/platform/messaging/whatsapp/send-messages#message-types).
+  Ignored when `template_id` is set.
+</ParamField>
+
+<ParamField path="reply.template_id" type="string" toc={true}>
+  WhatsApp only. The [template](/docs/platform/messaging/whatsapp/message-templates) to send, by
+  SignalWire template ID or Meta template ID. The template must be approved and belong to the
+  same WhatsApp Business Account as `from`. When set, omit `body`.
+</ParamField>
+
+<ParamField path="reply.header_template_parameters" type="string[] | object | string" toc={true}>
+  WhatsApp only. Values for the placeholders in the template header: an array for positional
+  parameters, an object for named parameters, or a URL string for a document header.
+</ParamField>
+
+<ParamField path="reply.body_template_parameters" type="string[] | object" toc={true}>
+  WhatsApp only. Values for the placeholders in the template body: an array for positional
+  parameters or an object for named parameters.
+</ParamField>
+
+<ParamField path="reply.button_template_parameters" type="string[]" toc={true}>
+  WhatsApp only. Values for URL-button placeholders in the template. Positional only: named
+  templates don't accept button parameters.
+</ParamField>
+
+<ParamField path="reply.content" type="object" toc={true}>
+  RCS only. Rich content to send: media, a location, text with suggestions, a card, or a
+  carousel. Takes the same
+  [content types](/docs/platform/messaging/rcs/send-messages#content-types) as the Messaging API.
+  Set `content` or `body`, never both.
 </ParamField>
 
 </Indent>
@@ -108,9 +163,9 @@ The matched `case` (or `default`) provides the reply body.
 
 <ParamField path="reply.switch.case" type="object" required={true} toc={true}>
   Map of values to reply outcomes. Each entry's value is either:
-  - a **string** — used as the reply body, sent back to the original sender as SMS, or
-  - a **full reply object** with `body`, `media`, `to`, `from`, `status_url` — for cases that
-    need media, a different destination, or a per-branch `status_url`.
+  - a **string** — used as the reply body, sent back to the original sender, or
+  - a **full reply object** with any of the fields in the **Object** tab — for cases that need
+    media, WhatsApp or RCS content, a different destination, or a per-branch `status_url`.
 
   `%{…}` placeholders inside the matched value are expanded before the reply is sent. A string
   outcome follows the same rules as the string shorthand: it must contain at least one
@@ -132,6 +187,66 @@ on the same `reply` — put them inside each `case` value (or `default`) instead
 
 </Tab>
 </Tabs>
+
+## WhatsApp replies
+
+When the inbound message is a WhatsApp message, `reply` sends a WhatsApp message:
+
+- `from` defaults to the WhatsApp number that received the message. To reply from another one, set
+  `from` to a WhatsApp number in the same Project, prefixed with `whatsapp:` (for example
+  `whatsapp:+15557654321`). The number must be registered.
+- `to` defaults to the sender. WhatsApp reports the sender's number without a leading `+`, so
+  SignalWire adds one. If you set `to`, use E.164 format.
+- Without `message_type` or `template_id`, the reply is a text message.
+- Set `template_id` to send an approved [template](/docs/platform/messaging/whatsapp/message-templates).
+  Meta allows free-form messages only within 24 hours of the customer's last inbound message, so use
+  a template outside that window. See
+  [Messaging rules](/docs/platform/messaging/whatsapp/send-messages#messaging-rules).
+- `media` is ignored. Send media with a media `message_type` instead.
+
+When a reply can't be queued, the script stops and the inbound message is marked `failed`, with the
+reason in its `error_code` and `error_message`. The reply fails with one of these codes:
+
+| Code | Cause |
+|---|---|
+| `swml_reply_invalid_from_number` | `from` isn't a WhatsApp number in this Project. |
+| `swml_whatsapp_reply_number_not_registered` | The `from` WhatsApp number isn't registered yet. |
+| `swml_reply_invalid_to_number` | `to` isn't a valid phone number. |
+| `swml_whatsapp_reply_to_number_not_allowed` | You set `to`, your account can send only to verified numbers, and `to` isn't one of them. |
+| `swml_whatsapp_reply_invalid_message_type` | `message_type` isn't one of the WhatsApp message types. |
+| `swml_whatsapp_reply_body_not_allowed_with_template` | The reply has both `body` and `template_id`. |
+| `swml_reply_body_or_media_required` | The reply has neither `body` nor `template_id`. |
+| `swml_whatsapp_reply_invalid_body` | `body` doesn't match the shape `message_type` calls for. The error message gives the reason. |
+| `swml_whatsapp_reply_invalid_template` | The template wasn't found, isn't approved, belongs to another WhatsApp Business Account, or its parameters don't match. The error message gives the reason. |
+| `swml_reply_character_limit_exceeded` | `body` is longer than the character limit. The error states the limit. |
+| `swml_reply_failed` | The reply couldn't be created. |
+
+## RCS replies
+
+When the inbound message is an RCS message, `reply` sends an RCS message:
+
+- `from` defaults to the RCS agent that received the message. To reply from another agent, set
+  `from` to the ID of an RCS agent in the same Project.
+- `to` defaults to the sender. It must be a US phone number, like any RCS send.
+- Set `body` for plain text or `content` for rich content, never both.
+- `media` is not supported. Send media with a `content` of type `media` instead.
+
+When a reply can't be queued, the script stops and the inbound message is marked `failed`, with the
+reason in its `error_code` and `error_message`. The reply fails with one of these codes:
+
+| Code | Cause |
+|---|---|
+| `swml_rcs_reply_invalid_from_agent` | `from` isn't an RCS agent in this Project. |
+| `rcs_messaging_not_enabled`, `rcs_agent_not_sendable`, `rcs_agent_not_configured` | The same agent checks as the [Messaging API](/docs/platform/messaging/rcs/send-messages#verify-the-send). |
+| `rcs_media_not_supported` | The reply has `media`. Use a `content` of type `media` instead. |
+| `swml_rcs_reply_body_or_content_required` | The reply has neither `body` nor `content`. |
+| `body_not_allowed_with_rcs_content` | The reply has both `body` and `content`. |
+| `rcs_content_*` | A problem in `content`, with the same codes as the [Messaging API](/docs/platform/messaging/rcs/send-messages#verify-the-send). |
+| `swml_reply_invalid_to_number` | `to` isn't a valid phone number. |
+| `rcs_recipient_country_not_supported` | `to` isn't a US phone number. |
+| `swml_rcs_reply_to_number_not_allowed` | You set `to`, your account can send only to verified numbers, and `to` isn't one of them. |
+| `swml_reply_character_limit_exceeded` | `body` is longer than the character limit. The error states the limit. |
+| `swml_reply_failed` | The reply couldn't be created. |
 
 ## **Variables**
 
@@ -422,6 +537,149 @@ sections:
           "to": "+12223334444",
           "from": "+15559876543",
           "body": "Your number %{message.to} got a message from %{message.from}! The body was: %{message.body}"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### WhatsApp reply buttons
+
+On a WhatsApp message, set `message_type` and pass `body` as an object. When the customer taps a
+button, the next inbound message has the button's `id` in `message.body` and its title in
+`message.tag`.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - reply:
+        message_type: whatsapp_interactive_reply_button
+        body:
+          type: button
+          body:
+            text: "How can we help?"
+          action:
+            buttons:
+              - type: reply
+                reply:
+                  id: sales
+                  title: "Talk to Sales"
+              - type: reply
+                reply:
+                  id: support
+                  title: "Get Support"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "reply": {
+          "message_type": "whatsapp_interactive_reply_button",
+          "body": {
+            "type": "button",
+            "body": { "text": "How can we help?" },
+            "action": {
+              "buttons": [
+                { "type": "reply", "reply": { "id": "sales", "title": "Talk to Sales" } },
+                { "type": "reply", "reply": { "id": "support", "title": "Get Support" } }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### WhatsApp template reply
+
+Send an approved template, for example when more than 24 hours have passed since the customer's
+last message. Replace `<YOUR_TEMPLATE_ID>` with the ID of a template in the same WhatsApp Business
+Account as the number that received the message. This template has two positional body parameters.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - reply:
+        template_id: "<YOUR_TEMPLATE_ID>"
+        body_template_parameters:
+          - "ORD-9821"
+          - "out for delivery"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "reply": {
+          "template_id": "<YOUR_TEMPLATE_ID>",
+          "body_template_parameters": ["ORD-9821", "out for delivery"]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### RCS reply with suggested replies
+
+On an RCS message, set `content` to send rich content. The recipient's tap arrives as a new inbound
+message.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - reply:
+        content:
+          type: suggestions
+          text: "Thanks for reaching out! What can we help with?"
+          actions:
+            - type: reply
+              title: "Track an order"
+            - type: reply
+              title: "Talk to someone"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "reply": {
+          "content": {
+            "type": "suggestions",
+            "text": "Thanks for reaching out! What can we help with?",
+            "actions": [
+              { "type": "reply", "title": "Track an order" },
+              { "type": "reply", "title": "Talk to someone" }
+            ]
+          }
         }
       }
     ]

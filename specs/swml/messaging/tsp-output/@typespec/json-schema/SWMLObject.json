@@ -17,7 +17,7 @@
     "unevaluatedProperties": {
         "not": {}
     },
-    "description": "A SWML document for handling inbound SMS or MMS messages. The document has a top-level\n`sections` map; execution starts at `sections.main`, and each section is an ordered array of\nmethods. Additional sections can be invoked via `execute`, `transfer`, or `goto`.\n\nSee the [Messaging SWML reference](/docs/swml/reference/messaging) for the full list of\navailable methods.",
+    "description": "A SWML document for handling inbound SMS, MMS, WhatsApp, or RCS messages. The document has a top-level\n`sections` map; execution starts at `sections.main`, and each section is an ordered array of\nmethods. Additional sections can be invoked via `execute`, `transfer`, or `goto`.\n\nSee the [Messaging SWML reference](/docs/swml/reference/messaging) for the full list of\navailable methods.",
     "title": "Messaging SWML Document",
     "$defs": {
         "Section": {
@@ -88,10 +88,19 @@
                             "$ref": "#/$defs/ReplyWithMedia"
                         },
                         {
+                            "$ref": "#/$defs/ReplyWhatsAppMessage"
+                        },
+                        {
+                            "$ref": "#/$defs/ReplyWhatsAppTemplate"
+                        },
+                        {
+                            "$ref": "#/$defs/ReplyRcsContent"
+                        },
+                        {
                             "$ref": "#/$defs/ReplyInlineSwitch"
                         }
                     ],
-                    "description": "Create and send an outbound message in response to the inbound message. Accepts one of:\na string (used as the message body), an object with body, media, and routing fields, or\nan inline `switch` that branches the reply on a variable value.\n\n`reply` does not end execution — subsequent steps in the section continue to run after\nthe reply is queued.",
+                    "description": "Create and send an outbound message in response to the inbound message. The reply goes\nout on the inbound message's channel: SMS or MMS, WhatsApp, or RCS. Accepts one of: a\nstring (used as the message body), an object with content and routing fields, or an\ninline `switch` that branches the reply on a variable value.\n\n`reply` does not end execution — subsequent steps in the section continue to run after\nthe reply is queued.",
                     "title": "reply"
                 }
             },
@@ -515,7 +524,7 @@
         "ReplyText": {
             "type": "string",
             "minLength": 1,
-            "description": "Reply body text, used by the string shorthand and by string outcomes of an inline\n`switch`. After variable expansion it must contain at least one non-whitespace\ncharacter.\n\nBody length is checked before the reply is queued. The limit depends on whether the\nreply is SMS or MMS and on the route SignalWire uses to send it, and length is counted\naccording to the message encoding. A body over the limit fails the reply with a\n`swml_reply_character_limit_exceeded` error whose message states the limit.",
+            "description": "Reply body text, used by the string shorthand and by string outcomes of an inline\n`switch`. After variable expansion it must contain at least one non-whitespace\ncharacter.\n\nBody length is checked before the reply is queued. The limit depends on the channel\n(SMS, MMS, WhatsApp, or RCS) and on the route SignalWire uses to send the reply, and length is counted\naccording to the message encoding. A body over the limit fails the reply with a\n`swml_reply_character_limit_exceeded` error whose message states the limit.",
             "title": "Reply body text"
         },
         "ReplyWithBody": {
@@ -526,14 +535,14 @@
                     "examples": [
                         "+15551234567"
                     ],
-                    "description": "Destination phone number in E.164 format. Defaults to the inbound message's `from`."
+                    "description": "Destination phone number in E.164 format. Defaults to the inbound message's `from`; on\nWhatsApp, a leading `+` is added to it. On RCS it must be a US number."
                 },
                 "from": {
                     "type": "string",
                     "examples": [
                         "+15559876543"
                     ],
-                    "description": "Sending phone number or short code. Must be owned by your project and have messaging capability. Defaults to the inbound message's `to`."
+                    "description": "Sender of the reply. Defaults to the inbound message's `to`, so the reply comes from the\nnumber or agent that received the message. For SMS and MMS, a phone number or short code\nowned by your project with messaging capability. For WhatsApp, a WhatsApp number in your\nproject, prefixed with `whatsapp:`. For RCS, the ID of an RCS agent in your project."
                 },
                 "status_url": {
                     "type": "string",
@@ -549,7 +558,7 @@
                         "Thanks for your message!"
                     ],
                     "minLength": 1,
-                    "description": "Body text of the reply. Required if `media` is not present. When no media is attached,\nthe body must contain at least one non-whitespace character after variable expansion.\n\nBody length is checked before the reply is queued. The limit depends on whether the\nreply is SMS or MMS and on the route SignalWire uses to send it, and length is counted\naccording to the message encoding. A body over the limit fails the reply with a\n`swml_reply_character_limit_exceeded` error whose message states the limit."
+                    "description": "Body text of the reply. Required if `media` is not present. When no media is attached,\nthe body must contain at least one non-whitespace character after variable expansion.\n\nBody length is checked before the reply is queued. The limit depends on the channel\n(SMS, MMS, WhatsApp, or RCS) and on the route SignalWire uses to send the reply, and length is counted\naccording to the message encoding. A body over the limit fails the reply with a\n`swml_reply_character_limit_exceeded` error whose message states the limit."
                 },
                 "media": {
                     "type": "array",
@@ -563,7 +572,7 @@
                         ]
                     ],
                     "maxItems": 8,
-                    "description": "Array of HTTP or HTTPS media URLs to attach. Converts the message to MMS. Maximum 8\nattachments. Media is fetched after the reply is queued, so a `queued` result does not\nconfirm that the media could be retrieved."
+                    "description": "Array of HTTP or HTTPS media URLs to attach. Converts the message to MMS. Maximum 8\nattachments. Media is fetched after the reply is queued, so a `queued` result does not\nconfirm that the media could be retrieved.\n\nSMS and MMS only. A WhatsApp reply ignores `media`, and an RCS reply that sets it fails\nwith `rcs_media_not_supported`."
                 }
             },
             "required": [
@@ -582,14 +591,14 @@
                     "examples": [
                         "+15551234567"
                     ],
-                    "description": "Destination phone number in E.164 format. Defaults to the inbound message's `from`."
+                    "description": "Destination phone number in E.164 format. Defaults to the inbound message's `from`; on\nWhatsApp, a leading `+` is added to it. On RCS it must be a US number."
                 },
                 "from": {
                     "type": "string",
                     "examples": [
                         "+15559876543"
                     ],
-                    "description": "Sending phone number or short code. Must be owned by your project and have messaging capability. Defaults to the inbound message's `to`."
+                    "description": "Sender of the reply. Defaults to the inbound message's `to`, so the reply comes from the\nnumber or agent that received the message. For SMS and MMS, a phone number or short code\nowned by your project with messaging capability. For WhatsApp, a WhatsApp number in your\nproject, prefixed with `whatsapp:`. For RCS, the ID of an RCS agent in your project."
                 },
                 "status_url": {
                     "type": "string",
@@ -612,7 +621,7 @@
                     ],
                     "minItems": 1,
                     "maxItems": 8,
-                    "description": "Array of HTTP or HTTPS media URLs to attach. Converts the message to MMS. Required if\n`body` is not present, and must then contain at least one URL. Maximum 8 attachments.\nMedia is fetched after the reply is queued, so a `queued` result does not confirm that\nthe media could be retrieved."
+                    "description": "Array of HTTP or HTTPS media URLs to attach. Converts the message to MMS. Required if\n`body` is not present, and must then contain at least one URL. Maximum 8 attachments.\nMedia is fetched after the reply is queued, so a `queued` result does not confirm that\nthe media could be retrieved.\n\nSMS and MMS only. A WhatsApp reply ignores `media`, so it needs a `body` or `template_id`\ninstead, and an RCS reply that sets it fails with `rcs_media_not_supported`."
                 },
                 "body": {
                     "type": "string",
@@ -630,6 +639,206 @@
                 "not": {}
             },
             "title": "Reply with media"
+        },
+        "ReplyWhatsAppMessage": {
+            "type": "object",
+            "properties": {
+                "to": {
+                    "type": "string",
+                    "examples": [
+                        "+15551234567"
+                    ],
+                    "description": "Destination phone number in E.164 format. Defaults to the inbound message's `from`; on\nWhatsApp, a leading `+` is added to it. On RCS it must be a US number."
+                },
+                "from": {
+                    "type": "string",
+                    "examples": [
+                        "+15559876543"
+                    ],
+                    "description": "Sender of the reply. Defaults to the inbound message's `to`, so the reply comes from the\nnumber or agent that received the message. For SMS and MMS, a phone number or short code\nowned by your project with messaging capability. For WhatsApp, a WhatsApp number in your\nproject, prefixed with `whatsapp:`. For RCS, the ID of an RCS agent in your project."
+                },
+                "status_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/reply-status"
+                    ],
+                    "description": "HTTP or HTTPS URL that receives delivery status callbacks for the outbound reply. The\ncallback uses the [message status callback payload](/docs/apis/rest/webhooks/message-status-callback).\nCallbacks are delivered after the reply is queued, so a `queued` result does not confirm\nthat a callback reached this URL."
+                },
+                "message_type": {
+                    "$ref": "#/$defs/WhatsAppReplyMessageType",
+                    "examples": [
+                        "whatsapp_interactive_reply_button"
+                    ],
+                    "description": "The kind of WhatsApp message to send. A WhatsApp reply without `message_type` is sent as\n`whatsapp_media_text`."
+                },
+                "body": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/$defs/WhatsAppImageBody"
+                        },
+                        {
+                            "$ref": "#/$defs/WhatsAppVideoBody"
+                        },
+                        {
+                            "$ref": "#/$defs/WhatsAppAudioBody"
+                        },
+                        {
+                            "$ref": "#/$defs/WhatsAppStickerBody"
+                        },
+                        {
+                            "$ref": "#/$defs/WhatsAppDocumentBody"
+                        },
+                        {
+                            "$ref": "#/$defs/WhatsAppLocationBody"
+                        },
+                        {
+                            "$ref": "#/$defs/WhatsAppReactionBody"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/WhatsAppContact"
+                            }
+                        },
+                        {
+                            "$ref": "#/$defs/WhatsAppInteractiveBody"
+                        }
+                    ],
+                    "description": "Message content, in the shape that `message_type` calls for: text for\n`whatsapp_media_text`, an array of contacts for `whatsapp_media_contacts`, and an object\nfor every other type. These are the same shapes the\n[send message API](/docs/apis/rest/messages/create-message) accepts. A string is sent as\nis for text and parsed as JSON for the other types."
+                }
+            },
+            "required": [
+                "message_type",
+                "body"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "A WhatsApp media or interactive reply. Applies only when the inbound message is a WhatsApp\nmessage. Free-form WhatsApp messages can only be sent within 24 hours of the customer's last\ninbound message.",
+            "title": "WhatsApp reply with message type"
+        },
+        "ReplyWhatsAppTemplate": {
+            "type": "object",
+            "properties": {
+                "to": {
+                    "type": "string",
+                    "examples": [
+                        "+15551234567"
+                    ],
+                    "description": "Destination phone number in E.164 format. Defaults to the inbound message's `from`; on\nWhatsApp, a leading `+` is added to it. On RCS it must be a US number."
+                },
+                "from": {
+                    "type": "string",
+                    "examples": [
+                        "+15559876543"
+                    ],
+                    "description": "Sender of the reply. Defaults to the inbound message's `to`, so the reply comes from the\nnumber or agent that received the message. For SMS and MMS, a phone number or short code\nowned by your project with messaging capability. For WhatsApp, a WhatsApp number in your\nproject, prefixed with `whatsapp:`. For RCS, the ID of an RCS agent in your project."
+                },
+                "status_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/reply-status"
+                    ],
+                    "description": "HTTP or HTTPS URL that receives delivery status callbacks for the outbound reply. The\ncallback uses the [message status callback payload](/docs/apis/rest/webhooks/message-status-callback).\nCallbacks are delivered after the reply is queued, so a `queued` result does not confirm\nthat a callback reached this URL."
+                },
+                "template_id": {
+                    "type": "string",
+                    "examples": [
+                        "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    ],
+                    "description": "The template to send, by SignalWire template ID or Meta template ID. The template must be `approved`."
+                },
+                "header_template_parameters": {
+                    "anyOf": [
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "$ref": "#/$defs/RecordString"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ],
+                    "description": "Values for the placeholders in the template header. An array for positional parameters, an object for named parameters, or a media URL string for a document/media header."
+                },
+                "body_template_parameters": {
+                    "anyOf": [
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "$ref": "#/$defs/RecordString"
+                        }
+                    ],
+                    "description": "Values for the placeholders in the template body. An array for positional parameters or an object for named parameters."
+                },
+                "button_template_parameters": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Values for URL-button placeholders. Positional only (an array); named parameters are not supported for buttons."
+                }
+            },
+            "required": [
+                "template_id"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "A WhatsApp template reply. Applies only when the inbound message is a WhatsApp message. Use\na template to reply more than 24 hours after the customer's last inbound message. The\ntemplate must be approved and belong to the same WhatsApp Business Account as the `from`\nnumber. Do not set `body`.",
+            "title": "WhatsApp reply with template"
+        },
+        "ReplyRcsContent": {
+            "type": "object",
+            "properties": {
+                "to": {
+                    "type": "string",
+                    "examples": [
+                        "+15551234567"
+                    ],
+                    "description": "Destination phone number in E.164 format. Defaults to the inbound message's `from`; on\nWhatsApp, a leading `+` is added to it. On RCS it must be a US number."
+                },
+                "from": {
+                    "type": "string",
+                    "examples": [
+                        "+15559876543"
+                    ],
+                    "description": "Sender of the reply. Defaults to the inbound message's `to`, so the reply comes from the\nnumber or agent that received the message. For SMS and MMS, a phone number or short code\nowned by your project with messaging capability. For WhatsApp, a WhatsApp number in your\nproject, prefixed with `whatsapp:`. For RCS, the ID of an RCS agent in your project."
+                },
+                "status_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/reply-status"
+                    ],
+                    "description": "HTTP or HTTPS URL that receives delivery status callbacks for the outbound reply. The\ncallback uses the [message status callback payload](/docs/apis/rest/webhooks/message-status-callback).\nCallbacks are delivered after the reply is queued, so a `queued` result does not confirm\nthat a callback reached this URL."
+                },
+                "content": {
+                    "$ref": "#/$defs/RcsContent",
+                    "description": "Rich content to send: media, a location, text with suggestions, a card, or a carousel.\nThe same content types as the [send message API](/docs/apis/rest/messages/create-message)."
+                }
+            },
+            "required": [
+                "content"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "An RCS rich-content reply. Applies only when the inbound message is an RCS message. Set\n`content` or `body`, never both.",
+            "title": "RCS reply with rich content"
         },
         "ReplyInlineSwitch": {
             "type": "object",
@@ -664,10 +873,19 @@
                                     },
                                     {
                                         "$ref": "#/$defs/ReplyWithMedia"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/ReplyWhatsAppMessage"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/ReplyWhatsAppTemplate"
+                                    },
+                                    {
+                                        "$ref": "#/$defs/ReplyRcsContent"
                                     }
                                 ]
                             },
-                            "description": "Map of values to reply outcomes. Each entry's value is either a string (used as\nthe reply body, sent back to the original sender as SMS) or a full reply object\n(`body`, `media`, `to`, `from`, `status_url`). Use the object form when the\nbranch needs media, a different destination, or a per-branch `status_url`."
+                            "description": "Map of values to reply outcomes. Each entry's value is either a string (used as\nthe reply body, sent back to the original sender) or a full reply object, in any of\nthe object forms `reply` accepts. Use the object form when the branch needs media,\nrich content, a different destination, or a per-branch `status_url`."
                         },
                         "default": {
                             "anyOf": [
@@ -679,6 +897,15 @@
                                 },
                                 {
                                     "$ref": "#/$defs/ReplyWithMedia"
+                                },
+                                {
+                                    "$ref": "#/$defs/ReplyWhatsAppMessage"
+                                },
+                                {
+                                    "$ref": "#/$defs/ReplyWhatsAppTemplate"
+                                },
+                                {
+                                    "$ref": "#/$defs/ReplyRcsContent"
                                 }
                             ],
                             "description": "Fallback used when no `case` value matches. Same string-or-reply-object shape as a\n`case` value. If omitted and no case matches, the `reply` step fails and execution\nstops."
@@ -699,7 +926,7 @@
             "unevaluatedProperties": {
                 "not": {}
             },
-            "description": "Branch the reply on a variable value. The matched `case` (or `default`) supplies the\nreply contents in one of two forms:\n\n- **String** — sent back to the original sender as the SMS body. The simplest form,\n  good for choosing between canned text responses.\n- **Reply object** — a full `{ body, media, to, from, status_url }` block, so the\n  matched branch can attach media, override the destination, or set a per-branch\n  status callback. Any `%{…}` placeholders inside the object are expanded before\n  the reply is sent.\n\nWhen you use an inline `switch`, do not set `body`, `media`, `to`, `from`, or\n`status_url` directly on the same `reply` — put them inside each `case` value\n(or `default`) instead.",
+            "description": "Branch the reply on a variable value. The matched `case` (or `default`) supplies the\nreply contents in one of two forms:\n\n- **String** — sent back to the original sender as the reply body. The simplest form,\n  good for choosing between canned text responses.\n- **Reply object** — any object form of `reply`, such as `{ body, media, to, from,\n  status_url }`, or a WhatsApp or RCS reply object, so the matched branch can attach\n  media, send rich content, override the destination, or set a per-branch status\n  callback. Any `%{…}` placeholders inside the object are expanded before the reply is\n  sent.\n\nWhen you use an inline `switch`, do not set `body`, `media`, `to`, `from`, or\n`status_url` directly on the same `reply` — put them inside each `case` value\n(or `default`) instead.",
             "title": "Reply with inline switch"
         },
         "SwitchTransform": {
@@ -719,6 +946,888 @@
             "pattern": "^[\\$%]\\{.*\\}$",
             "description": "A messaging SWML variable reference, such as `%{params.max_retries}`. It is replaced with\nthe variable's value from the inbound message (`message.*`), the current `params`, or a\nvariable set by an earlier step before the method uses it.",
             "title": "Messaging variable reference"
+        },
+        "WhatsAppReplyMessageType": {
+            "anyOf": [
+                {
+                    "type": "string",
+                    "const": "whatsapp_media_text"
+                },
+                {
+                    "type": "string",
+                    "const": "whatsapp_media_contacts"
+                },
+                {
+                    "type": "string",
+                    "const": "whatsapp_media_audio"
+                },
+                {
+                    "type": "string",
+                    "const": "whatsapp_media_document"
+                },
+                {
+                    "type": "string",
+                    "const": "whatsapp_media_image"
+                },
+                {
+                    "type": "string",
+                    "const": "whatsapp_media_sticker"
+                },
+                {
+                    "type": "string",
+                    "const": "whatsapp_media_video"
+                },
+                {
+                    "type": "string",
+                    "const": "whatsapp_media_reaction"
+                },
+                {
+                    "type": "string",
+                    "const": "whatsapp_media_location"
+                },
+                {
+                    "type": "string",
+                    "const": "whatsapp_interactive_cta"
+                },
+                {
+                    "type": "string",
+                    "const": "whatsapp_interactive_flow"
+                },
+                {
+                    "type": "string",
+                    "const": "whatsapp_interactive_list"
+                },
+                {
+                    "type": "string",
+                    "const": "whatsapp_interactive_location_request_message"
+                },
+                {
+                    "type": "string",
+                    "const": "whatsapp_interactive_reply_button"
+                }
+            ],
+            "description": "The kind of WhatsApp message a reply sends. Each type sets the shape of `body`.",
+            "title": "WhatsApp message type"
+        },
+        "WhatsAppImageBody": {
+            "type": "object",
+            "properties": {
+                "link": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/promo-banner.png"
+                    ],
+                    "description": "A public HTTP/HTTPS URL to the image."
+                },
+                "id": {
+                    "type": "string",
+                    "description": "The ID of media previously uploaded to WhatsApp. Mutually exclusive with `link`."
+                },
+                "caption": {
+                    "type": "string",
+                    "examples": [
+                        "Check out our summer sale!"
+                    ],
+                    "description": "Optional caption shown with the image."
+                }
+            },
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Body for an image message. Provide either `link` or `id` (not both)."
+        },
+        "WhatsAppVideoBody": {
+            "type": "object",
+            "properties": {
+                "link": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/clip.mp4"
+                    ],
+                    "description": "A public HTTP/HTTPS URL to the video."
+                },
+                "id": {
+                    "type": "string",
+                    "description": "The ID of media previously uploaded to WhatsApp. Mutually exclusive with `link`."
+                },
+                "caption": {
+                    "type": "string",
+                    "description": "Optional caption shown with the video."
+                }
+            },
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Body for a video message. Provide either `link` or `id` (not both)."
+        },
+        "WhatsAppAudioBody": {
+            "type": "object",
+            "properties": {
+                "link": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/voice-note.mp3"
+                    ],
+                    "description": "A public HTTP/HTTPS URL to the audio file."
+                },
+                "id": {
+                    "type": "string",
+                    "description": "The ID of media previously uploaded to WhatsApp. Mutually exclusive with `link`."
+                }
+            },
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Body for an audio message. Provide either `link` or `id` (not both). Captions are not supported."
+        },
+        "WhatsAppStickerBody": {
+            "type": "object",
+            "properties": {
+                "link": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/sticker.webp"
+                    ],
+                    "description": "A public HTTP/HTTPS URL to the sticker file. Meta requires `.webp` format."
+                },
+                "id": {
+                    "type": "string",
+                    "description": "The ID of media previously uploaded to WhatsApp. Mutually exclusive with `link`."
+                }
+            },
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Body for a sticker message. Provide either `link` or `id` (not both). Captions are not supported."
+        },
+        "WhatsAppDocumentBody": {
+            "type": "object",
+            "properties": {
+                "link": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/invoice.pdf"
+                    ],
+                    "description": "A public HTTP/HTTPS URL to the document."
+                },
+                "id": {
+                    "type": "string",
+                    "description": "The ID of media previously uploaded to WhatsApp. Mutually exclusive with `link`."
+                },
+                "caption": {
+                    "type": "string",
+                    "description": "Optional caption shown with the document."
+                },
+                "filename": {
+                    "type": "string",
+                    "examples": [
+                        "invoice.pdf"
+                    ],
+                    "maxLength": 240,
+                    "description": "Optional filename shown to the recipient. Maximum 240 characters."
+                }
+            },
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Body for a document message. Provide either `link` or `id` (not both)."
+        },
+        "WhatsAppLocationBody": {
+            "type": "object",
+            "properties": {
+                "latitude": {
+                    "type": "number",
+                    "examples": [
+                        41.8781
+                    ],
+                    "minimum": -90,
+                    "maximum": 90,
+                    "description": "Latitude, between -90 and 90."
+                },
+                "longitude": {
+                    "type": "number",
+                    "examples": [
+                        -87.6298
+                    ],
+                    "minimum": -180,
+                    "maximum": 180,
+                    "description": "Longitude, between -180 and 180."
+                },
+                "name": {
+                    "type": "string",
+                    "examples": [
+                        "SignalWire HQ"
+                    ],
+                    "description": "The name of the location."
+                },
+                "address": {
+                    "type": "string",
+                    "examples": [
+                        "Chicago, IL, USA"
+                    ],
+                    "description": "The address of the location."
+                }
+            },
+            "required": [
+                "latitude",
+                "longitude",
+                "name",
+                "address"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Body for a location message. All fields are required."
+        },
+        "WhatsAppReactionBody": {
+            "type": "object",
+            "properties": {
+                "message_id": {
+                    "type": "string",
+                    "examples": [
+                        "wamid.HBgLMTU1NTEyMzQ1NjcVAgARGBI..."
+                    ],
+                    "description": "The ID of the message being reacted to."
+                },
+                "emoji": {
+                    "type": "string",
+                    "examples": [
+                        "👍"
+                    ],
+                    "description": "The emoji to react with."
+                }
+            },
+            "required": [
+                "message_id",
+                "emoji"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Body for a reaction message."
+        },
+        "WhatsAppContact": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "$ref": "#/$defs/WhatsAppContactName",
+                    "description": "The contact's name. `formatted_name` is required."
+                }
+            },
+            "required": [
+                "name"
+            ],
+            "unevaluatedProperties": {},
+            "description": "A shared contact card. Additional fields (phones, emails, org, etc.) follow the WhatsApp contacts message format."
+        },
+        "WhatsAppInteractiveBody": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "examples": [
+                        "button"
+                    ],
+                    "description": "The interactive type, e.g. `button`, `list`, `cta_url`, `location_request_message`, or `flow`."
+                },
+                "action": {
+                    "$ref": "#/$defs/RecordUnknown",
+                    "description": "The interactive action. Its contents depend on `type` (for example, a `buttons` array, list `sections`, or Flow parameters)."
+                },
+                "header": {
+                    "$ref": "#/$defs/RecordUnknown",
+                    "description": "Optional header object."
+                },
+                "body": {
+                    "$ref": "#/$defs/RecordUnknown",
+                    "description": "Optional body object, e.g. `{ \"text\": \"How can we help?\" }`."
+                },
+                "footer": {
+                    "$ref": "#/$defs/RecordUnknown",
+                    "description": "Optional footer object."
+                }
+            },
+            "required": [
+                "type",
+                "action"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Body for an interactive message. `type` and `action` are required; `header`, `body`, and `footer` are optional. The shape of `action` depends on the interactive type — buttons, list sections, a call-to-action URL, a location request, or a Flow — and follows the WhatsApp interactive message format."
+        },
+        "RecordString": {
+            "type": "object",
+            "properties": {},
+            "unevaluatedProperties": {
+                "type": "string"
+            }
+        },
+        "RcsContent": {
+            "anyOf": [
+                {
+                    "$ref": "#/$defs/RcsMediaContent"
+                },
+                {
+                    "$ref": "#/$defs/RcsLocationContent"
+                },
+                {
+                    "$ref": "#/$defs/RcsSuggestionsContent"
+                },
+                {
+                    "$ref": "#/$defs/RcsCardContent"
+                },
+                {
+                    "$ref": "#/$defs/RcsCarouselContent"
+                }
+            ],
+            "description": "Rich content for an RCS message. The `type` field determines the other fields."
+        },
+        "WhatsAppContactName": {
+            "type": "object",
+            "properties": {
+                "formatted_name": {
+                    "type": "string",
+                    "examples": [
+                        "Jane Smith"
+                    ],
+                    "description": "The contact's full formatted name. Required."
+                }
+            },
+            "required": [
+                "formatted_name"
+            ],
+            "unevaluatedProperties": {},
+            "description": "The name fields of a shared contact."
+        },
+        "RecordUnknown": {
+            "type": "object",
+            "properties": {},
+            "unevaluatedProperties": {}
+        },
+        "RcsMediaContent": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "media"
+                },
+                "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/images/promo.png"
+                    ],
+                    "description": "An HTTP or HTTPS URL to the file."
+                }
+            },
+            "required": [
+                "type",
+                "url"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Sends a media file."
+        },
+        "RcsLocationContent": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "location"
+                },
+                "title": {
+                    "type": "string",
+                    "examples": [
+                        "Downtown store"
+                    ],
+                    "description": "Name of the location."
+                },
+                "latitude": {
+                    "type": "number",
+                    "examples": [
+                        41.8781
+                    ],
+                    "minimum": -90,
+                    "maximum": 90,
+                    "description": "Latitude, between -90 and 90."
+                },
+                "longitude": {
+                    "type": "number",
+                    "examples": [
+                        -87.6298
+                    ],
+                    "minimum": -180,
+                    "maximum": 180,
+                    "description": "Longitude, between -180 and 180."
+                },
+                "label": {
+                    "type": "string",
+                    "examples": [
+                        "Open until 9pm"
+                    ],
+                    "description": "Optional label for the pin on the map."
+                }
+            },
+            "required": [
+                "type",
+                "title",
+                "latitude",
+                "longitude"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Sends a location pin."
+        },
+        "RcsSuggestionsContent": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "suggestions"
+                },
+                "text": {
+                    "type": "string",
+                    "examples": [
+                        "Can you make your appointment tomorrow at 2pm?"
+                    ],
+                    "maxLength": 3072,
+                    "description": "Message text. Maximum 3072 characters."
+                },
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/RcsAction"
+                    },
+                    "minItems": 1,
+                    "description": "Suggestions shown under the text. At least one."
+                }
+            },
+            "required": [
+                "type",
+                "text",
+                "actions"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Sends text with suggestions the recipient can tap."
+        },
+        "RcsCardContent": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "card"
+                },
+                "title": {
+                    "type": "string",
+                    "examples": [
+                        "Your order has shipped"
+                    ],
+                    "maxLength": 200,
+                    "description": "Card title. Maximum 200 characters."
+                },
+                "subtitle": {
+                    "type": "string",
+                    "examples": [
+                        "Order #12345 arrives Thursday."
+                    ],
+                    "maxLength": 2000,
+                    "description": "Card subtitle. Maximum 2000 characters."
+                },
+                "media": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/images/package.png"
+                    ],
+                    "description": "An HTTP or HTTPS URL to a media file shown on the card."
+                },
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/RcsAction"
+                    },
+                    "description": "Suggestions shown on the card."
+                }
+            },
+            "required": [
+                "type",
+                "title"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Sends a single rich card."
+        },
+        "RcsCarouselContent": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "carousel"
+                },
+                "cards": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/RcsCard"
+                    },
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "description": "The cards in the carousel. At least 1 and at most 10 cards."
+                },
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/RcsAction"
+                    },
+                    "maxItems": 3,
+                    "description": "Suggestions shown under the carousel. Maximum 3."
+                }
+            },
+            "required": [
+                "type",
+                "cards"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Sends a horizontally scrolling set of rich cards."
+        },
+        "RcsAction": {
+            "anyOf": [
+                {
+                    "$ref": "#/$defs/RcsReplyAction"
+                },
+                {
+                    "$ref": "#/$defs/RcsUrlAction"
+                },
+                {
+                    "$ref": "#/$defs/RcsCallAction"
+                },
+                {
+                    "$ref": "#/$defs/RcsLocationAction"
+                },
+                {
+                    "$ref": "#/$defs/RcsCalendarAction"
+                },
+                {
+                    "$ref": "#/$defs/RcsRequestLocationAction"
+                }
+            ],
+            "description": "A suggestion shown with a message. The `type` field determines the other fields."
+        },
+        "RcsCard": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "examples": [
+                        "Your order has shipped"
+                    ],
+                    "maxLength": 200,
+                    "description": "Card title. Maximum 200 characters."
+                },
+                "subtitle": {
+                    "type": "string",
+                    "examples": [
+                        "Order #12345 arrives Thursday."
+                    ],
+                    "maxLength": 2000,
+                    "description": "Card subtitle. Maximum 2000 characters."
+                },
+                "media": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/images/package.png"
+                    ],
+                    "description": "An HTTP or HTTPS URL to a media file shown on the card."
+                },
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/RcsAction"
+                    },
+                    "description": "Suggestions shown on the card."
+                }
+            },
+            "required": [
+                "title"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "A rich card: a title with optional subtitle, image, and suggestions."
+        },
+        "RcsReplyAction": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "reply"
+                },
+                "title": {
+                    "type": "string",
+                    "examples": [
+                        "Yes, confirm"
+                    ],
+                    "description": "Text shown on the suggestion."
+                }
+            },
+            "required": [
+                "type",
+                "title"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "A suggested reply. Tapping it sends a reply to your agent as an inbound message."
+        },
+        "RcsUrlAction": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "url"
+                },
+                "title": {
+                    "type": "string",
+                    "examples": [
+                        "Track your order"
+                    ],
+                    "description": "Text shown on the suggestion."
+                },
+                "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/orders/12345"
+                    ],
+                    "description": "The HTTP or HTTPS URL to open."
+                },
+                "webview": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "const": "browser"
+                        },
+                        {
+                            "type": "string",
+                            "const": "full"
+                        },
+                        {
+                            "type": "string",
+                            "const": "half"
+                        },
+                        {
+                            "type": "string",
+                            "const": "tall"
+                        }
+                    ],
+                    "examples": [
+                        "browser"
+                    ],
+                    "description": "How the URL opens: in the device's browser, or in a webview inside the messaging app at full, half, or tall height."
+                }
+            },
+            "required": [
+                "type",
+                "title",
+                "url"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Opens a URL on the recipient's device."
+        },
+        "RcsCallAction": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "call"
+                },
+                "title": {
+                    "type": "string",
+                    "examples": [
+                        "Call us"
+                    ],
+                    "description": "Text shown on the suggestion."
+                },
+                "phone": {
+                    "type": "string",
+                    "examples": [
+                        "+15557654321"
+                    ],
+                    "description": "The phone number to call."
+                }
+            },
+            "required": [
+                "type",
+                "title",
+                "phone"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Starts a phone call from the recipient's device."
+        },
+        "RcsLocationAction": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "location"
+                },
+                "title": {
+                    "type": "string",
+                    "examples": [
+                        "View store"
+                    ],
+                    "description": "Text shown on the suggestion."
+                },
+                "latitude": {
+                    "type": "number",
+                    "examples": [
+                        41.8781
+                    ],
+                    "minimum": -90,
+                    "maximum": 90,
+                    "description": "Latitude, between -90 and 90."
+                },
+                "longitude": {
+                    "type": "number",
+                    "examples": [
+                        -87.6298
+                    ],
+                    "minimum": -180,
+                    "maximum": 180,
+                    "description": "Longitude, between -180 and 180."
+                },
+                "label": {
+                    "type": "string",
+                    "examples": [
+                        "Downtown store"
+                    ],
+                    "description": "Optional label for the pin on the map."
+                }
+            },
+            "required": [
+                "type",
+                "title",
+                "latitude",
+                "longitude"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Shows a location on a map on the recipient's device."
+        },
+        "RcsCalendarAction": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "calendar"
+                },
+                "title": {
+                    "type": "string",
+                    "examples": [
+                        "Add to calendar"
+                    ],
+                    "description": "Text shown on the suggestion."
+                },
+                "event_title": {
+                    "type": "string",
+                    "examples": [
+                        "Dental appointment"
+                    ],
+                    "description": "Title of the calendar event."
+                },
+                "start": {
+                    "type": "string",
+                    "examples": [
+                        "2026-12-01T15:00:00Z"
+                    ],
+                    "description": "Start time of the event."
+                },
+                "end": {
+                    "type": "string",
+                    "examples": [
+                        "2026-12-01T15:30:00Z"
+                    ],
+                    "description": "End time of the event."
+                },
+                "description": {
+                    "type": "string",
+                    "examples": [
+                        "Bring your insurance card."
+                    ],
+                    "description": "Optional description of the calendar event."
+                },
+                "fallback_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/appointments/12345"
+                    ],
+                    "description": "An HTTP or HTTPS URL to open when the device can't create the calendar event."
+                }
+            },
+            "required": [
+                "type",
+                "title",
+                "event_title",
+                "start",
+                "end",
+                "fallback_url"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Adds an event to the recipient's calendar."
+        },
+        "RcsRequestLocationAction": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "request_location"
+                },
+                "title": {
+                    "type": "string",
+                    "examples": [
+                        "Share your location"
+                    ],
+                    "description": "Text shown on the suggestion."
+                },
+                "fallback_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/find-a-store"
+                    ],
+                    "description": "An HTTP or HTTPS URL to open when the device can't share its location."
+                }
+            },
+            "required": [
+                "type",
+                "title",
+                "fallback_url"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Asks the recipient to share their location. The location the recipient shares isn't delivered to your application."
         }
     }
 }
