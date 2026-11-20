@@ -98,7 +98,7 @@ model InboundMessageContext {
 
   @doc("""
     WhatsApp messages only. Context for the message:
-
+    
     - Text message: the string `default`.
     - Reply button tap or list selection: the ID of the WhatsApp message that carried the
       button or list, as a string, or null when WhatsApp doesn't provide it.
@@ -109,7 +109,7 @@ model InboundMessageContext {
       `context_id` and `context_from` when the location replies to an earlier message.
     - Contacts: an object with `type` and a `contacts` array, each entry holding
       `name_information` and `phones_information`.
-
+    
     Object fields WhatsApp doesn't provide are omitted.
     """)
   whatsapp_context?: string | Record<unknown> | null;

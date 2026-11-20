@@ -55,8 +55,9 @@ scalar ReplyText extends string;
 @summary("Reply with body")
 model ReplyWithBody is ReplyBase {
   @doc("""
-    Body text of the reply. Required if `media` is not present. When no media is attached,
-    the body must contain at least one non-whitespace character after variable expansion.
+    Body text of the reply. For SMS and MMS, required if `media` is not present. When no
+    media is attached, the body must contain at least one non-whitespace character after
+    variable expansion.
     
     Body length is checked before the reply is queued. The limit depends on the channel
     (SMS, MMS, WhatsApp, or RCS) and on the route SignalWire uses to send the reply, and length is counted
@@ -148,7 +149,8 @@ model ReplyWhatsAppMessage is ReplyBase {
     `whatsapp_media_text`, an array of contacts for `whatsapp_media_contacts`, and an object
     for every other type. These are the same shapes the
     [send message API](/docs/apis/rest/messages/create-message) accepts. A string is sent as
-    is for text and parsed as JSON for the other types.
+    is for text and parsed as JSON for the other types. An object or array body is counted
+    as its JSON text for the character limit, so a large interactive body can exceed it.
     """)
   body:
     | string
@@ -163,6 +165,12 @@ model ReplyWhatsAppMessage is ReplyBase {
     | SignalWireAPI.Message.WhatsAppInteractiveBody;
 }
 
+alias WhatsAppTemplateReplyKeys =
+  | "template_id"
+  | "header_template_parameters"
+  | "body_template_parameters"
+  | "button_template_parameters";
+
 // WhatsApp only. Template fields are validated exactly as for the send message API; the reply
 // additionally requires the template to belong to the WhatsApp Business Account of `from`.
 @summary("WhatsApp reply with template")
@@ -175,7 +183,7 @@ model ReplyWhatsAppMessage is ReplyBase {
 model ReplyWhatsAppTemplate is ReplyBase {
   ...PickProperties<
     SignalWireAPI.Message.WhatsAppTemplateMessageRequest,
-    "template_id" | "header_template_parameters" | "body_template_parameters" | "button_template_parameters"
+    WhatsAppTemplateReplyKeys
   >;
 }
 
