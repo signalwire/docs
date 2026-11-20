@@ -51771,11 +51771,15 @@ components:
             - $ref: '#/components/schemas/SWML.Messaging.ReplyText'
             - $ref: '#/components/schemas/SWML.Messaging.ReplyWithBody'
             - $ref: '#/components/schemas/SWML.Messaging.ReplyWithMedia'
+            - $ref: '#/components/schemas/SWML.Messaging.ReplyWhatsAppMessage'
+            - $ref: '#/components/schemas/SWML.Messaging.ReplyWhatsAppTemplate'
+            - $ref: '#/components/schemas/SWML.Messaging.ReplyRcsContent'
             - $ref: '#/components/schemas/SWML.Messaging.ReplyInlineSwitch'
           description: |-
-            Create and send an outbound message in response to the inbound message. Accepts one of:
-            a string (used as the message body), an object with body, media, and routing fields, or
-            an inline `switch` that branches the reply on a variable value.
+            Create and send an outbound message in response to the inbound message. The reply goes
+            out on the inbound message's channel: SMS or MMS, WhatsApp, or RCS. Accepts one of: a
+            string (used as the message body), an object with content and routing fields, or an
+            inline `switch` that branches the reply on a variable value.
 
             `reply` does not end execution — subsequent steps in the section continue to run after
             the reply is queued.
@@ -51809,16 +51813,22 @@ components:
                   - $ref: '#/components/schemas/SWML.Messaging.ReplyText'
                   - $ref: '#/components/schemas/SWML.Messaging.ReplyWithBody'
                   - $ref: '#/components/schemas/SWML.Messaging.ReplyWithMedia'
+                  - $ref: '#/components/schemas/SWML.Messaging.ReplyWhatsAppMessage'
+                  - $ref: '#/components/schemas/SWML.Messaging.ReplyWhatsAppTemplate'
+                  - $ref: '#/components/schemas/SWML.Messaging.ReplyRcsContent'
               description: |-
                 Map of values to reply outcomes. Each entry's value is either a string (used as
-                the reply body, sent back to the original sender as SMS) or a full reply object
-                (`body`, `media`, `to`, `from`, `status_url`). Use the object form when the
-                branch needs media, a different destination, or a per-branch `status_url`.
+                the reply body, sent back to the original sender) or a full reply object, in any of
+                the object forms `reply` accepts. Use the object form when the branch needs media,
+                rich content, a different destination, or a per-branch `status_url`.
             default:
               anyOf:
                 - $ref: '#/components/schemas/SWML.Messaging.ReplyText'
                 - $ref: '#/components/schemas/SWML.Messaging.ReplyWithBody'
                 - $ref: '#/components/schemas/SWML.Messaging.ReplyWithMedia'
+                - $ref: '#/components/schemas/SWML.Messaging.ReplyWhatsAppMessage'
+                - $ref: '#/components/schemas/SWML.Messaging.ReplyWhatsAppTemplate'
+                - $ref: '#/components/schemas/SWML.Messaging.ReplyRcsContent'
               description: |-
                 Fallback used when no `case` value matches. Same string-or-reply-object shape as a
                 `case` value. If omitted and no case matches, the `reply` step fails and execution
@@ -51834,17 +51844,61 @@ components:
         Branch the reply on a variable value. The matched `case` (or `default`) supplies the
         reply contents in one of two forms:
 
-        - **String** — sent back to the original sender as the SMS body. The simplest form,
+        - **String** — sent back to the original sender as the reply body. The simplest form,
           good for choosing between canned text responses.
-        - **Reply object** — a full `{ body, media, to, from, status_url }` block, so the
-          matched branch can attach media, override the destination, or set a per-branch
-          status callback. Any `%{…}` placeholders inside the object are expanded before
-          the reply is sent.
+        - **Reply object** — any object form of `reply`, such as `{ body, media, to, from,
+          status_url }`, or a WhatsApp or RCS reply object, so the matched branch can attach
+          media, send rich content, override the destination, or set a per-branch status
+          callback. Any `%{…}` placeholders inside the object are expanded before the reply is
+          sent.
 
         When you use an inline `switch`, do not set `body`, `media`, `to`, `from`, or
         `status_url` directly on the same `reply` — put them inside each `case` value
         (or `default`) instead.
       title: Reply with inline switch
+    SWML.Messaging.ReplyRcsContent:
+      type: object
+      required:
+        - content
+      properties:
+        to:
+          type: string
+          description: |-
+            Destination phone number in E.164 format. Defaults to the inbound message's `from`; on
+            WhatsApp, a leading `+` is added to it. On RCS it must be a US number.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: |-
+            Sender of the reply. Defaults to the inbound message's `to`, so the reply comes from the
+            number or agent that received the message. For SMS and MMS, a phone number or short code
+            owned by your project with messaging capability. For WhatsApp, a WhatsApp number in your
+            project, prefixed with `whatsapp:`. For RCS, the ID of an RCS agent in your project.
+          examples:
+            - '+15559876543'
+        status_url:
+          type: string
+          format: uri
+          description: |-
+            HTTP or HTTPS URL that receives delivery status callbacks for the outbound reply. The
+            callback uses the [message status callback payload](/docs/apis/rest/webhooks/message-status-callback).
+            Callbacks are delivered after the reply is queued, so a `queued` result does not confirm
+            that a callback reached this URL.
+          examples:
+            - https://example.com/reply-status
+        content:
+          allOf:
+            - $ref: '#/components/schemas/Message.RcsContent'
+          description: |-
+            Rich content to send: media, a location, text with suggestions, a card, or a carousel.
+            The same content types as the [send message API](/docs/apis/rest/messages/create-message).
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        An RCS rich-content reply. Applies only when the inbound message is an RCS message. Set
+        `content` or `body`, never both.
+      title: RCS reply with rich content
     SWML.Messaging.ReplyText:
       type: string
       minLength: 1
@@ -51853,11 +51907,147 @@ components:
         `switch`. After variable expansion it must contain at least one non-whitespace
         character.
 
-        Body length is checked before the reply is queued. The limit depends on whether the
-        reply is SMS or MMS and on the route SignalWire uses to send it, and length is counted
+        Body length is checked before the reply is queued. The limit depends on the channel
+        (SMS, MMS, WhatsApp, or RCS) and on the route SignalWire uses to send the reply, and length is counted
         according to the message encoding. A body over the limit fails the reply with a
         `swml_reply_character_limit_exceeded` error whose message states the limit.
       title: Reply body text
+    SWML.Messaging.ReplyWhatsAppMessage:
+      type: object
+      required:
+        - message_type
+        - body
+      properties:
+        to:
+          type: string
+          description: |-
+            Destination phone number in E.164 format. Defaults to the inbound message's `from`; on
+            WhatsApp, a leading `+` is added to it. On RCS it must be a US number.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: |-
+            Sender of the reply. Defaults to the inbound message's `to`, so the reply comes from the
+            number or agent that received the message. For SMS and MMS, a phone number or short code
+            owned by your project with messaging capability. For WhatsApp, a WhatsApp number in your
+            project, prefixed with `whatsapp:`. For RCS, the ID of an RCS agent in your project.
+          examples:
+            - '+15559876543'
+        status_url:
+          type: string
+          format: uri
+          description: |-
+            HTTP or HTTPS URL that receives delivery status callbacks for the outbound reply. The
+            callback uses the [message status callback payload](/docs/apis/rest/webhooks/message-status-callback).
+            Callbacks are delivered after the reply is queued, so a `queued` result does not confirm
+            that a callback reached this URL.
+          examples:
+            - https://example.com/reply-status
+        message_type:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Messaging.WhatsAppReplyMessageType'
+          description: |-
+            The kind of WhatsApp message to send. A WhatsApp reply without `message_type` is sent as
+            `whatsapp_media_text`.
+          examples:
+            - whatsapp_interactive_reply_button
+        body:
+          anyOf:
+            - type: string
+            - $ref: '#/components/schemas/Message.WhatsAppImageBody'
+            - $ref: '#/components/schemas/Message.WhatsAppVideoBody'
+            - $ref: '#/components/schemas/Message.WhatsAppAudioBody'
+            - $ref: '#/components/schemas/Message.WhatsAppStickerBody'
+            - $ref: '#/components/schemas/Message.WhatsAppDocumentBody'
+            - $ref: '#/components/schemas/Message.WhatsAppLocationBody'
+            - $ref: '#/components/schemas/Message.WhatsAppReactionBody'
+            - type: array
+              items:
+                $ref: '#/components/schemas/Message.WhatsAppContact'
+            - $ref: '#/components/schemas/Message.WhatsAppInteractiveBody'
+          description: |-
+            Message content, in the shape that `message_type` calls for: text for
+            `whatsapp_media_text`, an array of contacts for `whatsapp_media_contacts`, and an object
+            for every other type. These are the same shapes the
+            [send message API](/docs/apis/rest/messages/create-message) accepts. A string is sent as
+            is for text and parsed as JSON for the other types. An object or array body is counted
+            as its JSON text for the character limit, so a large interactive body can exceed it.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        A WhatsApp media or interactive reply. Applies only when the inbound message is a WhatsApp
+        message. Free-form WhatsApp messages can only be sent within 24 hours of the customer's last
+        inbound message.
+      title: WhatsApp reply with message type
+    SWML.Messaging.ReplyWhatsAppTemplate:
+      type: object
+      required:
+        - template_id
+      properties:
+        to:
+          type: string
+          description: |-
+            Destination phone number in E.164 format. Defaults to the inbound message's `from`; on
+            WhatsApp, a leading `+` is added to it. On RCS it must be a US number.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: |-
+            Sender of the reply. Defaults to the inbound message's `to`, so the reply comes from the
+            number or agent that received the message. For SMS and MMS, a phone number or short code
+            owned by your project with messaging capability. For WhatsApp, a WhatsApp number in your
+            project, prefixed with `whatsapp:`. For RCS, the ID of an RCS agent in your project.
+          examples:
+            - '+15559876543'
+        status_url:
+          type: string
+          format: uri
+          description: |-
+            HTTP or HTTPS URL that receives delivery status callbacks for the outbound reply. The
+            callback uses the [message status callback payload](/docs/apis/rest/webhooks/message-status-callback).
+            Callbacks are delivered after the reply is queued, so a `queued` result does not confirm
+            that a callback reached this URL.
+          examples:
+            - https://example.com/reply-status
+        template_id:
+          type: string
+          description: The template to send, by SignalWire template ID or Meta template ID. The template must be `approved`.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        header_template_parameters:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - type: object
+              unevaluatedProperties:
+                type: string
+            - type: string
+          description: Values for the placeholders in the template header. An array for positional parameters, an object for named parameters, or a media URL string for a document/media header.
+        body_template_parameters:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - type: object
+              unevaluatedProperties:
+                type: string
+          description: Values for the placeholders in the template body. An array for positional parameters or an object for named parameters.
+        button_template_parameters:
+          type: array
+          items:
+            type: string
+          description: Values for URL-button placeholders. Positional only (an array); named parameters are not supported for buttons.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        A WhatsApp template reply. Applies only when the inbound message is a WhatsApp message. Use
+        a template to reply more than 24 hours after the customer's last inbound message. The
+        template must be approved and belong to the same WhatsApp Business Account as the `from`
+        number. Do not set `body`.
+      title: WhatsApp reply with template
     SWML.Messaging.ReplyWithBody:
       type: object
       required:
@@ -51865,12 +52055,18 @@ components:
       properties:
         to:
           type: string
-          description: Destination phone number in E.164 format. Defaults to the inbound message's `from`.
+          description: |-
+            Destination phone number in E.164 format. Defaults to the inbound message's `from`; on
+            WhatsApp, a leading `+` is added to it. On RCS it must be a US number.
           examples:
             - '+15551234567'
         from:
           type: string
-          description: Sending phone number or short code. Must be owned by your project and have messaging capability. Defaults to the inbound message's `to`.
+          description: |-
+            Sender of the reply. Defaults to the inbound message's `to`, so the reply comes from the
+            number or agent that received the message. For SMS and MMS, a phone number or short code
+            owned by your project with messaging capability. For WhatsApp, a WhatsApp number in your
+            project, prefixed with `whatsapp:`. For RCS, the ID of an RCS agent in your project.
           examples:
             - '+15559876543'
         status_url:
@@ -51887,11 +52083,12 @@ components:
           type: string
           minLength: 1
           description: |-
-            Body text of the reply. Required if `media` is not present. When no media is attached,
-            the body must contain at least one non-whitespace character after variable expansion.
+            Body text of the reply. For SMS and MMS, required if `media` is not present. When no
+            media is attached, the body must contain at least one non-whitespace character after
+            variable expansion.
 
-            Body length is checked before the reply is queued. The limit depends on whether the
-            reply is SMS or MMS and on the route SignalWire uses to send it, and length is counted
+            Body length is checked before the reply is queued. The limit depends on the channel
+            (SMS, MMS, WhatsApp, or RCS) and on the route SignalWire uses to send the reply, and length is counted
             according to the message encoding. A body over the limit fails the reply with a
             `swml_reply_character_limit_exceeded` error whose message states the limit.
           examples:
@@ -51906,6 +52103,9 @@ components:
             Array of HTTP or HTTPS media URLs to attach. Converts the message to MMS. Maximum 8
             attachments. Media is fetched after the reply is queued, so a `queued` result does not
             confirm that the media could be retrieved.
+
+            SMS and MMS only. A WhatsApp reply ignores `media`, and an RCS reply that sets it fails
+            with `rcs_media_not_supported`.
           examples:
             - - https://example.com/image.jpg
       unevaluatedProperties:
@@ -51918,12 +52118,18 @@ components:
       properties:
         to:
           type: string
-          description: Destination phone number in E.164 format. Defaults to the inbound message's `from`.
+          description: |-
+            Destination phone number in E.164 format. Defaults to the inbound message's `from`; on
+            WhatsApp, a leading `+` is added to it. On RCS it must be a US number.
           examples:
             - '+15551234567'
         from:
           type: string
-          description: Sending phone number or short code. Must be owned by your project and have messaging capability. Defaults to the inbound message's `to`.
+          description: |-
+            Sender of the reply. Defaults to the inbound message's `to`, so the reply comes from the
+            number or agent that received the message. For SMS and MMS, a phone number or short code
+            owned by your project with messaging capability. For WhatsApp, a WhatsApp number in your
+            project, prefixed with `whatsapp:`. For RCS, the ID of an RCS agent in your project.
           examples:
             - '+15559876543'
         status_url:
@@ -51948,6 +52154,9 @@ components:
             `body` is not present, and must then contain at least one URL. Maximum 8 attachments.
             Media is fetched after the reply is queued, so a `queued` result does not confirm that
             the media could be retrieved.
+
+            SMS and MMS only. A WhatsApp reply ignores `media`, so it needs a `body` or `template_id`
+            instead, and an RCS reply that sets it fails with `rcs_media_not_supported`.
           examples:
             - - https://example.com/image.jpg
         body:
@@ -52104,7 +52313,7 @@ components:
       unevaluatedProperties:
         not: {}
       description: |-
-        A SWML document for handling inbound SMS or MMS messages. The document has a top-level
+        A SWML document for handling inbound SMS, MMS, WhatsApp, or RCS messages. The document has a top-level
         `sections` map; execution starts at `sections.main`, and each section is an ordered array of
         methods. Additional sections can be invoked via `execute`, `transfer`, or `goto`.
 
@@ -52272,6 +52481,25 @@ components:
       unevaluatedProperties:
         not: {}
       title: transfer Method
+    SWML.Messaging.WhatsAppReplyMessageType:
+      type: string
+      enum:
+        - whatsapp_media_text
+        - whatsapp_media_contacts
+        - whatsapp_media_audio
+        - whatsapp_media_document
+        - whatsapp_media_image
+        - whatsapp_media_sticker
+        - whatsapp_media_video
+        - whatsapp_media_reaction
+        - whatsapp_media_location
+        - whatsapp_interactive_cta
+        - whatsapp_interactive_flow
+        - whatsapp_interactive_list
+        - whatsapp_interactive_location_request_message
+        - whatsapp_interactive_reply_button
+      description: The kind of WhatsApp message a reply sends. Each type sets the shape of `body`.
+      title: WhatsApp message type
     SWMLDocument:
       anyOf:
         - $ref: '#/components/schemas/SWML.Calling.SWMLObject'
@@ -67617,37 +67845,49 @@ components:
           enum:
             - sms
             - mms
-          description: The kind of message.
+            - whatsapp
+            - rcs
+          description: The channel the message arrived on.
           examples:
             - sms
         from:
           type: string
-          description: Phone number that sent the message.
+          description: |-
+            Sender of the message. For SMS, MMS, and RCS, a phone number in E.164 format. For WhatsApp,
+            the sender's phone number as WhatsApp reports it: country code and number, with no leading
+            `+`.
           examples:
             - '+15551231234'
         to:
           type: string
-          description: Phone number that received the message.
+          description: |-
+            Recipient of the message. For SMS and MMS, your phone number in E.164 format. For WhatsApp,
+            your WhatsApp number, prefixed with `whatsapp:`. For RCS, the ID of your RCS agent.
           examples:
             - '+15553214321'
         body:
           anyOf:
             - type: string
             - type: 'null'
-          description: The text content of the message. Null on media-only MMS where the carrier did not include a text body.
+          description: |-
+            The text content of the message. Null on media-only MMS where the carrier did not include a
+            text body. For a WhatsApp reply button or list selection, the ID of the button or list row
+            the customer chose. Null for WhatsApp media, location, and contact messages.
           examples:
             - Hello, I need help
         media:
           type: array
           items:
             $ref: '#/components/schemas/Webhooks.Messaging.InboundMessageMediaItem'
-          description: MMS media attachments. Empty when the message has no attachments.
+          description: |-
+            Media attachments. Empty when the message has no attachments. Always empty for WhatsApp:
+            WhatsApp media details are in `whatsapp_context`.
           examples:
             - []
         segments:
           type: integer
           format: int32
-          description: Number of SMS segments the message body was split into.
+          description: Number of segments the message body was split into. Always `1` for WhatsApp.
           examples:
             - 1
         timestamp:
@@ -67656,6 +67896,48 @@ components:
           description: Timestamp in UTC (ISO 8601, seconds precision) of when the message was received.
           examples:
             - '2024-01-15T10:30:00Z'
+        message_type:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: |-
+            WhatsApp and RCS messages only. For WhatsApp, the kind of message the customer sent:
+            `whatsapp_image`, `whatsapp_video`, `whatsapp_audio`, `whatsapp_document`,
+            `whatsapp_sticker`, `whatsapp_location`, `whatsapp_contacts`,
+            `whatsapp_interactive_button` (a reply button tap), or `whatsapp_interactive_list` (a list
+            selection). Null for a text message. Always null for RCS.
+        tag:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: |-
+            WhatsApp messages only. For a reply button tap or list selection, the title of the button
+            or list row the customer chose. Null otherwise.
+        whatsapp_context:
+          anyOf:
+            - type: string
+            - type: object
+              unevaluatedProperties: {}
+            - type: 'null'
+          description: |-
+            WhatsApp messages only. Context for the message:
+
+            - Text message: the string `default`.
+            - Reply button tap or list selection: the ID of the WhatsApp message that carried the
+              button or list, as a string, or null when WhatsApp doesn't provide it.
+            - Image, video, audio, document, or sticker: an object with `type`, `media_id`,
+              `mime_type`, `sha256`, and `url`. A document also has `filename`, and a sticker has
+              `animated`.
+            - Location: an object with `type`, `latitude`, `longitude`, `name`, and `address`, plus
+              `context_id` and `context_from` when the location replies to an earlier message.
+            - Contacts: an object with `type` and a `contacts` array, each entry holding
+              `name_information` and `phones_information`.
+
+            Object fields WhatsApp doesn't provide are omitted.
+        agent_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: RCS messages only. The ID of the RCS agent that received the message. Same as `to`.
       unevaluatedProperties:
         not: {}
       description: Information about the inbound message that triggered the SWML document fetch.
@@ -67686,7 +67968,7 @@ components:
             - 48213
       unevaluatedProperties:
         not: {}
-      description: A single MMS media attachment included on an inbound message.
+      description: A single media attachment included on an inbound message.
       title: Inbound message media item
     Webhooks.Messaging.InboundMessageWebhookPayload:
       type: object
@@ -68851,7 +69133,7 @@ webhooks:
       operationId: inbound_message_webhook
       summary: SWML inbound message webhook
       description: |-
-        Payload sent by SignalWire to a SWML messaging webhook URL when an inbound SMS or MMS message arrives on a phone number configured with a SWML message handler. The same payload shape is also used when the SWML messaging `transfer` method targets an external URL — in that case, `params` carries the values supplied to the `transfer` step and `vars` carries the propagated runtime variables from the originating document.
+        Payload sent by SignalWire to a SWML messaging webhook URL when an inbound SMS, MMS, WhatsApp, or RCS message arrives on a phone number, WhatsApp number, or RCS agent configured with a SWML message handler. The same payload shape is also used when the SWML messaging `transfer` method targets an external URL — in that case, `params` carries the values supplied to the `transfer` step and `vars` carries the propagated runtime variables from the originating document.
 
         The webhook URL is expected to respond with the SWML document to execute for the inbound message.
       parameters: []
