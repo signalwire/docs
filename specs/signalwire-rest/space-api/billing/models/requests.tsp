@@ -97,12 +97,12 @@ model UsageQuery {
 
 @doc("Query parameters for payment history.")
 model PaymentHistoryQuery {
-  @doc("Return only adjustments recorded after this date (`YYYY-MM-DD`) or ISO 8601 timestamp.")
+  @doc("Return only adjustments recorded at or after this time. Accepts a date (`YYYY-MM-DD`), an ISO 8601 timestamp, or Unix time in seconds. A date is read as midnight UTC at the start of that day, so adjustments from that day are included. A timestamp without `Z` or a UTC offset is read as UTC.")
   @query
   @example("2026-07-01")
   created_after?: string;
 
-  @doc("Return only adjustments recorded before this date (`YYYY-MM-DD`) or ISO 8601 timestamp.")
+  @doc("Return only adjustments recorded before this time; an adjustment recorded at exactly this time is left out. Accepts the same formats as `created_after`. A date is read as midnight UTC at the start of that day, so adjustments from that day are left out.")
   @query
   @example("2026-08-01")
   created_before?: string;

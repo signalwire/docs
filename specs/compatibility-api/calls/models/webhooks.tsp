@@ -41,7 +41,7 @@ model VoiceStatusCallbackPayload {
 
   @doc("""
     The estimated Mean Opinion Score (MOS) for inbound audio quality, based on the share of incoming audio packets that arrived without loss or delay.
-    It ranges from about 1 to 4.5, the score for a call with no lost or late packets.
+    It ranges from about 1 to 4.5. 4.5 is the best score, and a call that received no audio packets also scores 4.5.
     Sent with up to two decimal places, such as `4.37`. A whole-number score is sent with one decimal place, such as `4.0`.
     """)
   @example(4.37)

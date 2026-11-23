@@ -23,6 +23,8 @@ namespace SignalWireAPI.Video.Logs {
     @doc("""
       Lists historical Video API activity in the project for usage review and troubleshooting. This collection does not manage live Rooms or Conferences; use [Get video log](/docs/apis/rest/video-logs/get-log) when you already have a log ID.
 
+      ${logListBehavior}
+
       ${tokenPermissions<"_Video_">}
       """)
     list(...ListLogsRequest):

@@ -102,7 +102,7 @@ model RelayVoiceLog {
 
 @doc("Audio quality statistics for a Compatibility API call. Each field is null when the call has no measurement for it, such as a call that never carried audio.")
 model CallQualityMetrics {
-  @doc("The estimated Mean Opinion Score (MOS) for inbound audio quality, based on the share of incoming audio packets that arrived without loss or delay. It ranges from about 1 to 4.5, the score for a call with no lost or late packets. Returned as a decimal string.")
+  @doc("The estimated Mean Opinion Score (MOS) for inbound audio quality, based on the share of incoming audio packets that arrived without loss or delay. It ranges from about 1 to 4.5. 4.5 is the best score, and a call that received no audio packets also scores 4.5. Returned as a decimal string.")
   @example("4.5")
   audio_in_mos: string | null;
 
