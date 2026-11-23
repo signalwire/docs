@@ -1,0 +1,66 @@
+---
+title: "on_call_start"
+slug: reference/python/agents/agent-base/on-call-start
+description: Register a handler that runs when the call starts, before the AI's first turn.
+max-toc-depth: 3
+---
+
+[on-call-end]: /docs/server-sdks/reference/python/agents/agent-base/on-call-end
+[functionresult]: /docs/server-sdks/reference/python/agents/function-result
+[swml-functions]: /docs/swml/reference/calling/ai/swaig/functions
+
+Register a handler that runs when the call starts, before the AI's first turn. Usable
+as a decorator or called directly. Handlers run in registration order. This is the
+counterpart of [`on_call_end()`][on-call-end].
+
+Under the hood this registers the platform's reserved `startup_hook`
+[function][swml-functions], which the platform calls once after the call is answered
+and never offers to the model. The platform waits for the hook before the AI starts,
+so a slow handler delays the greeting. Keep handlers short.
+
+A handler can return a [`FunctionResult`][functionresult] or `None`. The platform
+uses the combined reply of all handlers:
+
+- The actions run at once, in registration order across handlers, such as
+  `update_global_data()` to give the call data before the conversation starts.
+- The response text is added to the conversation as a system message that the model
+  reads before it speaks. The texts of several handlers are joined, one per line.
+  Only a plain string response is used. Realtime models run the actions and drop the
+  text.
+
+Exceptions are caught and logged rather than raised, and that handler's result is
+dropped, so a failing handler can't stop the call from starting or the other
+handlers from running.
+
+## Parameters
+
+<ParamField path="handler" type="Callable[[dict[str, Any]], FunctionResult | None]" required={true} toc={true}>
+  Called as `handler(raw_data)`, where `raw_data` is the SWAIG request, including
+  `call_id`, `global_data`, and the caller's details.
+</ParamField>
+
+## Returns
+
+The handler, unchanged, so the method works as a decorator.
+
+## Example
+
+```python {6-9}
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="vip", route="/vip")
+agent.prompt_add_section("Role", "You greet callers.")
+
+@agent.on_call_start
+def load_caller(raw_data):
+    return (FunctionResult("The caller is a gold member.")
+            .update_global_data({"tier": "gold"}))
+
+agent.serve()
+```
+
+The hook's reply:
+
+```json
+{"response": "The caller is a gold member.", "action": [{"set_global_data": {"tier": "gold"}}]}
+```

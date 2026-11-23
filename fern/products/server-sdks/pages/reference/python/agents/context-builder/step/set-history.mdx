@@ -7,11 +7,14 @@ max-toc-depth: 3
 
 [ref-step]: /docs/server-sdks/reference/python/agents/context-builder/step
 [ref-context-set-history]: /docs/server-sdks/reference/python/agents/context-builder/context/set-history
+[ref-set-end]: /docs/server-sdks/reference/python/agents/context-builder/step/set-end
+[ref-reset]: /docs/server-sdks/reference/python/agents/context-builder/step/set-reset-system-prompt
 
-Control what the model still sees when this step is entered. The mode applies at
-the moment of entry and governs everything that came before, including the turn
-that triggered the transition. It doesn't affect this step's own turns, which
-accumulate fresh. Nothing is deleted: the call log keeps every message.
+Control what the model still sees when this step is entered. The mode applies
+when the step's instructions are injected, before the next request to the
+model, and governs everything that came before. It doesn't affect this step's
+own turns, which accumulate fresh. Nothing is deleted: the call log keeps every
+message.
 
 Overrides the context-level default set with
 [`Context.set_history()`][ref-context-set-history].
@@ -19,16 +22,51 @@ Overrides the context-level default set with
 ## Parameters
 
 <ParamField path="history" type="str" required={true} toc={true}>
-  One of three modes.
+  One of five modes.
 
   - `"keep"` -- clear nothing. Every prior step's instructions and dialogue stay
     visible to the model.
   - `"default"` -- hide the prior step instructions, keep the user and assistant
     dialogue. This is the behavior when unset.
+  - `"spoken"` -- keep the conversation, drop the work. The prior step
+    instructions are cleared, and every earlier tool call, tool result and
+    turn-scoped system note (tool prompts, injected messages, a gather's
+    preamble) leaves the model's context for the rest of the call. Every spoken
+    turn stays: the caller's, the agent's replies, and `say` actions. An agent
+    turn that spoke and also called a tool keeps its words.
   - `"hide"` -- hide the prior instructions and pull the prior dialogue out of the
-    model's context. Pair it with a `${step_history.*}` reference in this step's
-    text to choose exactly what comes back.
+    model's context for the rest of the call. Pair it with a `${step_history.*}`
+    reference in this step's text to choose exactly what comes back.
+  - `"isolate"` -- like `"hide"`, but only while the agent is in this step. When
+    the agent leaves it, the earlier dialogue comes back and this step's own
+    turns stay. The earlier instructions stay cleared, and anything an earlier
+    `"hide"` step hid stays hidden. Entering the step again isolates it again.
+
+  A platform release that doesn't support `"spoken"` or `"isolate"` treats it as
+  `"default"`.
 </ParamField>
+
+| Mode | Earlier step instructions | Earlier tool calls and results | Earlier spoken turns |
+|---|---|---|---|
+| `keep` | Kept | Kept | Kept |
+| `default` | Cleared | Kept | Kept |
+| `spoken` | Cleared | Gone for the rest of the call | Kept |
+| `hide` | Cleared | Gone for the rest of the call | Gone for the rest of the call |
+| `isolate` | Cleared | Gone while in the step | Gone while in the step |
+
+`"hide"`, `"isolate"` and `"spoken"` keep the exchange that entered the step as
+the step's start: the tool call whose action changed the step, its result, its
+notes and its `say`, plus any caller words stored before the step was injected.
+How the step was entered changes what that exchange is:
+
+- A change from a `post_process` result runs after the model's reply, so the
+  step keeps that call and everything stored from it on, the reply included.
+- A change made with `next_step` keeps nothing.
+- An [end step][ref-set-end], or a step with a [reset][ref-reset], takes no
+  history pass.
+
+A consolidation summary stays under `"hide"` and `"spoken"`. `"isolate"` hides
+it while the step lasts. Semantic gates judge the same turns the model sees.
 
 ## Returns
 
@@ -36,9 +74,46 @@ Overrides the context-level default set with
 
 ## Raises
 
-`ValueError` if `history` is not one of the three modes.
+`ValueError` if `history` is not one of the five modes.
 
-## Example
+## Examples
+
+### Confirm step that sees only its own turns
+
+Use `"isolate"` on a confirm step, so the read-back is all the model has.
+
+```python {8}
+from signalwire import AgentBase
+
+agent = AgentBase(name="orders", route="/orders")
+agent.prompt_add_section("Role", "You take orders.")
+
+ctx = agent.define_contexts().add_context("default")
+ctx.add_step("take").set_text("Take the caller's order.")
+ctx.add_step("confirm").set_text("Read the order back.").set_history("isolate")
+
+agent.serve()
+```
+
+### Stage boundary that keeps the conversation
+
+Use `"spoken"` where the caller's earlier requests must stay but the finished
+stage's tool results shouldn't.
+
+```python {8}
+from signalwire import AgentBase
+
+agent = AgentBase(name="billing", route="/billing")
+agent.prompt_add_section("Role", "You help with billing.")
+
+ctx = agent.define_contexts().add_context("default")
+ctx.add_step("lookup").set_text("Find the caller's invoice.")
+ctx.add_step("wrap").set_text("Thank the caller.").set_history("spoken").set_end(True)
+
+agent.serve()
+```
+
+### Choose what comes back with step history
 
 ```python {8-10}
 from signalwire import AgentBase

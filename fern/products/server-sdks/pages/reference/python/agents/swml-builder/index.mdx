@@ -26,8 +26,7 @@ construction in a single expression.
 
 In addition to the explicitly defined methods below, SWMLBuilder automatically generates
 methods for every SWML verb in the schema (e.g., `connect()`, `record()`, `denoise()`,
-`goto()`). These dynamic methods accept keyword arguments matching the verb's SWML
-parameters and return `self` for chaining.
+`goto()`). These dynamic methods take the verb's body and return `self` for chaining.
 
 <Info>
 SWMLBuilder constructs [SWML][swml] documents programmatically. See the
@@ -45,27 +44,59 @@ SWMLBuilder constructs [SWML][swml] documents programmatically. See the
 ## **Dynamic Verb Methods**
 
 SWMLBuilder auto-generates chaining methods for every verb defined in the SWML schema
-that does not already have an explicit method. These dynamic methods accept keyword
-arguments matching the verb's SWML parameters and return `Self`.
+that does not already have an explicit method. Each one has the signature
+`<verb>(body=None, /, **options)` and returns `Self`. It takes the verb's body in any
+of these forms:
+
+- Positionally, with the type the verb takes: an object (`dict`) for most verbs, a
+  list for `cond` and `unset`, a string for `label` and `unset`, a duration for
+  `sleep`, or any JSON value for `return`.
+- As `config=` or `value=`, the names the generated type declarations use.
+- As keyword arguments, one per key of an object body. A positional object body is
+  merged with any keyword arguments; a body that isn't an object together with
+  keyword arguments raises `TypeError`.
+
+A keyword argument set to `None` is left out. Keyword arguments pass through as the
+verb's keys, so a key that isn't a valid Python name, such as `connect`'s `from`, goes
+in a positional `dict`.
 
 Examples of dynamic verbs: `connect()`, `record()`, `record_call()`, `denoise()`,
 `transfer()`, `goto()`, `cond()`, `execute()`, `tap()`, and many more.
 
-```python {6-8}
+```python {6-10}
 from signalwire import SWMLService, SWMLBuilder
 
 service = SWMLService(name="dynamic-demo")
 builder = SWMLBuilder(service)
 
-builder.connect(to="+15551234567", from_="+15559876543")
+builder.label("start")
+builder.connect({"to": "+15551234567", "from": "+15559876543"})
 builder.record_call(format="mp4", stereo=True)
+builder.unset(["tries", "result"])
 builder.denoise()
 
 print(builder.build())
 ```
 
-The `sleep` verb is a special case -- it accepts a positional `duration` argument
-(milliseconds) instead of keyword arguments:
+`return` is a Python keyword, so its method is `return_()`. Any verb whose name is a
+Python keyword is reached with a trailing underscore. `return_()` takes any JSON value
+as the verb's body:
+
+```python {6}
+from signalwire import SWMLService, SWMLBuilder
+
+service = SWMLService(name="sub")
+builder = SWMLBuilder(service)
+
+builder.set({"status": "done"}).return_({"status": "${status}"})
+
+print(builder.render())
+```
+
+The `sleep` verb takes its duration in milliseconds, positionally or as `duration=`. The
+duration must be a positive integer, `-1` to sleep until the call ends, or a SWML
+variable string such as `"${wait_ms}"`; `0`, any other negative value, and a boolean
+raise `SchemaValidationError`.
 
 ```python {6}
 from signalwire import SWMLBuilder, SWMLService
@@ -73,13 +104,16 @@ from signalwire import SWMLBuilder, SWMLService
 service = SWMLService(name="demo")
 builder = SWMLBuilder(service)
 builder.add_section("main")
-builder.sleep(duration=2000)
+builder.sleep(2000)
 
 print(builder.render())
 ```
 
 <Info>
-If a verb name is not found in the SWML schema, calling it raises an `AttributeError`.
+Every body is validated against the SWML schema when it's added, and a body that
+doesn't fit raises `SchemaValidationError`. See
+[`add_verb()`](/docs/server-sdks/reference/python/agents/swml-service/add-verb). If a
+verb name is not found in the SWML schema, calling it raises an `AttributeError`.
 </Info>
 
 ## **Methods**

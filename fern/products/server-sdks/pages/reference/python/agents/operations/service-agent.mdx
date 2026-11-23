@@ -1,0 +1,101 @@
+---
+title: "ServiceAgent"
+slug: reference/python/agents/operations/service-agent
+description: A prefab AgentBase that owns an Operations service and installs it before the first SWML or tool request.
+max-toc-depth: 3
+---
+
+[agent-base]: /docs/server-sdks/reference/python/agents/agent-base
+[operations]: /docs/server-sdks/reference/python/agents/operations/operations
+[front-desk]: /docs/server-sdks/reference/python/agents/prefabs/front-desk-agent
+[personal-assistant]: /docs/server-sdks/reference/python/agents/prefabs/personal-assistant-agent
+
+`ServiceAgent` is an [`AgentBase`][agent-base] written as the operations it can do for
+a caller. It owns an [`Operations`][operations] service, available as `agent.ops`, and
+installs it once, before the first SWML or tool request. On each SWML request it starts
+the call's record with the call's medium and, when `identify()` has a `prefill`, the
+caller already identified. [`FrontDeskAgent`][front-desk] and
+[`PersonalAssistantAgent`][personal-assistant] are built on it.
+
+```python
+from signalwire.operations import ServiceAgent
+```
+
+## Parameters
+
+<ParamField path="name" type="str" required={true} toc={true}>
+  The agent's name.
+</ParamField>
+
+<ParamField path="role" type="str" required={true} toc={true}>
+  Who the agent is and how it sounds. Becomes the prompt's Role section. Keyword-only.
+</ParamField>
+
+<ParamField path="**kwargs" type="Any" toc={true}>
+  Every [`Operations`][operations] keyword argument (`rules`, `wording`,
+  `confirm_gates`, `tool_fillers`, `gate_fillers`, `wrap`, `customize`, `namespace`,
+  `context`, `currency`, `money_format`, `medium`), and every `AgentBase` argument
+  (`route`, `host`, `port`, and the rest).
+</ParamField>
+
+## Properties
+
+<ParamField path="ops" type="Operations" toc={true}>
+  The service the agent owns.
+</ParamField>
+
+## Methods
+
+These delegate to the owned service, with the same arguments as on
+[`Operations`][operations]: `operation()`, `lookup()`, `identify()`, `writes_with()`,
+`transfer_with()`, `offer()`, `phase()`, and `confirm_gates()`. The methods that
+return the service return the agent instead, so they chain.
+
+### compile
+
+`compile()` installs the service on the agent once and returns the agent. It runs
+before the first SWML or tool request, and is thread-safe, so concurrent first
+requests wait for one install.
+
+### preview
+
+`preview()` installs the service if needed and returns each generated step's text and
+tools, and the conscience, as plain text.
+
+## Example
+
+```python
+from signalwire.operations import Change, Field, Operation, Refuse, ServiceAgent, Write
+
+ORDERS = {"#W1": {"status": "pending", "total": 54.04}}
+
+agent = ServiceAgent("store", role="You answer the phone for an online store.", currency="USD")
+agent.identify(
+    any_of=[["email"]],
+    find=lambda call, keys: "u1" if keys["email"] == "ann@example.com" else None,
+)
+agent.writes_with(lambda call, write: print("write", write.name, write.args))
+
+
+@agent.operation(tool="cancel_order")
+class Cancel(Operation):
+    """Cancel a pending order."""
+
+    order_id = Field(str, "The order to cancel.")
+
+    def prepare(self, call, f):
+        order = ORDERS.get(f.order_id)
+        if order is None or order["status"] != "pending":
+            raise Refuse(f"{f.order_id} can't be cancelled: only pending orders can.")
+        return Change(
+            read_back=f"Cancel order {f.order_id}, refunding ${order['total']:.2f}. Shall I go ahead?",
+            touches=[f"order:{f.order_id}"],
+            writes=[Write("cancel_order", order_id=f.order_id)],
+            money=[-order["total"]],
+            done=f"Order {f.order_id} is cancelled.",
+        )
+
+
+if __name__ == "__main__":
+    agent.run()
+```

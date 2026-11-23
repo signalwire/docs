@@ -1,0 +1,98 @@
+---
+title: "RequestList"
+slug: reference/python/agents/patterns/request-list
+description: Keep a list of what the caller asked for while the agent was busy, so the agent takes each request up afterward.
+max-toc-depth: 3
+---
+
+[refresh-step]: /docs/server-sdks/reference/python/agents/function-result/refresh-step
+
+`RequestList` keeps a list, in the call's `global_data`, of what the caller asked for
+while the agent was busy with another task. A tool notes each request with
+[`note()`](/docs/server-sdks/reference/python/agents/patterns/request-list/note), and
+the agent tells the caller it's noted for right after this. Step text shows the list as
+`${global_data.<global_key>_text}`, so once the current task is done, the agent takes
+up each request in order.
+
+The model hears of each new request in the tool result. Current platform releases
+expand step text again when a value it reads changes, so the list shows in the step's
+text at the next request. Earlier releases and realtime models keep the text from when
+the step was entered; return [`refresh_step()`][refresh-step] with the note to show the
+list there at once.
+
+```python
+from signalwire.patterns import RequestList
+```
+
+## Parameters
+
+<ParamField path="global_key" type="str" required={true} toc={true}>
+  The `global_data` key the list is kept under. The list's text for step text is kept
+  under `<global_key>_text`.
+</ParamField>
+
+<ParamField path="openers" type="Mapping[str, str] | None" default="None" toc={true}>
+  Keyword-only. How the agent opens each kind of request when it takes it up, keyed by
+  kind. `{about}` in an opener is replaced with what the request is about. A kind
+  without an opener opens with what it's about.
+</ParamField>
+
+<ParamField path="heading" type="str" default="Noted for right after this:" toc={true}>
+  Keyword-only. The first line of the list's text.
+</ParamField>
+
+## Methods
+
+<CardGroup cols={3}>
+  <Card title="as_text" href="/docs/server-sdks/reference/python/agents/patterns/request-list/as-text">
+    Render a list of requests as step text.
+  </Card>
+  <Card title="defaults" href="/docs/server-sdks/reference/python/agents/patterns/request-list/defaults">
+    Return the global data to start a call with.
+  </Card>
+  <Card title="done" href="/docs/server-sdks/reference/python/agents/patterns/request-list/done">
+    Remove the oldest request once it has been taken up.
+  </Card>
+  <Card title="next" href="/docs/server-sdks/reference/python/agents/patterns/request-list/next">
+    Return the oldest request with its opener.
+  </Card>
+  <Card title="note" href="/docs/server-sdks/reference/python/agents/patterns/request-list/note">
+    Note a request to come back to, and tell the model.
+  </Card>
+  <Card title="opener" href="/docs/server-sdks/reference/python/agents/patterns/request-list/opener">
+    Return how the agent opens a request.
+  </Card>
+  <Card title="pending" href="/docs/server-sdks/reference/python/agents/patterns/request-list/pending">
+    Return the requests a call has noted, oldest first.
+  </Card>
+</CardGroup>
+
+## Example
+
+```python {6-8,11,14,24}
+from signalwire import AgentBase, FunctionResult
+from signalwire.patterns import RequestList
+
+agent = AgentBase(name="desk", route="/desk")
+agent.prompt_add_section("Role", "You take orders and note other requests.")
+later = RequestList("later", openers={"balance": "You also asked about your balance.",
+                                      "question": "You had a question: {about}."})
+agent.set_global_data(later.defaults())
+
+def note_request(args, raw_data):
+    return later.note(raw_data, args["kind"], args["about"])
+
+def finish_request(args, raw_data):
+    return later.done(raw_data, FunctionResult("Done with that request."))
+
+agent.define_tool("note_request", "Note something the caller asked for, to take up after the order",
+                  {"type": "object",
+                   "properties": {"kind": {"type": "string", "enum": ["balance", "question"]},
+                                  "about": {"type": "string"}},
+                   "required": ["kind", "about"]}, note_request)
+agent.define_tool("finish_request", "Mark the first noted request as taken up",
+                  {"type": "object", "properties": {}}, finish_request)
+ctx = agent.define_contexts().add_context("default")
+ctx.add_step("take_order").set_text("Take the caller's order.\n\n${global_data.later_text}")
+agent.serve()
+```

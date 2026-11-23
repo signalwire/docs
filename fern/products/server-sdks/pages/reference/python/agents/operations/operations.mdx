@@ -1,0 +1,333 @@
+---
+title: "Operations"
+slug: reference/python/agents/operations/operations
+description: The operations service class, which installs operations, lookups, caller identity, writes, and transfers on any AgentBase.
+max-toc-depth: 3
+---
+
+[agent-base]: /docs/server-sdks/reference/python/agents/agent-base
+[service-agent]: /docs/server-sdks/reference/python/agents/operations/service-agent
+[operation]: /docs/server-sdks/reference/python/agents/operations/operation
+[field]: /docs/server-sdks/reference/python/agents/operations/field
+[refuse]: /docs/server-sdks/reference/python/agents/operations/refuse
+[write]: /docs/server-sdks/reference/python/agents/operations/write
+[money]: /docs/server-sdks/reference/python/agents/operations/money
+[wording]: /docs/server-sdks/reference/python/agents/operations/wording
+[record]: /docs/server-sdks/reference/python/agents/operations/record
+[semantic-gate]: /docs/server-sdks/reference/python/agents/semantic-gate
+[context-builder]: /docs/server-sdks/reference/python/agents/context-builder
+[function-result]: /docs/server-sdks/reference/python/agents/function-result
+[define-tool]: /docs/server-sdks/reference/python/agents/agent-base/define-tool
+
+`Operations` holds what an agent can do for a caller (its operations, lookups,
+caller identity, writer, and transfer) and installs all of it on any
+[`AgentBase`][agent-base] with `install()`. Use it for an agent configured per
+request or one with its own setup; [`ServiceAgent`][service-agent] is the prefab
+that owns one and installs it for you.
+
+```python
+from signalwire.operations import Operations
+```
+
+## Parameters
+
+All parameters are keyword-only.
+
+<ParamField path="role" type="str" required={true} toc={true}>
+  Who the agent is and how it sounds. Becomes the prompt's Role section.
+</ParamField>
+
+<ParamField path="rules" type="Sequence[str] | Mapping[str, str | None] | None" default="None" toc={true}>
+  The prompt's Rules section. A list replaces `DEFAULT_RULES`. A mapping changes them
+  by key: a new key adds a rule, an existing key replaces that rule, and `None` removes
+  it. See [wording, rules, and medium][wording].
+</ParamField>
+
+<ParamField path="wording" type="Mapping[str, str] | None" default="None" toc={true}>
+  Replacements for the generated words, keyed like `DEFAULT_WORDING`. An unknown key
+  or placeholder raises `ValueError`. See [wording, rules, and medium][wording].
+</ParamField>
+
+<ParamField path="confirm_gates" type="Sequence[SemanticGate] | None" default="None" toc={true}>
+  [Semantic gates][semantic-gate] for the confirm tool, in place of the one
+  `confirm_gates()` builds.
+</ParamField>
+
+<ParamField path="tool_fillers" type="Mapping[str, Any] | None" default="None" toc={true}>
+  Fillers for the generated tools (`confirm_change`, `decline_change`,
+  `transfer_to_human`, the identify tool), keyed by tool name, in the form
+  [`define_tool()`][define-tool] takes them.
+</ParamField>
+
+<ParamField path="gate_fillers" type="Mapping[str, Any] | None" default="None" toc={true}>
+  Fillers said while a generated tool's gates run.
+</ParamField>
+
+<ParamField path="wrap" type="Callable[[str, Callable], Callable] | None" default="None" toc={true}>
+  `wrap(name, handler)` returns the handler to register for each generated tool, for
+  your own middleware.
+</ParamField>
+
+<ParamField path="customize" type="Callable[[Any], None] | None" default="None" toc={true}>
+  `customize(contexts)` receives the generated [`ContextBuilder`][context-builder]
+  once the steps are made, to change them.
+</ParamField>
+
+<ParamField path="namespace" type="str | None" default="None" toc={true}>
+  A prefix for everything the service generates, so it can sit beside another
+  `Operations` or beside tools and steps of the same names. Lower-case letters,
+  digits, and `_`, starting with a letter; anything else raises `ValueError`. With
+  `namespace="billing"`:
+
+  - Tools: `confirm_billing_change`, `decline_billing_change`,
+    `billing_transfer_to_human`, `billing_find_account`
+  - Steps: `billing_identify`, `billing_main`, `billing_confirm`, and the
+    transfer's context `billing_transferred`
+  - Record: `global_data.billing` in place of `global_data.ops`
+</ParamField>
+
+<ParamField path="context" type="str" default="default" toc={true}>
+  The context the generated steps go in.
+</ParamField>
+
+<ParamField path="currency" type="str | None" default="None" toc={true}>
+  ISO 4217 code for changes that don't give their own, such as `"USD"`. Must be three
+  capital letters, or `ValueError` is raised. With `None`, amounts are stated without
+  a currency. See [money][money].
+</ParamField>
+
+<ParamField path="money_format" type="Callable[[Decimal, str | None], str] | None" default="None" toc={true}>
+  `money_format(amount, currency)` writes the totals the service states, in place of
+  `format_money`. `amount` is never below 0.
+</ParamField>
+
+<ParamField path="medium" type="str | None" default="None" toc={true}>
+  `"voice"` or `"chat"` for a service that only takes calls or only chats. With
+  `None`, each call's medium is read from its first request. Any other value raises
+  `ValueError`.
+</ParamField>
+
+## Methods
+
+The registration methods return the service, or the decorated class or function, so
+they chain.
+
+### operation
+
+`operation(cls=None, *, tool=None, kind=None, guidance=None)` registers an
+[`Operation`][operation] subclass. Use it bare (`@ops.operation`) or called
+(`@ops.operation(tool="cancel_order")`). `tool`, `kind`, and `guidance` override the
+class attributes of the same names. Raises `ValueError` for a class without a
+docstring or for a `kind` already registered.
+
+### lookup
+
+`lookup(description, *, tool=None, fields=None, before_identity=False, fillers=(), secure=True)`
+registers a lookup: a tool that reads and changes nothing. The decorated function is
+called as `fn(call, **fields)` and returns text or a
+[`FunctionResult`][function-result], or raises [`Refuse`][refuse]. It may be `async`.
+
+<ParamField path="lookup.description" type="str" required={true} toc={true}>
+  What it reads, as the model reads it.
+</ParamField>
+
+<ParamField path="lookup.tool" type="str | None" default="None" toc={true}>
+  The tool's name. Defaults to the function's name.
+</ParamField>
+
+<ParamField path="lookup.fields" type="Mapping[str, Field] | None" default="None" toc={true}>
+  Its arguments as [`Field`][field]s. Defaults to the function's parameters after
+  `call`, each a string.
+</ParamField>
+
+<ParamField path="lookup.before_identity" type="bool" default="False" toc={true}>
+  `True` to offer it before the caller is identified.
+</ParamField>
+
+<ParamField path="lookup.fillers" type="Sequence[str] | Mapping[str, Sequence[str]]" default="()" toc={true}>
+  Short phrases said while it runs: one list for every language, or lists keyed by
+  language code.
+</ParamField>
+
+<ParamField path="lookup.secure" type="bool" default="True" toc={true}>
+  Whether its tool takes the agent's per-call security token.
+</ParamField>
+
+### identify
+
+`identify(*, any_of, find, load=None, describe=None, fields=None, tool=None, ask=None, fillers=(), check_keys=True, required=True, prefill=None)`
+adds an identify step and tool (`find_account`). Account data isn't shared or changed
+until the caller is found. Raises `ValueError` when `any_of` is empty or holds an
+empty key set.
+
+<ParamField path="identify.any_of" type="Sequence[Sequence[str]]" required={true} toc={true}>
+  Key sets, any one of which finds an account, such as
+  `[["email"], ["first_name", "last_name", "zip"]]`.
+</ParamField>
+
+<ParamField path="identify.find" type="Callable" required={true} toc={true}>
+  `find(call, keys)` returns the account's id, or `None` when no account matches. May
+  raise `Refuse` or `Need`, and may be `async`.
+</ParamField>
+
+<ParamField path="identify.load" type="Callable | None" default="None" toc={true}>
+  `load(call, account_id)` returns the account as operations use it
+  (`call.account`). Defaults to the id itself.
+</ParamField>
+
+<ParamField path="identify.describe" type="Callable | None" default="None" toc={true}>
+  `describe(call)` returns the account in a few words for the steps. Read again after
+  every change.
+</ParamField>
+
+<ParamField path="identify.fields" type="Mapping[str, Field] | None" default="None" toc={true}>
+  Descriptions of the keys (each defaults to a string), and any other arguments `find`
+  takes.
+</ParamField>
+
+<ParamField path="identify.tool" type="str | None" default="None" toc={true}>
+  The identify tool's name. Defaults to `find_account`, with the namespace prefix when
+  there is one.
+</ParamField>
+
+<ParamField path="identify.ask" type="str | None" default="None" toc={true}>
+  How to ask for the keys, such as "their email address, or their first name, last name
+  and zip code". Defaults to text built from `any_of`.
+</ParamField>
+
+<ParamField path="identify.fillers" type="Sequence[str] | Mapping[str, Sequence[str]]" default="()" toc={true}>
+  Short phrases said while it runs.
+</ParamField>
+
+<ParamField path="identify.check_keys" type="bool" default="True" toc={true}>
+  `False` to call `find` without a whole key set, when it recovers from partial or
+  misheard keys itself.
+</ParamField>
+
+<ParamField path="identify.required" type="bool" default="True" toc={true}>
+  `False` for an agent that's useful to callers who aren't identified: there's no
+  identify step, and the identify tool is offered with the rest. Operations still
+  refuse until the caller is found, unless they're `before_identity`.
+</ParamField>
+
+<ParamField path="identify.prefill" type="Callable | None" default="None" toc={true}>
+  `prefill(request_data, request)` returns keys already known when the call starts,
+  such as the caller ID, or `None`. With keys, `find` runs before the call starts and
+  the call starts identified. Implies `required=False`.
+</ParamField>
+
+### writes_with
+
+`writes_with(writer)` sets `writer(call, write)`, which carries out every operation's
+[writes][write] and raises `WriteFailed` when the backend refuses one. An operation's
+own `apply()` takes precedence. Without a writer or `apply()`, a write fails.
+
+### transfer_with
+
+`transfer_with(transfer, *, destinations=None, gated=True, tool=None, notice=None)`
+offers a transfer in every step. `transfer(call, summary)`, or
+`transfer(call, summary, to)` with `destinations`, hands the call over by returning a
+`FunctionResult` with the platform action (such as a connect), or raises `Refuse`.
+
+<ParamField path="transfer_with.transfer" type="Callable" required={true} toc={true}>
+  The function that hands the call over.
+</ParamField>
+
+<ParamField path="transfer_with.destinations" type="Mapping[str, str] | None" default="None" toc={true}>
+  Where callers can go, by name, each with a description, such as
+  `{"sales": "buying something new"}`. The names become the tool's `to` argument.
+</ParamField>
+
+<ParamField path="transfer_with.gated" type="bool" default="True" toc={true}>
+  Whether the tool runs only once the caller has asked for a person or agreed to it.
+  Set `False` for a router whose callers say where to go.
+</ParamField>
+
+<ParamField path="transfer_with.tool" type="str | None" default="None" toc={true}>
+  The tool's name. Defaults to `transfer_to_human`, with the namespace prefix when there
+  is one.
+</ParamField>
+
+<ParamField path="transfer_with.notice" type="str | None" default="None" toc={true}>
+  What the platform says as the transfer starts. Defaults to the `transfer.notice`
+  wording.
+</ParamField>
+
+### offer
+
+`offer(*tools, before_identity=False, steps=None)` offers tools the service didn't
+make, such as skills, DataMap tools, or tools from `define_tool()`, in its steps.
+Offers add up. By default they go in every generated step except `identify` and
+`confirm`; `before_identity=True` adds the identify step, and `steps=[...]` names the
+steps exactly.
+
+### phase
+
+`phase(name, text, tools=None, *, initial=False)` declares a step of the call's own,
+such as a game's betting step, with the tools it offers (by default every lookup and
+operation, and the transfer). A tool moves to it with `call.go(name)`. `initial=True`
+starts the call in it. Raises `ValueError` for a name that's taken.
+
+### confirm_gates
+
+`confirm_gates()` returns the confirm tool's gate as a list of one
+[`SemanticGate`][semantic-gate]: did the caller agree to the change read back. A yes
+counts however short, even said during the read-back or together with a request for
+something else; it doesn't count when the caller asked for the change itself to be
+different.
+
+### install
+
+`install(agent)` gives `agent` the service's prompt sections, record, conscience line,
+tools, and steps, and returns the agent. It adds to what the agent has and replaces
+none of it: an existing Role or Rules section gets the service's text after its own,
+existing steps keep their text and tools, an initial step the agent chose stands, and
+the service's line is appended to the agent's `conscience`. Raises `ValueError`,
+before changing anything, when the agent already has a tool of the same name as one
+the service generates.
+
+### prefilled
+
+`prefilled(request_data, request=None)` returns the `global_data` a call starts with,
+from its first request: the record with the call's medium, and the caller identified
+when `identify()`'s `prefill` knows them. Returns `None` when there's nothing to add.
+`ServiceAgent` applies it on every SWML request; an agent configured per request
+applies it itself, as global data.
+
+### preview
+
+`preview(agent=None)` returns each generated step's text and tools, and the
+conscience, as plain text. Without `agent`, the service is installed on a new agent
+for the preview.
+
+### record_text
+
+`record_text(global_data)` returns the [record's][record] `now` line for a call's
+`global_data`.
+
+## Example
+
+```python
+from signalwire import AgentBase
+from signalwire.operations import Change, Field, Operation, Operations
+
+billing = Operations(role="You handle billing.", namespace="billing", currency="USD")
+
+
+@billing.operation(tool="refund_charge")
+class Refund(Operation):
+    """Refund a charge."""
+
+    charge_id = Field(str, "The charge to refund.")
+
+    def prepare(self, call, f):
+        return Change(
+            read_back=f"Refund charge {f.charge_id}. Shall I go ahead?",
+            touches=[f"charge:{f.charge_id}"],
+        )
+
+
+agent = AgentBase(name="front", route="/front")
+billing.install(agent)
+print(billing.preview(agent))
+```

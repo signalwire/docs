@@ -1,0 +1,109 @@
+---
+title: "Messages"
+slug: reference/python/agents/operations/messages
+description: Task pack that takes a message for someone, reads it back, and passes it on once the caller agrees.
+max-toc-depth: 3
+---
+
+[operations]: /docs/server-sdks/reference/python/agents/operations/operations
+[service-agent]: /docs/server-sdks/reference/python/agents/operations/service-agent
+[write]: /docs/server-sdks/reference/python/agents/operations/write
+[wording]: /docs/server-sdks/reference/python/agents/operations/wording
+[front-desk]: /docs/server-sdks/reference/python/agents/prefabs/front-desk-agent
+[personal-assistant]: /docs/server-sdks/reference/python/agents/prefabs/personal-assistant-agent
+
+`Messages` is a task pack that takes a message for someone, reads it back, and passes
+it on once the caller agrees. Add it to an [`Operations`][operations] or a
+[`ServiceAgent`][service-agent] with `add_to()`.
+
+When the caller gives no number, the pack offers the number they're calling from,
+read back for them to agree to. A second message for the same recipient while the
+first waits for a yes takes its place.
+
+```python
+from signalwire.operations import Message, Messages
+```
+
+## Parameters
+
+All parameters are keyword-only.
+
+<ParamField path="save" type="Callable[[CallContext, Message], Any]" required={true} toc={true}>
+  `save(call, message)` passes the `Message` on once the caller says yes. Raise
+  [`WriteFailed`][write] when it can't. May be `async`.
+</ParamField>
+
+<ParamField path="recipients" type="Mapping[str, str] | None" default="None" toc={true}>
+  Who a message can be for, by name, each with a few words on who they are. `None` when
+  there's only one place messages go.
+</ParamField>
+
+<ParamField path="ask_for" type="Sequence[str]" default='("name", "number")' toc={true}>
+  What's asked for when the caller hasn't said it: `"name"`, `"number"`, or both. Any
+  other value raises `ValueError`. The message itself is always asked for, and who it's
+  for whenever there are `recipients`.
+</ParamField>
+
+<ParamField path="caller_id" type="bool" default="True" toc={true}>
+  `True` to offer the number the caller is calling from when they haven't given one.
+</ParamField>
+
+<ParamField path="tool" type="str" default="take_message" toc={true}>
+  The tool's name.
+</ParamField>
+
+<ParamField path="wording" type="Mapping[str, str] | None" default="None" toc={true}>
+  Replacements keyed like `MESSAGES_WORDING`. See [wording][wording].
+</ParamField>
+
+<ParamField path="before_identity" type="bool" default="True" toc={true}>
+  `False` to take messages only from identified callers.
+</ParamField>
+
+## Methods
+
+`add_to(target)` registers the pack's operation on an `Operations` or a
+`ServiceAgent`, and returns `target`.
+
+## Message
+
+A frozen dataclass that `save` receives.
+
+<ParamField path="Message.text" type="str" toc={true}>
+  The message, in the caller's words.
+</ParamField>
+
+<ParamField path="Message.name" type="str" toc={true}>
+  Who it's from, as they said it, or `""`.
+</ParamField>
+
+<ParamField path="Message.number" type="str" toc={true}>
+  A number to reach them on, as they gave it or agreed to, or `""`.
+</ParamField>
+
+<ParamField path="Message.to" type="str" toc={true}>
+  Who it's for (one of `recipients`), or `""`.
+</ParamField>
+
+<ParamField path="Message.call_id" type="str" toc={true}>
+  The platform's id for the call.
+</ParamField>
+
+<ParamField path="Message.account_id" type="str" toc={true}>
+  The account identified, or `""`.
+</ParamField>
+
+## Example
+
+```python
+from signalwire.operations import Messages, ServiceAgent
+
+agent = ServiceAgent("office", role="You answer the phone for a dental practice.")
+Messages(
+    save=lambda call, message: print(message.to, message.text, message.number),
+    recipients={"Dr. Lee": "the dentist"},
+).add_to(agent)
+```
+
+[`FrontDeskAgent`][front-desk] and [`PersonalAssistantAgent`][personal-assistant] take
+a `Messages` pack as `messages=` and offer it when a call can't be put through.

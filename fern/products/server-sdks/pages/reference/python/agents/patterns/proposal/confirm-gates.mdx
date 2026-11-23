@@ -1,0 +1,61 @@
+---
+title: "confirm_gates"
+slug: reference/python/agents/patterns/proposal/confirm-gates
+description: Return the confirm tool's three semantic gates, judged on the proposal's dialogue.
+max-toc-depth: 3
+---
+
+[semantic-gate]: /docs/server-sdks/reference/python/agents/semantic-gate
+[define-tool]: /docs/server-sdks/reference/python/agents/agent-base/define-tool
+
+Return the confirm tool's [semantic gates][semantic-gate]. Pass them as `gates=` to
+[`define_tool()`][define-tool] for the confirm tool. Each gate is judged on the
+proposal's dialogue (`dialogue="proposal"`), with the `Proposal`'s `threshold`:
+
+| Gate id | Passes when |
+|---|---|
+| `answered` | The caller's latest turn is an answer, not only a sound that shows they're listening made while the agent was still talking. |
+| `agreed` | The caller's latest answer says yes to the change in `semantic_state`. |
+| `read_back` | The agent read back the change in `semantic_state` before that answer. |
+
+When a gate fails, the model is told that the confirm tool didn't run and why. Its tool
+prompt quotes the proposal as `${global_data.semantic_state.proposal}`, which the
+platform expands from the call's data, and names the decline tool when one is set.
+Each failure also turns tool chaining off with `back_to_back_functions(False)`, so the
+model answers in words before it calls a tool again. With `unclear=True` on the
+`Proposal`, each gate also sets `unclear` and an `on_unclear` that reads the change back
+and asks for a plain yes or no.
+
+## Returns
+
+`list[SemanticGate]` -- The `answered`, `agreed`, and `read_back` gates, in that order.
+
+## Example
+
+```python {11}
+from signalwire import AgentBase
+from signalwire.patterns import Proposal
+
+agent = AgentBase(name="tea", route="/tea")
+order = Proposal("place_order", decline_tool="review_order")
+
+def place_order(args, raw_data):
+    return order.complete("Order 4471 is placed")
+
+agent.define_tool("place_order", "Place the order the caller said yes to",
+                  {"type": "object", "properties": {}}, place_order, gates=order.confirm_gates())
+```
+
+The `agreed` gate renders as:
+
+```json
+{"id": "agreed",
+ "question": "Is the caller's latest answer in `conversation` to the agent's request to confirm a yes to the change described in `semantic_state`? The read-back may be cut off by their answer: a yes once they have heard what the change is counts. A yes that comes with another request still counts as a yes to this change.",
+ "criteria": {"true": "Their latest answer says yes to this change, even with another request or a cut-off read-back.",
+              "false": "Their latest answer says no, hesitates, or only asks a question or for something else."},
+ "threshold": 0.8,
+ "on_fail": {"response": {"tool_result": "place_order was not run. The caller has not said yes to this change.",
+                          "tool_prompt": "Read it back, \"${global_data.semantic_state.proposal}\", and ask for a plain yes or no, or call review_order if they no longer want it."},
+             "action": [{"back_to_back_functions": false}]},
+ "dialogue": "proposal"}
+```

@@ -1,0 +1,66 @@
+---
+title: "model_view"
+slug: reference/python/agents/testing/call-simulator/model-view
+description: Return the conversation entries the model gets now, after each step's history mode.
+max-toc-depth: 3
+---
+
+[set-history]: /docs/server-sdks/reference/python/agents/context-builder/step/set-history
+
+The conversation entries the model gets on its next request, oldest first, after
+the [history modes][set-history] of the steps entered so far. Use it to check that a
+step sees what you expect, such as a confirm step that sees only its read-back.
+
+- `keep` removes nothing, and `default` removes earlier step instructions.
+- `hide` also removes every earlier turn, tool call, tool result, and system note
+  for the rest of the call; `isolate` does the same until the call leaves the step.
+- `spoken` removes earlier instructions, tool calls, tool results, and system
+  notes for the rest of the call, and keeps every spoken turn.
+- `hide`, `isolate`, and `spoken` keep the exchange that entered the step: the
+  call whose action changed it, its result, notes, and say, and caller words stored
+  before the step was injected. A change by `next_step` keeps nothing.
+- An end step takes no history pass.
+
+The current step's instructions show its text expanded with the global data now;
+`call_log` keeps the text as it went in. A result's `say` comes after the call's
+result and notes, held until the next caller or agent turn. The base prompt isn't
+included.
+
+## Returns
+
+`list[dict[str, Any]]` -- The entries, each with `role` and `content`, and
+`tool_calls` on a tool call.
+
+## Raises
+
+`NotImplementedError` once the call has entered a step with a reset, which the
+simulator doesn't follow.
+
+## Example
+
+The confirm step uses `isolate`, so the model sees only the exchange that entered it:
+
+```python {18-19}
+from signalwire import AgentBase, FunctionResult
+from signalwire.testing import CallSimulator
+
+agent = AgentBase(name="orders", route="/orders")
+agent.prompt_add_section("Role", "You take orders.")
+agent.define_tool("review_order", "Read the order back", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Read the order back.").swml_change_step("confirm"))
+agent.define_tool("place_order", "Place the order", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Order placed."))
+ctx = agent.define_contexts().add_context("default")
+ctx.add_step("take").set_text("Take the order.").set_functions(["review_order"])
+ctx.add_step("confirm").set_text("Confirm the order.").set_functions(["place_order"]).set_history("isolate")
+
+sim = CallSimulator(agent)
+sim.caller("A large tea, please.").agent_says("A large tea. Anything else?")
+sim.caller("No, that's all.")
+sim.call("review_order")
+for entry in sim.model_view():
+    print(entry["role"], repr(entry["content"]))
+# assistant ''
+# tool 'Read the order back.'
+# system 'Confirm the order.'
+```

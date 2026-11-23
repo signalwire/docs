@@ -1,0 +1,39 @@
+---
+title: "offered"
+slug: reference/python/agents/testing/call-simulator/offered
+description: List the tools the model is offered at this point in the simulated call.
+max-toc-depth: 3
+---
+
+The tools the model is offered now, as the current step's function list and any
+`toggle_functions` actions allow, in the order the agent defines them. `next_step`
+follows when the step has valid steps, and `change_context` when it has valid
+contexts.
+
+## Returns
+
+`list[str]` -- The tool names.
+
+## Example
+
+```python {15,18}
+from signalwire import AgentBase, FunctionResult
+from signalwire.testing import CallSimulator
+
+agent = AgentBase(name="orders", route="/orders")
+agent.prompt_add_section("Role", "You take orders.")
+agent.define_tool("review_order", "Read the order back", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Read the order back.").swml_change_step("confirm"))
+agent.define_tool("place_order", "Place the order", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Order placed."))
+ctx = agent.define_contexts().add_context("default")
+ctx.add_step("take").set_text("Take the order.").set_functions(["review_order"])
+ctx.add_step("confirm").set_text("Confirm the order.").set_functions(["place_order"]).set_history("isolate")
+
+sim = CallSimulator(agent)
+print(sim.offered())
+# ['review_order']
+sim.call("review_order")
+print(sim.offered())
+# ['place_order']
+```

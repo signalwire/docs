@@ -1,0 +1,56 @@
+---
+title: "note"
+slug: reference/python/agents/patterns/request-list/note
+description: Note a request to come back to, and tell the model it's noted.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/server-sdks/reference/python/agents/function-result
+
+Note a request to come back to, and tell the model so. The model gets `"Noted for right
+after this: <about>."`, with a tool prompt to tell the caller and carry on with what it
+was doing. The result updates the list and its text in `global_data`. The same request
+noted twice is kept once.
+
+## Parameters
+
+<ParamField path="raw_data" type="Mapping[str, Any] | None" required={true} toc={true}>
+  The noting tool's SWAIG request.
+</ParamField>
+
+<ParamField path="kind" type="str" required={true} toc={true}>
+  The kind of request, one of your own. It picks the opener.
+</ParamField>
+
+<ParamField path="about" type="str" required={true} toc={true}>
+  What the request is about, in a few words.
+</ParamField>
+
+<ParamField path="result" type="FunctionResult | None" default="None" toc={true}>
+  A result to add to, in place of a new one.
+</ParamField>
+
+## Returns
+
+[`FunctionResult`][functionresult] -- The noting tool's result.
+
+## Example
+
+```python {6}
+from signalwire.patterns import RequestList
+
+later = RequestList("later", openers={"balance": "You also asked about your balance."})
+
+def note_request(args, raw_data):
+    return later.note(raw_data, args["kind"], args["about"])
+```
+
+Noting `kind="balance"` and `about="the account balance"` on an empty list gives:
+
+```json
+{"response": {"tool_result": "Noted for right after this: the account balance.",
+              "tool_prompt": "Tell the caller you've noted it for right after this, and carry on with what you were doing."},
+ "action": [{"set_global_data": {
+   "later": [{"kind": "balance", "about": "the account balance"}],
+   "later_text": "Noted for right after this:\n1. You also asked about your balance.\nWhen the current task is done, take these up in order, then ask if there's anything else."}}]}
+```

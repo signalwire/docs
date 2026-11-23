@@ -1,0 +1,115 @@
+---
+title: "FrontDeskAgent"
+slug: reference/python/agents/prefabs/front-desk-agent
+description: A business's front desk that puts callers through to open departments, books appointments, takes messages, and answers from documents.
+max-toc-depth: 3
+---
+
+[service-agent]: /docs/server-sdks/reference/python/agents/operations/service-agent
+[operations]: /docs/server-sdks/reference/python/agents/operations/operations
+[appointments]: /docs/server-sdks/reference/python/agents/operations/appointments
+[messages]: /docs/server-sdks/reference/python/agents/operations/messages
+[info-bot]: /docs/server-sdks/reference/python/agents/operations/info-bot-knowledge
+[wording]: /docs/server-sdks/reference/python/agents/operations/wording
+[connect]: /docs/server-sdks/reference/python/agents/function-result/connect
+
+`FrontDeskAgent` is a business's front desk, built on [`ServiceAgent`][service-agent].
+It puts callers through to the department they ask for while that department takes
+calls, books appointments, takes messages, and answers from documents, each when you
+give it the matching part.
+
+The departments become a `transfer_to_human` tool with a `to` argument listing the
+department names. The tool runs as soon as the caller names a department, without
+first asking whether they want a person. An open department is reached with a
+permanent [`connect`][connect] transfer (`final=True`), so the call leaves the agent. A closed
+department, or a request from a chat, is refused, and the model offers a message when
+there's a `Messages` pack.
+
+```python
+from signalwire.prefabs import Department, FrontDeskAgent
+```
+
+## Parameters
+
+<ParamField path="name" type="str" default="front_desk" toc={true}>
+  The agent's name.
+</ParamField>
+
+<ParamField path="role" type="str" required={true} toc={true}>
+  Keyword-only, as are all the parameters below. Who the agent is and how it sounds.
+  Becomes the prompt's Role section.
+</ParamField>
+
+<ParamField path="departments" type="Mapping[str, Department] | None" default="None" toc={true}>
+  Where callers can be put through to, keyed by the name callers use for each.
+</ParamField>
+
+<ParamField path="appointments" type="Appointments | None" default="None" toc={true}>
+  An [`Appointments`][appointments] pack, to book appointments.
+</ParamField>
+
+<ParamField path="messages" type="Messages | None" default="None" toc={true}>
+  A [`Messages`][messages] pack, to take messages and to offer one when a department
+  isn't taking calls.
+</ParamField>
+
+<ParamField path="knowledge" type="InfoBotKnowledge | None" default="None" toc={true}>
+  An [`InfoBotKnowledge`][info-bot] to answer from the business's documents. Offered
+  before the caller is identified.
+</ParamField>
+
+<ParamField path="caller_id" type="str | None" default="None" toc={true}>
+  The number calls put through come from. The platform's default when `None`.
+</ParamField>
+
+<ParamField path="desk_wording" type="Mapping[str, str] | None" default="None" toc={true}>
+  Replacements for the desk's own words, keyed like `FrontDeskAgent.WORDING`. See
+  [wording][wording].
+</ParamField>
+
+<ParamField path="**kwargs" type="Any" toc={true}>
+  `ServiceAgent`'s arguments: every [`Operations`][operations] keyword argument
+  (`rules`, `wording`, `currency`, `medium`, and the rest) and every `AgentBase`
+  argument.
+</ParamField>
+
+## Department
+
+`Department(description, to, open=None)` is a frozen dataclass for one place the desk
+puts callers through to.
+
+<ParamField path="Department.description" type="str" required={true} toc={true}>
+  What callers go to it for, as the model reads it: "questions about a bill".
+</ParamField>
+
+<ParamField path="Department.to" type="str" required={true} toc={true}>
+  Where the call goes: a phone number in E.164 form, or a SIP address.
+</ParamField>
+
+<ParamField path="Department.open" type="Callable[[CallContext], bool] | None" default="None" toc={true}>
+  `open(call)` returns whether the department takes calls now. May be `async`. `None`
+  means always.
+</ParamField>
+
+## Example
+
+```python
+from signalwire.operations import Messages
+from signalwire.prefabs import Department, FrontDeskAgent
+
+
+def billing_open(call):
+    return True  # replace with your own business-hours check
+
+
+desk = FrontDeskAgent(
+    role="You answer the phone for Bayside Dental. You are warm and brief.",
+    departments={
+        "billing": Department("questions about a bill", "+15550100001", open=billing_open),
+    },
+    messages=Messages(save=lambda call, message: print(message)),
+)
+
+if __name__ == "__main__":
+    desk.run()
+```

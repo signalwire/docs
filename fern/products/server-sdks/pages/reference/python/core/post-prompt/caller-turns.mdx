@@ -1,0 +1,68 @@
+---
+title: "caller_turns"
+slug: reference/python/core/post-prompt/caller-turns
+description: Read what the caller said from a SWAIG request's conversation, so a tool can check an argument came from the caller.
+max-toc-depth: 3
+---
+
+[ref-post-prompt]: /docs/server-sdks/reference/python/core/post-prompt
+[define-tool]: /docs/server-sdks/reference/python/agents/agent-base/define-tool
+[speech-finals]: /docs/server-sdks/reference/python/agents/agent-base/speech-finals
+
+Read what the caller said from a SWAIG request's conversation, so a tool can check
+that an argument is something the caller said and not something the model inferred.
+
+A request carries the conversation only with the `swaig_post_conversation` AI
+parameter on. Define the tool with `needs_conversation=True` on
+[`define_tool()`][define-tool], which turns it on.
+
+## Parameters
+
+<ParamField path="raw_data" type="Any" required={true} toc={true}>
+  The SWAIG request (the handler's `raw_data`), or a `call_log` list.
+</ParamField>
+
+<ParamField path="since" type="float | None" default="None" toc={true}>
+  Only the turns from this time on: a call log entry's `timestamp`, in microseconds
+  since the epoch.
+</ParamField>
+
+<ParamField path="last" type="int | None" default="None" toc={true}>
+  Only the newest this many turns. Keyword-only.
+</ParamField>
+
+## Returns
+
+`list[str]` -- The caller's turns, oldest first, as the recognizer's final text,
+after hearing hints and number formatting. Empty when the request carries no
+conversation. For the words as the recognizer heard them, with a confidence for each,
+see [`speech_finals()`][speech-finals].
+
+## Example
+
+```python {8,19}
+from signalwire import AgentBase, FunctionResult
+from signalwire.core.post_prompt import caller_turns
+
+agent = AgentBase(name="stores", route="/stores")
+agent.prompt_add_section("Role", "You find the caller's nearest store.")
+
+def find_store(args, raw_data):
+    said = " ".join(caller_turns(raw_data, last=3))
+    if args["zip"] not in said.replace(" ", ""):
+        return FunctionResult(tool_result="find_store was not run.",
+                              tool_prompt="Ask the caller for their ZIP code.")
+    return FunctionResult(f"The nearest store to {args['zip']} is on Main Street.")
+
+agent.define_tool(
+    "find_store", "Find the store nearest a ZIP code",
+    {"type": "object",
+     "properties": {"zip": {"type": "string", "description": "The caller's ZIP code"}},
+     "required": ["zip"]},
+    find_store, needs_conversation=True,
+)
+
+agent.serve()
+```
+
+Part of the [post-prompt normalization][ref-post-prompt] module.

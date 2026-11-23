@@ -1,0 +1,85 @@
+---
+title: "Render-time warnings"
+slug: reference/python/agents/context-builder/render-warnings
+description: Design warnings the SDK reports when it renders an agent's contexts and steps.
+max-toc-depth: 3
+---
+
+[steps-offering]: /docs/server-sdks/reference/python/agents/context-builder/steps-offering
+[named-tools]: /docs/server-sdks/reference/python/agents/context-builder/named-tools
+[validate]: /docs/server-sdks/reference/python/agents/context-builder/validate
+[set-functions]: /docs/server-sdks/reference/python/agents/context-builder/step/set-functions
+[toggle-functions]: /docs/server-sdks/reference/python/agents/function-result/toggle-functions
+[reset]: /docs/server-sdks/reference/python/agents/context-builder/step/set-reset-system-prompt
+[system-prompt]: /docs/server-sdks/reference/python/agents/context-builder/context/set-system-prompt
+
+When the SDK renders an agent's SWML, it checks the contexts for design
+problems that are valid configuration but don't do what they appear to. Unlike
+the errors [`validate()`][validate] raises, these don't stop rendering.
+
+Each problem is reported once per agent, including across the per-request
+copies of a dynamically configured agent. It goes to the SDK's logger under the
+warning's name, and is also raised as a Python `UserWarning` whose message
+starts with `SignalWire ` followed by the name. Python prints each message
+once, and pytest lists them in its warnings summary.
+
+## Warnings
+
+<ParamField path="tool_offered_by_no_step" type="UserWarning" toc={true}>
+  Every step lists its functions with [`set_functions()`][set-functions], and
+  none lists a registered tool. The model never gets that tool unless a
+  function result turns it on with [`toggle_functions()`][toggle-functions].
+  [`steps_offering()`][steps-offering] shows which steps offer a tool.
+</ParamField>
+
+<ParamField path="tool_named_but_not_offered" type="UserWarning" toc={true}>
+  A step that lists its functions names a registered tool it doesn't offer: in
+  its text, its criteria, its context's prompt, a gather question, or a
+  semantic gate's output on one of its tools. The model reads the name and may
+  call a tool it doesn't have. Names are found by the rule
+  [`named_tools()`][named-tools] uses. A step without a function list is
+  skipped.
+</ParamField>
+
+<ParamField path="step_reset_is_terminal" type="UserWarning" toc={true}>
+  A step has a [reset][reset] setting. A step with a reset is terminal: the
+  platform runs the reset in place of the step's text, and step mode ends
+  there, so the text never runs.
+</ParamField>
+
+<ParamField path="context_reset_without_system_prompt" type="UserWarning" toc={true}>
+  A context sets `consolidate`, `full_reset` or `user_prompt` without a
+  [system prompt][system-prompt]. The platform runs a context's reset only when
+  it has a system prompt, so these settings do nothing.
+</ParamField>
+
+## Silence the Python warnings
+
+Fix the design where you can. To silence the Python warnings, for example in
+a test suite that turns warnings into errors, filter on the message prefix.
+The logger entries are unaffected.
+
+```python
+import warnings
+
+warnings.filterwarnings("ignore", message="SignalWire ")
+```
+
+## Example
+
+```python
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="orders", route="/orders")
+agent.prompt_add_section("Role", "You take orders.")
+agent.define_tool("lookup", "Look up the order", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Found it."))
+agent.define_tool("place_order", "Place the order", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Order placed."))
+
+ctx = agent.define_contexts().add_context("default")
+# Names place_order but offers only lookup: tool_named_but_not_offered
+ctx.add_step("look").set_text("Look it up, then call place_order.").set_functions(["lookup"])
+ctx.add_step("done").set_text("Thank the caller.").set_functions("none")
+# place_order is in no step's list: tool_offered_by_no_step
+```

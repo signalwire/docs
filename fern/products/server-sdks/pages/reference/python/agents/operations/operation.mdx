@@ -1,0 +1,170 @@
+---
+title: "Operation"
+slug: reference/python/agents/operations/operation
+description: Base class for one change an operations agent can make for a caller, with its fields, rules, writes, and how it combines with other requests.
+max-toc-depth: 3
+---
+
+[operations]: /docs/server-sdks/reference/python/agents/operations/operations
+[field]: /docs/server-sdks/reference/python/agents/operations/field
+[change]: /docs/server-sdks/reference/python/agents/operations/change
+[need]: /docs/server-sdks/reference/python/agents/operations/need
+[refuse]: /docs/server-sdks/reference/python/agents/operations/refuse
+[write]: /docs/server-sdks/reference/python/agents/operations/write
+[call-context]: /docs/server-sdks/reference/python/agents/operations/call-context
+
+`Operation` is the base class for something the agent can change for a caller.
+Subclass it, declare [`Field`][field] attributes, give it a docstring (its first
+paragraph is what the model reads about the tool), and implement `prepare()`. Register
+it with [`operation()`][operations] on an `Operations` or `ServiceAgent`.
+
+The generated tool takes the fields plus a required boolean, `data_supplied_by_user`,
+in which the model says the caller gave the details themselves. Unless it's `true`,
+nothing runs.
+
+```python
+from signalwire.operations import Operation
+```
+
+## Properties
+
+Optional class attributes.
+
+<ParamField path="kind" type="str" toc={true}>
+  The change's name in the call's record and in `confirm_change`. Defaults to the class
+  name in lower case.
+</ParamField>
+
+<ParamField path="tool" type="str" toc={true}>
+  The tool's name. Defaults to the class name in snake case.
+</ParamField>
+
+<ParamField path="combine" type="Sequence[str] | None" default="None" toc={true}>
+  The fields that must match for a request of this operation, made "as well", to merge
+  into one of the same operation waiting for the caller's yes. `None` means the two
+  never merge.
+</ParamField>
+
+<ParamField path="goes_before" type="Sequence[str]" default="()" toc={true}>
+  Kinds of change that wait for this one when both are for the same things, such as an
+  address change before an item change.
+</ParamField>
+
+<ParamField path="guidance" type="str | None" default="None" toc={true}>
+  Instructions for a step of the operation's own, entered when `prepare()` raises
+  `Need`. `None` gives no step of its own.
+</ParamField>
+
+<ParamField path="fillers" type="Sequence[str] | Mapping[str, Sequence[str]]" default="()" toc={true}>
+  Short phrases said while the tool runs: one list for every language, or lists keyed
+  by language code.
+</ParamField>
+
+<ParamField path="confirm" type="bool" default="True" toc={true}>
+  `False` makes the change go through when the tool is called, with no read-back and no
+  yes, such as a move in a game.
+</ParamField>
+
+<ParamField path="before_identity" type="bool" default="False" toc={true}>
+  `True` for an operation a caller can use before they're identified.
+</ParamField>
+
+<ParamField path="ask_in_order" type="bool" default="False" toc={true}>
+  `True` to ask for one missing field at a time, in declaration order.
+</ParamField>
+
+<ParamField path="offered_in" type="Sequence[str] | None" default="None" toc={true}>
+  The steps that offer the tool, by name. `None` offers it in every step.
+</ParamField>
+
+<ParamField path="secure" type="bool" default="True" toc={true}>
+  Whether the tool takes the agent's per-call security token.
+</ParamField>
+
+## Methods
+
+### prepare
+
+`prepare(self, call, values)` checks the request and builds its change. It returns a
+[`Change`][change], or raises [`Need`][need] when something wasn't said or
+[`Refuse`][refuse] when the request breaks a rule. It may look things up and may be
+`async`, but never writes. `call` is a [`CallContext`][call-context] and `values` a
+`Values` holding the fields.
+
+### apply
+
+`apply(self, call, write)` carries out one [`Write`][write] and raises `WriteFailed`
+when the backend refuses it. Defaults to the service's writer (`writes_with()`). May
+be `async`.
+
+### merge
+
+`merge(self, held, new)` returns one request from the change waiting (`held`) and a
+request made as well (`new`), both as argument dicts. By default, list fields are
+joined, an item asked for again takes its new form (see `same_item`), and other fields
+take the new value.
+
+### same_item
+
+`same_item(self, field, a, b)` returns whether two entries of a list field are the same
+thing asked for twice. Defaults to `a == b`.
+
+### conflicts_with
+
+`conflicts_with(self, other, mine, theirs)` returns why this change and another of kind
+`other` can't both happen, or `None`. `mine` and `theirs` are the two `Change`s.
+
+### without
+
+`without(self, args, gone)` returns this operation's arguments with the things named in
+`gone` (a set of `touches` keys another change takes over) removed, or `None` when the
+change can't be split and the whole change is replaced.
+
+## Requests while a change waits
+
+When the caller asks for something new while a change waits for their yes, the SDK
+compares the new request with the waiting change by what both touch:
+
+- Same operation, asked for "as well", and `combine` allows it: one change from
+  `merge()`, read back as one.
+- Same operation for the same things, without "as well": nothing changes, and the model
+  asks "as well, or instead?"
+- Same operation otherwise, or `conflicts_with()` objects: the new request replaces the
+  waiting change for what both touch, and the rest (`without()`) is set aside.
+- A conflict asked for "as well": nothing changes, and the model is told why.
+- The waiting operation lists the new kind in `goes_before`: the waiting change stays,
+  and the new one is set aside for right after.
+- Anything else: the new change is read back now, and the waiting one is set aside.
+
+## Example
+
+```python
+from signalwire.operations import Change, Field, Operation, ServiceAgent
+
+agent = ServiceAgent("returns", role="You handle returns and exchanges.")
+
+
+@agent.operation(tool="return_items")
+class Return(Operation):
+    """Return items of a delivered order."""
+
+    order_id = Field(str, "The delivered order.")
+    items = Field(list[str], "The items to return.")
+    refund_to = Field(str, "Where the refund goes.")
+    combine = ("refund_to",)
+
+    def prepare(self, call, f):
+        return Change(
+            read_back=f"Return {', '.join(f.items)} from {f.order_id}. Shall I?",
+            touches=[f"order:{f.order_id}", *[f"item:{i}" for i in f.items]],
+        )
+
+    def conflicts_with(self, other, mine, theirs):
+        if other == "exchange" and mine.touches[0] in theirs.touches:
+            return "a delivered order takes one return or one exchange, not both"
+        return None
+
+    def without(self, args, gone):
+        items = [i for i in args.get("items") or [] if f"item:{i}" not in gone]
+        return {**args, "items": items} if items else None
+```

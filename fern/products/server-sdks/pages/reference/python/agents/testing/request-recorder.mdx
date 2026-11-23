@@ -1,0 +1,80 @@
+---
+title: "RequestRecorder"
+slug: reference/python/agents/testing/request-recorder
+description: Tool middleware that records each tool request so CallSimulator.replay can run them again.
+max-toc-depth: 3
+---
+
+[replay]: /docs/server-sdks/reference/python/agents/testing/call-simulator/replay
+[define-tool]: /docs/server-sdks/reference/python/agents/agent-base/define-tool
+
+Tool middleware that records each tool request the agent gets, for
+[`CallSimulator.replay()`][replay]. Add it to the agent with
+[`agent.add_tool_middleware(recorder)`](/docs/server-sdks/reference/python/agents/agent-base/add-tool-middleware), or to one tool with
+[`define_tool(..., middleware=[recorder])`][define-tool]. It records the request,
+then passes the call on unchanged.
+
+<Warning title="Recorded requests hold caller data">
+The requests carry what the caller said and the call's data. Keep a recording file
+where you'd keep call recordings.
+</Warning>
+
+```python
+from signalwire.testing import RequestRecorder
+```
+
+## Parameters
+
+<ParamField path="path" type="str | Path | None" default="None" toc={true}>
+  A file to append each request to, one JSON object a line. `None` keeps the
+  requests in memory only.
+</ParamField>
+
+<ParamField path="limit" type="int" default="1000" toc={true}>
+  Keyword-only. The most requests kept in `requests`, newest kept. The file isn't
+  trimmed.
+</ParamField>
+
+## Properties
+
+<ParamField path="requests" type="list[dict[str, Any]]" toc={true}>
+  The requests recorded, oldest first, each with `function` and `argument` set.
+</ParamField>
+
+## Methods
+
+### load
+
+**RequestRecorder.load**(`path`) -> `list[dict[str, Any]]`
+
+A static method that returns the requests a recorder wrote to `path`.
+
+<ParamField path="path" type="str | Path" required={true} toc={true}>
+  The recording file.
+</ParamField>
+
+## Example
+
+```python {12-13}
+from signalwire import AgentBase, FunctionResult
+from signalwire.testing import CallSimulator, RequestRecorder
+
+agent = AgentBase(name="greeter", route="/greeter")
+agent.prompt_add_section("Role", "You greet callers.")
+
+def caller_number(args, raw_data):
+    return FunctionResult(f"The caller is calling from {raw_data.get('caller_id_num')}.")
+
+agent.define_tool("caller_number", "Get the caller's number", {"type": "object", "properties": {}},
+                  caller_number)
+recorder = RequestRecorder("tool_requests.jsonl")
+agent.add_tool_middleware(recorder)
+
+# Record a request, here from a simulated call
+CallSimulator(agent, request_fields={"caller_id_num": "+15551234567"}).call("caller_number")
+
+# Later, run the recorded requests against the agent again
+for outcome in CallSimulator(agent).replay(RequestRecorder.load("tool_requests.jsonl")):
+    print(outcome.name, outcome.response)
+# caller_number The caller is calling from +15551234567.
+```

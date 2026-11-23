@@ -11,6 +11,14 @@ max-toc-depth: 3
 [datamap]: /docs/server-sdks/guides/data-map
 [native-functions]: /docs/server-sdks/guides/native-functions
 [ref-functionresult]: /docs/server-sdks/reference/python/agents/function-result
+[ref-define-tool]: /docs/server-sdks/reference/python/agents/agent-base/define-tool
+[ref-tool-refusal]: /docs/server-sdks/reference/python/agents/tool-refusal
+[ref-caller-turns]: /docs/server-sdks/reference/python/core/post-prompt/caller-turns
+[ref-add-tool-middleware]: /docs/server-sdks/reference/python/agents/agent-base/add-tool-middleware
+[ref-set-tool-resend-dedupe]: /docs/server-sdks/reference/python/agents/agent-base/set-tool-resend-dedupe
+[ref-set-nullable-optional-parameters]: /docs/server-sdks/reference/python/agents/agent-base/set-nullable-optional-parameters
+[ref-define-native-tool]: /docs/server-sdks/reference/python/agents/agent-base/define-native-tool
+[ref-semantic-gate]: /docs/server-sdks/reference/python/agents/semantic-gate
 
 ## What You'll Learn
 
@@ -492,6 +500,13 @@ The `define_tool()` method is available in all SDK languages. The parameters JSO
 | `fillers` | Language-specific filler phrases |
 | `webhook_url` | External webhook URL (overrides local handler) |
 | `required` | List of required parameter names |
+| `gates` | 1 to 8 [semantic gates][ref-semantic-gate] that must pass before the function runs |
+| `vouched` | Run only when the model says the caller gave the details (default: False) |
+| `nullable_optional` | Let optional arguments take `null` (default: follow the agent) |
+| `middleware` | Middleware for this tool's calls only |
+| `needs_conversation` | Send the conversation with each request, for `caller_turns()` (default: False) |
+
+See [`define_tool()`][ref-define-tool] for every parameter.
 
 ## Handler Function Signature
 
@@ -951,6 +966,98 @@ self.define_tool(
     handler=self.test_handler,
     secure=False  # Disable for testing
 )
+```
+
+## What the model reads as the outcome
+
+The model treats a tool's result as what happened, so the SDK keeps the result from claiming more than the handler knows:
+
+- A `FunctionResult`, or a dict with a `response` or an `action`, is sent as it is.
+- Any other dict is the handler's data, and the model gets it as JSON. An empty dict tells the model the outcome is unknown.
+- `None` sends "Function executed successfully".
+- An exception is logged, not sent. The model is told the function failed before it finished, so whether it took effect is unknown, and not to tell the caller it worked or that it didn't.
+
+To decline a call with an outcome you know, such as an item out of stock, raise [`ToolRefusal`][ref-tool-refusal]. The model gets what is true now and what to do next:
+
+```python
+from signalwire import FunctionResult, ToolRefusal
+
+def place_order(args, raw_data):
+    if args.get("item") == "tea":
+        raise ToolRefusal("place_order was not run: tea is out of stock.",
+                          "Tell the caller, and offer coffee.")
+    return FunctionResult("Order placed.")
+```
+
+## Tools that need the caller's own details
+
+Two checks keep a tool from running on details the model guessed.
+
+With `vouched=True`, the tool gets a required boolean argument, `data_supplied_by_user`, in which the model says the caller gave the details themselves. Unless it's `true`, the handler doesn't run, and the model is told to get the answer from the caller first. The handler never sees the argument.
+
+[`caller_turns()`][ref-caller-turns] reads what the caller said from the request's conversation, so the handler can check an argument itself. `needs_conversation=True` makes each request carry the conversation:
+
+```python
+from signalwire import AgentBase, FunctionResult
+from signalwire.core.post_prompt import caller_turns
+
+agent = AgentBase(name="stores", route="/stores")
+agent.prompt_add_section("Role", "You find the caller's nearest store.")
+
+def find_store(args, raw_data):
+    said = " ".join(caller_turns(raw_data, last=3))
+    if args["zip"] not in said.replace(" ", ""):
+        return FunctionResult(tool_result="find_store was not run.",
+                              tool_prompt="Ask the caller for their ZIP code.")
+    return FunctionResult(f"The nearest store to {args['zip']} is on Main Street.")
+
+agent.define_tool(
+    "find_store", "Find the store nearest a ZIP code",
+    {"type": "object",
+     "properties": {"zip": {"type": "string", "description": "The caller's ZIP code"}},
+     "required": ["zip"]},
+    find_store, vouched=True, needs_conversation=True,
+)
+```
+
+## Optional arguments that take null
+
+Some model providers use strict schemas that make every argument required, so the model can't leave an optional argument out. [`set_nullable_optional_parameters()`][ref-set-nullable-optional-parameters] lets each optional argument of every tool take `null` as well as its type, and a `null` reaches the handler as an argument that wasn't given. A tool's own `nullable_optional=` overrides the agent's setting.
+
+## Tool middleware
+
+Middleware runs around tool calls, for logging, timing, or changing arguments and results in one place. [`add_tool_middleware()`][ref-add-tool-middleware] adds it for every tool, and `middleware=` on `define_tool()` adds it for one:
+
+```python
+import time
+from signalwire import AgentBase
+
+agent = AgentBase(name="timed", route="/timed")
+agent.prompt_add_section("Role", "You answer questions.")
+
+def log_calls(name, args, raw_data, call_next):
+    started = time.monotonic()
+    result = call_next(args, raw_data)
+    print(name, round((time.monotonic() - started) * 1000), "ms")
+    return result
+
+agent.add_tool_middleware(log_calls)
+```
+
+Middleware that raises `ToolRefusal` declines the call. It covers tools defined with `define_tool()`, not DataMap or native functions, which run on the platform.
+
+## Retries don't run a tool twice
+
+SignalWire sends a tool request again, with the same `tool_call_id`, after a timeout, a failed connection, or a 5xx response. The agent answers such a retry with the first attempt's result, and a retry that arrives while the first attempt is still running waits for it. A call the model makes again has a new `tool_call_id` and runs.
+
+The record is kept in the agent's process, so with several processes or replicas a retry that reaches another one runs the tool again. Make tools that change things safe to run twice. [`set_tool_resend_dedupe(False)`][ref-set-tool-resend-dedupe] turns the dedupe off.
+
+## Platform functions under your own description
+
+[`define_native_tool()`][ref-define-native-tool] defines a function the platform implements itself, such as `end_call`, with your own description and parameters. No webhook is called. Use it to describe a [native function][native-functions] in your own words, or so a step's function list can name it:
+
+```python
+agent.define_native_tool("end_call", "End the call once the caller says goodbye.")
 ```
 
 ## Writing Good Descriptions

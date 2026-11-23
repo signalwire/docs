@@ -1,0 +1,103 @@
+---
+title: "Proposal"
+slug: reference/python/agents/patterns/proposal
+description: Read a change back to the caller and run the tool that carries it out only after the caller says yes.
+max-toc-depth: 3
+---
+
+[semantic-gate]: /docs/server-sdks/reference/python/agents/semantic-gate
+[set-semantic-gates]: /docs/server-sdks/reference/python/agents/agent-base/set-semantic-gates
+[define-tool]: /docs/server-sdks/reference/python/agents/agent-base/define-tool
+[back-to-back]: /docs/server-sdks/reference/python/agents/function-result/back-to-back-functions
+[current]: /docs/server-sdks/reference/python/agents/patterns/current
+
+`Proposal` reads a change back to the caller and gates the tool that carries it out on
+the caller's yes. It takes two tools:
+
+- A proposing tool returns [`propose()`](/docs/server-sdks/reference/python/agents/patterns/proposal/propose).
+  The change is recorded in `global_data.semantic_state`, and the agent says the
+  read-back word for word, then waits for the caller.
+- The confirm tool gets the three [semantic gates][semantic-gate] from
+  [`confirm_gates()`](/docs/server-sdks/reference/python/agents/patterns/proposal/confirm-gates),
+  judged on the proposal's dialogue. It runs only when the caller answered, the answer
+  is a yes, and what they answered was a read-back of this change. Its handler returns
+  [`complete()`](/docs/server-sdks/reference/python/agents/patterns/proposal/complete).
+
+When a gate fails, the model is told why, with the proposal quoted, and tool chaining
+is turned off with [`back_to_back_functions(False)`][back-to-back] so the model answers
+in words. Because that setting lasts for the call, `propose()`, `ask_again()`, and
+`complete()` turn chaining back on with `back_to_back_functions("forever")`. An agent
+that sets `back_to_back_functions` itself should allow for this.
+
+```python
+from signalwire.patterns import Proposal
+```
+
+## Parameters
+
+<ParamField path="confirm_tool" type="str" required={true} toc={true}>
+  The name of the tool that carries out the change.
+</ParamField>
+
+<ParamField path="decline_tool" type="str | None" default="None" toc={true}>
+  Keyword-only. The tool that a no or a requested change goes to. It's named in what
+  the model is told when the caller doesn't say yes.
+</ParamField>
+
+<ParamField path="threshold" type="float" default="0.8" toc={true}>
+  Keyword-only. Each gate's threshold. A yes/no gate wants about 0.8; with `unclear`,
+  about 0.6.
+</ParamField>
+
+<ParamField path="unclear" type="bool" default="False" toc={true}>
+  Keyword-only. `True` lets the gates answer unclear as well, which asks the caller
+  again. See `unclear` on [`SemanticGate`][semantic-gate].
+</ParamField>
+
+## Methods
+
+<CardGroup cols={3}>
+  <Card title="propose" href="/docs/server-sdks/reference/python/agents/patterns/proposal/propose">
+    Record the change and read it back to the caller.
+  </Card>
+  <Card title="ask_again" href="/docs/server-sdks/reference/python/agents/patterns/proposal/ask-again">
+    Read the current proposal back again as a new revision.
+  </Card>
+  <Card title="confirm_gates" href="/docs/server-sdks/reference/python/agents/patterns/proposal/confirm-gates">
+    Return the confirm tool's three semantic gates.
+  </Card>
+  <Card title="complete" href="/docs/server-sdks/reference/python/agents/patterns/proposal/complete">
+    Record what was done in place of the proposal.
+  </Card>
+</CardGroup>
+
+To read the proposal a request carries, use [`current()`][current].
+
+## Example
+
+```python {6,9-10,13,20}
+from signalwire import AgentBase
+from signalwire.patterns import Proposal
+
+agent = AgentBase(name="tea", route="/tea")
+agent.prompt_add_section("Role", "You take tea orders.")
+order = Proposal("place_order", decline_tool="review_order")
+
+def review_order(args, raw_data):
+    return order.propose(f"That's a {args['item']}. Is that right?",
+                         raw_data=raw_data, details={"item": args["item"]})
+
+def place_order(args, raw_data):
+    return order.complete("Order 4471 is placed")
+
+agent.define_tool("review_order", "Read the order back",
+                  {"type": "object", "properties": {"item": {"type": "string"}}, "required": ["item"]},
+                  review_order)
+agent.define_tool("place_order", "Place the order the caller said yes to",
+                  {"type": "object", "properties": {}}, place_order,
+                  gates=order.confirm_gates())
+agent.serve()
+```
+
+The gates judge the proposal's dialogue on their own, so the agent doesn't need
+[`set_semantic_gates(dialogue="proposal")`][set-semantic-gates] for them.

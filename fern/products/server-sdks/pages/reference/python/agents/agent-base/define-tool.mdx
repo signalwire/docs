@@ -11,6 +11,13 @@ max-toc-depth: 3
 [functionresult]: /docs/server-sdks/reference/python/agents/function-result
 [ref-agentbase]: /docs/server-sdks/reference/python/agents/agent-base
 [semanticgate]: /docs/server-sdks/reference/python/agents/semantic-gate
+[tool-refusal]: /docs/server-sdks/reference/python/agents/tool-refusal
+[add-tool-middleware]: /docs/server-sdks/reference/python/agents/agent-base/add-tool-middleware
+[set-nullable-optional-parameters]: /docs/server-sdks/reference/python/agents/agent-base/set-nullable-optional-parameters
+[set-tool-resend-dedupe]: /docs/server-sdks/reference/python/agents/agent-base/set-tool-resend-dedupe
+[define-native-tool]: /docs/server-sdks/reference/python/agents/agent-base/define-native-tool
+[caller-turns]: /docs/server-sdks/reference/python/core/post-prompt/caller-turns
+[ai-params]: /docs/swml/reference/calling/ai/params
 
 Programmatically define a SWAIG function (tool) that the AI can invoke during a
 conversation. This is the imperative alternative to the
@@ -48,7 +55,22 @@ comes from external configuration.
 
 <ParamField path="handler" type="Callable" required={true} toc={true}>
   Python function to call when the AI invokes this tool. Receives `(args: dict, raw_data: dict)`
-  and should return a [`FunctionResult`][functionresult].
+  and should return a [`FunctionResult`][functionresult]. It may be an `async def`.
+  `raw_data` is the SWAIG request; its `tool_call_id` identifies the model's tool call,
+  is the same on a request the platform sends again, and is absent from requests the
+  platform makes on its own, such as `startup_hook`.
+
+  The model reads what the handler returns as the outcome:
+
+  - A `FunctionResult`, or a dict with a `response` or an `action`, is sent as it is.
+  - Any other dict reaches the model as JSON. An empty dict tells the model the
+    outcome is unknown.
+  - `None` sends "Function executed successfully".
+  - Raising [`ToolRefusal`][tool-refusal] declines the call with the `tool_result`
+    and `tool_prompt` it carries.
+  - Any other exception is logged, not sent. The model is told the function failed
+    before it finished, so whether it took effect is unknown, and not to tell the
+    caller it worked or that it didn't.
 </ParamField>
 
 <ParamField path="secure" type="bool" default="True" toc={true}>
@@ -85,6 +107,34 @@ comes from external configuration.
   `ValueError` without `gates`.
 </ParamField>
 
+<ParamField path="vouched" type="bool" default="False" toc={true}>
+  `True` for a tool whose arguments must come from the caller, not from the model's
+  guesses. The tool gets a required boolean argument, `data_supplied_by_user`,
+  described to the model as "True only if the user gave these details themselves in
+  this call." Unless the model sends `true`, the handler doesn't run, and the model
+  gets "`<name>` was not run." with the tool prompt "Get the answer from the user
+  before using this tool." The handler never sees the argument.
+</ParamField>
+
+<ParamField path="nullable_optional" type="bool | None" default="None" toc={true}>
+  `True` lets the model send `null` for each argument that isn't required, as
+  providers with strict schemas require: each optional argument takes `null` as well
+  as its type, and a `null` reaches the handler as an argument that wasn't given.
+  `None` follows [`set_nullable_optional_parameters()`][set-nullable-optional-parameters].
+</ParamField>
+
+<ParamField path="middleware" type="Sequence[ToolMiddleware] | None" default="None" toc={true}>
+  Middleware that runs around this tool's calls only, inside the agent-wide
+  middleware from [`add_tool_middleware()`][add-tool-middleware].
+</ParamField>
+
+<ParamField path="needs_conversation" type="bool" default="False" toc={true}>
+  `True` when the handler reads the conversation, as
+  [`caller_turns()`][caller-turns] does. When the SWML is rendered, it turns on the
+  agent's `swaig_post_conversation` [AI parameter][ai-params], so every tool request
+  carries the call log, unless that parameter was set to `False`.
+</ParamField>
+
 <ParamField path="**swaig_fields" type="Any" toc={true}>
   Additional SWAIG fields to include in the function definition
   (e.g., `wait_file`, `meta_data`). Function properties without a dedicated
@@ -94,6 +144,16 @@ comes from external configuration.
 ## **Returns**
 
 [`AgentBase`][ref-agentbase] -- Returns self for method chaining.
+
+## Raises
+
+`ValueError` for gates the platform would refuse, or `gate_fillers` without `gates`.
+
+A tool from `define_tool()` always gets the agent's webhook URL. To describe a
+function the platform implements itself, use
+[`define_native_tool()`][define-native-tool]. A transport retry of a request is
+answered with the first attempt's result; see
+[`set_tool_resend_dedupe()`][set-tool-resend-dedupe].
 
 ## **Example**
 
@@ -125,4 +185,42 @@ agent.define_tool(
     fillers={"en-US": ["Checking the weather...", "Let me look that up..."]}
 )
 agent.serve()
+```
+
+A tool whose arguments must come from the caller:
+
+```python {12}
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="profile", route="/profile")
+agent.prompt_add_section("Role", "You update caller profiles.")
+
+def update_address(args, raw_data):
+    return FunctionResult(f"Address set to {args['street']}.")
+
+agent.define_tool(
+    "update_address", "Change the caller's street address",
+    {"type": "object", "properties": {"street": {"type": "string"}}, "required": ["street"]},
+    update_address, vouched=True,
+)
+```
+
+The rendered function gains the vouching argument:
+
+```json
+{
+  "function": "update_address",
+  "description": "Change the caller's street address",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "street": {"type": "string"},
+      "data_supplied_by_user": {
+        "type": "boolean",
+        "description": "True only if the user gave these details themselves in this call."
+      }
+    },
+    "required": ["street", "data_supplied_by_user"]
+  }
+}
 ```

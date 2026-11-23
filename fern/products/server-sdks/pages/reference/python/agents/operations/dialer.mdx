@@ -1,0 +1,134 @@
+---
+title: "Dialer"
+slug: reference/python/agents/operations/dialer
+description: Place an outbound call to an agent or a SWML document only once every check, such as consent and calling hours, passes.
+max-toc-depth: 3
+---
+
+[rest-client]: /docs/server-sdks/reference/python/rest/client
+[dial]: /docs/server-sdks/reference/python/rest/calling/dial
+
+`Dialer` places an outbound call to an agent's URL, or runs a SWML document, only once
+every check passes. Otherwise it raises `NotPlaced` with the reason and makes no
+request. Calling hours are read on the callee's own clock. Pacing, retries, and
+outcomes belong to your scheduler, which calls `place()`.
+
+```python
+from signalwire.operations.outbound import (
+    Callee, Dialer, NotPlaced, calling_hours, consented,
+)
+```
+
+## Parameters
+
+<ParamField path="client" type="RestClient" required={true} toc={true}>
+  A [`RestClient`][rest-client].
+</ParamField>
+
+<ParamField path="from_number" type="str" required={true} toc={true}>
+  Keyword-only, as are all the parameters below. The number calls come from.
+</ParamField>
+
+<ParamField path="url" type="str | None" default="None" toc={true}>
+  The agent's URL. The callee's `data` is added to it as query parameters. Give exactly
+  one of `url` and `swml`, or `ValueError` is raised.
+</ParamField>
+
+<ParamField path="swml" type="Mapping[str, Any] | None" default="None" toc={true}>
+  A SWML document to run in place of an agent at a URL.
+</ParamField>
+
+<ParamField path="checks" type="Sequence[Check]" default="()" toc={true}>
+  What must pass before a call is placed, in order. The first objection stops the call.
+</ParamField>
+
+<ParamField path="timeout" type="int | None" default="None" toc={true}>
+  How long to ring, in seconds. The platform's default when `None`.
+</ParamField>
+
+<ParamField path="status_url" type="str | None" default="None" toc={true}>
+  Where the platform posts the call's progress.
+</ParamField>
+
+<ParamField path="status_events" type="Sequence[str] | None" default="None" toc={true}>
+  Which progress events to post, such as `["answered", "ended"]`.
+</ParamField>
+
+## Methods
+
+### place
+
+`place(callee, now=None)` dials `callee` once every check passes and returns the
+result of [`client.calling.dial()`][dial]. Raises `NotPlaced` with the first
+objection otherwise, and makes no request.
+
+### why_not
+
+`why_not(callee, now=None)` returns why a call to `callee` can't be placed now, or
+`None` when every check passes. Places no call.
+
+For both methods, `now` is the time to check at, for tests. It must carry a time zone,
+or `ValueError` is raised; it defaults to the current time.
+
+## Callee
+
+`Callee(number, zone, data={})`, a frozen dataclass, is the person to be called.
+
+<ParamField path="Callee.number" type="str" required={true} toc={true}>
+  Their number, in E.164 form.
+</ParamField>
+
+<ParamField path="Callee.zone" type="str" required={true} toc={true}>
+  Their IANA time zone name, such as `"America/Chicago"`. A name that isn't a time zone
+  raises `ValueError`.
+</ParamField>
+
+<ParamField path="Callee.data" type="Mapping[str, Any]" toc={true}>
+  What the call is about, added to the agent's URL as query parameters.
+</ParamField>
+
+## NotPlaced
+
+`NotPlaced(callee, reason)` is raised by `place()` in place of dialing. It has
+`.callee` and `.reason`.
+
+## Checks
+
+A check has the type `Check = Callable[[Callee, datetime], str | None]`: it returns why
+the call can't be placed now, or `None`. `now` is an aware UTC time. Use the built-in
+checks or any function of your own with the same type.
+
+- `consented(lookup)`: `lookup(callee)` returns `True` when consent is on record,
+  `False` when it was withdrawn, or `None` when there's none on record. Only `True`
+  lets the call through.
+- `calling_hours(start, end, *, days=None)`: the callee's local time must be within
+  `start` and `end` (`datetime.time` values, inclusive), and on one of `days` when
+  given, with Monday as 0 through Sunday as 6.
+
+## Example
+
+This places a real call, so it needs `SIGNALWIRE_PROJECT_ID`, `SIGNALWIRE_API_TOKEN`,
+and `SIGNALWIRE_SPACE`.
+
+```python
+from datetime import time
+
+from signalwire.operations.outbound import Callee, Dialer, NotPlaced, calling_hours, consented
+from signalwire.rest import RestClient
+
+CONSENT = {"+15557654321": True}
+
+dialer = Dialer(
+    RestClient(),
+    from_number="+15550001111",
+    url="https://agents.example.com/reminders",
+    checks=[consented(lambda callee: CONSENT.get(callee.number)), calling_hours(time(9), time(20))],
+)
+
+try:
+    dialer.place(Callee("+15557654321", "America/Los_Angeles", {"appointment": "a1"}))
+except NotPlaced as e:
+    print(e.reason)
+```
+
+The call is placed to `https://agents.example.com/reminders?appointment=a1`.

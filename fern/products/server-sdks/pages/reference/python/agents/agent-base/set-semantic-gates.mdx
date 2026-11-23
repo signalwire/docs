@@ -8,6 +8,7 @@ max-toc-depth: 3
 [ref-agentbase]: /docs/server-sdks/reference/python/agents/agent-base
 [semanticgate]: /docs/server-sdks/reference/python/agents/semantic-gate
 [ai-params]: /docs/swml/reference/calling/ai/params
+[set-semantic-state]: /docs/server-sdks/reference/python/agents/function-result/set-semantic-state
 
 Set how the call checks the [semantic gates][semanticgate] on its SWAIG functions.
 Each argument sets one [AI parameter][ai-params]. An argument left as `None` leaves
@@ -32,7 +33,22 @@ set.
   Sets `semantic_gate_history`; the platform default is 20.
 </ParamField>
 
-Raises `ValueError` when a value has the wrong type or is out of range. Values
+<ParamField path="dialogue" type="str | None" default="None" toc={true}>
+  Which dialogue the decision model judges. Sets `semantic_gate_dialogue`; the
+  platform default is `"window"`.
+
+  - `"window"` -- the newest `history` entries.
+  - `"proposal"` -- the entries since `global_data.semantic_state` last changed
+    (see [`set_semantic_state()`][set-semantic-state]), from the agent's first turn
+    after the change: the read-back and the caller's reply. With no
+    `semantic_state` set, the window is used.
+
+  A gate's own `dialogue`, `history`, and `since` take the place of these settings
+  for its function.
+</ParamField>
+
+Raises `ValueError` when a value has the wrong type or is out of range. Values are
+checked in the order `enabled`, `dialogue`, `timeout_ms`, `history`, and values
 checked before the one that raised stay set.
 
 ## Returns
@@ -49,3 +65,16 @@ agent.set_prompt_text("You help callers manage their account.")
 agent.set_semantic_gates(timeout_ms=4000, history=40)
 agent.serve()
 ```
+
+Judge confirmations on the proposal's dialogue:
+
+```python {5}
+from signalwire import AgentBase
+
+agent = AgentBase(name="account-agent", route="/account")
+agent.set_prompt_text("You help callers manage their account.")
+agent.set_semantic_gates(dialogue="proposal", history=30)
+agent.serve()
+```
+
+This renders `"params": {"semantic_gate_dialogue": "proposal", "semantic_gate_history": 30}`.

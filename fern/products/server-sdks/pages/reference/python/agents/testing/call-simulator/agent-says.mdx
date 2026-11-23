@@ -1,0 +1,45 @@
+---
+title: "agent_says"
+slug: reference/python/agents/testing/call-simulator/agent-says
+description: Add the model's spoken reply to the simulated call, then run any post_process actions waiting for it.
+max-toc-depth: 3
+---
+
+[ref-sim]: /docs/server-sdks/reference/python/agents/testing/call-simulator
+[set-post-process]: /docs/server-sdks/reference/python/agents/function-result/set-post-process
+
+The agent says `text`, as the model's reply. It's added to the call log as an
+`assistant` turn. When an earlier result was
+[`post_process`][set-post-process], its actions run now, after the reply, as the
+platform runs them. A test that checks a `post_process` hangup or step change
+calls `agent_says()` first.
+
+## Parameters
+
+<ParamField path="text" type="str" required={true} toc={true}>
+  The model's reply.
+</ParamField>
+
+## Returns
+
+[`CallSimulator`][ref-sim] -- Self, for chaining.
+
+## Example
+
+```python {10,13}
+from signalwire import AgentBase, FunctionResult
+from signalwire.testing import CallSimulator
+
+agent = AgentBase(name="frontdesk", route="/frontdesk")
+agent.prompt_add_section("Role", "You answer the front desk.")
+agent.define_tool("finish", "End the call after saying goodbye", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Say goodbye.", post_process=True).hangup())
+
+sim = CallSimulator(agent)
+sim.call("finish")
+print(sim.ended)
+# False
+sim.agent_says("Thanks for calling. Goodbye!")
+print(sim.ended)
+# True
+```

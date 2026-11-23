@@ -105,6 +105,17 @@ sw-search ./docs ./examples README.md --file-types md,txt,py
   - `"spacy"` -- Slower; also expands content with WordNet synonyms, and the expansion is written into the index. The effect depends on your corpus, so measure it before choosing. Requires `[search-nlp]` extras.
 </ParamField>
 
+<ParamField path="--query-stopwords" type="string" toc={true}>
+  Comma-separated terms every document in the index is about, such as your product's
+  name (for example `"Acme,Acme Cloud"`). The terms are recorded in the index, and
+  search drops them from queries before embedding and keyword matching, unless fewer
+  than two content words would remain, so "what is Acme" still searches for Acme.
+  Matching is case-insensitive, on word boundaries, takes a possessive with it, and
+  terms may be phrases. The search command, the search service, and the
+  `native_vector_search` skill all apply them; in remote mode the skill leaves it to
+  the search server.
+</ParamField>
+
 <ParamField path="--validate" type="flag" toc={true}>
   Validate the index after building.
 </ParamField>
@@ -127,6 +138,15 @@ sw-search ./docs ./examples README.md --file-types md,txt,py
   - `"markdown"` -- Header-aware chunking with code block detection
   - `"json"` -- Pre-chunked JSON input
 </ParamField>
+
+<Note>
+A pre-chunked JSON chunk can set `rank_weight` in its `metadata` to demote a
+secondary source, such as commentary indexed next to reference material. Search
+multiplies the chunk's score by it, so it only demotes: it applies for values greater
+than `0` and at most `1`, and other values, booleans, and non-numbers are ignored.
+Search also treats a chunk's `document` metadata (else `url`, else `source`, else its
+file) as its document when it limits how many results come from one document.
+</Note>
 
 ### Strategy-Specific Options
 
@@ -348,6 +368,23 @@ sw-search ./chunks/ \
   --chunking-strategy json \
   --file-types json \
   --output final.swsearch
+```
+
+A pre-chunked file whose forum chunk ranks below the reference page when both match:
+
+```json title="chunks.json"
+{"chunks": [
+  {"content": "Outbound calls cost $0.008 per minute.",
+   "metadata": {"document": "voice-rates", "url": "https://example.com/pricing/voice"}},
+  {"content": "Forum thread: what I pay for outbound calls...",
+   "metadata": {"document": "forum-123", "rank_weight": 0.5}}
+]}
+```
+
+### Terms every document is about
+
+```bash
+sw-search ./docs --output acme.swsearch --query-stopwords "Acme,Acme Cloud"
 ```
 
 ### Using with an Agent

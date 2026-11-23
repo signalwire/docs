@@ -1,0 +1,58 @@
+---
+title: "set_nullable_optional_parameters"
+slug: reference/python/agents/agent-base/set-nullable-optional-parameters
+description: Let the model send null for the optional arguments of every tool.
+max-toc-depth: 3
+---
+
+[ref-agentbase]: /docs/server-sdks/reference/python/agents/agent-base
+[define-tool]: /docs/server-sdks/reference/python/agents/agent-base/define-tool
+
+Let the model send `null` for the optional arguments of every tool, as providers
+with strict schemas require: their schemas make every argument required, so an
+optional argument has to take `null` instead. With this on, each argument that
+isn't required takes `null` as well as its type, and a `null` reaches the handler as
+an argument that wasn't given.
+
+It applies to tools defined with [`define_tool()`][define-tool], when the SWML is
+rendered, so it covers tools defined before or after it. A tool's own
+`nullable_optional` overrides it.
+
+## Parameters
+
+<ParamField path="enabled" type="bool" default="True" toc={true}>
+  `True` to turn it on, `False` to turn it off.
+</ParamField>
+
+## Returns
+
+[`AgentBase`][ref-agentbase] -- Self for method chaining.
+
+## Example
+
+```python {5}
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="ship", route="/ship")
+agent.prompt_add_section("Role", "You take shipping addresses.")
+agent.set_nullable_optional_parameters()
+
+def set_address(args, raw_data):
+    return FunctionResult(f"Unit: {args.get('unit', 'none')}.")
+
+agent.define_tool(
+    "set_address", "Set the shipping address",
+    {"type": "object",
+     "properties": {"street": {"type": "string"}, "unit": {"type": "string"}},
+     "required": ["street"]},
+    set_address,
+)
+
+agent.serve()
+```
+
+The optional `unit` argument renders as:
+
+```json
+"properties": {"street": {"type": "string"}, "unit": {"type": ["string", "null"]}}
+```

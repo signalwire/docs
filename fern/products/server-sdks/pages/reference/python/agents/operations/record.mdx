@@ -1,0 +1,128 @@
+---
+title: "Call record"
+slug: reference/python/agents/operations/record
+description: The state an operations agent keeps for each call under one global_data key, and the RECORD, RECORD_KEYS, and RECORD_VERSION constants.
+max-toc-depth: 3
+---
+
+[operations]: /docs/server-sdks/reference/python/agents/operations/operations
+[call-context]: /docs/server-sdks/reference/python/agents/operations/call-context
+
+An [`Operations`][operations] service keeps its state for the call under one
+`global_data` key: `ops` by default, or the service's `namespace`. Prompts and SWML can
+read it as `${global_data.ops.<key>}`, and the `conscience` param shows its `now` line
+on every request. Your code reads the record as [`call.data`][call-context].
+
+A service keeps a record when it has operations, identifies callers, or finds the
+medium on each request. A service with only lookups and a fixed `medium` keeps none.
+
+```python
+from signalwire.operations import RECORD, RECORD_KEYS, RECORD_VERSION
+```
+
+## Properties
+
+<ParamField path="v" type="int" toc={true}>
+  The record's version, `RECORD_VERSION` (currently `1`). It goes up when a key is
+  renamed or changes meaning, and never when a key is added.
+</ParamField>
+
+<ParamField path="account_id" type="str" toc={true}>
+  The account identified, or `""`.
+</ParamField>
+
+<ParamField path="account" type="str" toc={true}>
+  The account in a few words, as `identify()`'s `describe` gives it.
+</ParamField>
+
+<ParamField path="asked" type="str" toc={true}>
+  What the caller asked for before they were identified.
+</ParamField>
+
+<ParamField path="medium" type="str" toc={true}>
+  `"voice"` or `"chat"`, or `""`.
+</ParamField>
+
+<ParamField path="history" type="list[dict]" toc={true}>
+  The settled changes, oldest first.
+</ParamField>
+
+<Indent>
+
+<ParamField path="history.kind" type="str" toc={true}>
+  The operation's kind.
+</ParamField>
+
+<ParamField path="history.touches" type="list[str]" toc={true}>
+  The change's `touches` keys.
+</ParamField>
+
+<ParamField path="history.read_back" type="str" toc={true}>
+  The read-back the caller answered.
+</ParamField>
+
+<ParamField path="history.outcome" type="str" toc={true}>
+  `made`, `not made`, `declined`, or `replaced`. A `not made` entry also has `reason`,
+  the backend's reason.
+</ParamField>
+
+<ParamField path="history.done" type="str" toc={true}>
+  What the caller was told was done.
+</ParamField>
+
+<ParamField path="history.money" type="str" toc={true}>
+  The money the writes that went through moved, as an exact decimal string such as
+  `"-54.04"`.
+</ParamField>
+
+<ParamField path="history.currency" type="str" toc={true}>
+  The money's ISO 4217 code, or `""`.
+</ParamField>
+
+</Indent>
+
+<ParamField path="now" type="str" toc={true}>
+  Where the call stands, in words: the medium, what the caller asked for, what's done,
+  what waits for their answer, and what's set aside. Worked out again on every update.
+</ParamField>
+
+The keys `waiting`, `queued`, `proposals`, and `state` are the service's own. Read your
+own per-call state through `call.state`.
+
+## Constants
+
+- `RECORD`: the default key, `"ops"`.
+- `RECORD_KEYS`: a tuple of every key of the record.
+- `RECORD_VERSION`: the current version, `1`.
+
+## Example
+
+A record after one cancelled order:
+
+```json
+{
+  "ops": {
+    "v": 1,
+    "account_id": "u1",
+    "account": "",
+    "asked": "cancel an order",
+    "waiting": {},
+    "queued": [],
+    "history": [
+      {
+        "kind": "cancel",
+        "touches": ["order:#W1"],
+        "read_back": "Cancel order #W1, refunding $54.04. Shall I go ahead?",
+        "outcome": "made",
+        "done": "Order #W1 is cancelled.",
+        "money": "-54.04",
+        "currency": "USD"
+      }
+    ],
+    "proposals": 1,
+    "state": {},
+    "medium": "",
+    "now": "What they asked for: cancel an order\nDone in this call: Order #W1 is cancelled."
+  }
+}
+```

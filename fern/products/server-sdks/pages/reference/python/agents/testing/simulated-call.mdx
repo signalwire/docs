@@ -1,0 +1,75 @@
+---
+title: "SimulatedCall"
+slug: reference/python/agents/testing/simulated-call
+description: The outcome of one tool call in a CallSimulator run, with its result, whether it ran, and what blocked it.
+max-toc-depth: 3
+---
+
+[call]: /docs/server-sdks/reference/python/agents/testing/call-simulator/call
+[replay]: /docs/server-sdks/reference/python/agents/testing/call-simulator/replay
+[calls]: /docs/server-sdks/reference/python/agents/testing/call-simulator
+
+What one tool call came to in the simulation. [`CallSimulator.call()`][call] and
+[`replay()`][replay] return it, and [`CallSimulator.calls`][calls] keeps every one.
+
+```python
+from signalwire.testing import SimulatedCall
+```
+
+## Properties
+
+<ParamField path="name" type="str" toc={true}>
+  The tool's name.
+</ParamField>
+
+<ParamField path="args" type="dict[str, Any]" toc={true}>
+  The arguments the model sent.
+</ParamField>
+
+<ParamField path="result" type="dict[str, Any]" toc={true}>
+  The result as the platform gets it: `response`, and `action` when the result has
+  actions.
+</ParamField>
+
+<ParamField path="ran" type="bool" toc={true}>
+  Whether the tool's handler, or its stub, ran.
+</ParamField>
+
+<ParamField path="blocked_by" type="str | None" toc={true}>
+  Why the tool didn't run: `"step"` for a tool the current step doesn't offer (or a
+  navigation the step doesn't allow), or the id of the semantic gate that blocked
+  it. `None` when it ran.
+</ParamField>
+
+<ParamField path="response" type="str" toc={true}>
+  The result's text: its `response`, or the `tool_result` of a structured response.
+</ParamField>
+
+<ParamField path="tool_prompt" type="str | None" toc={true}>
+  The result's `tool_prompt`, when it has one.
+</ParamField>
+
+<ParamField path="actions" type="list[dict[str, Any]]" toc={true}>
+  The result's actions.
+</ParamField>
+
+## Example
+
+```python {12-15}
+from signalwire import AgentBase, FunctionResult
+from signalwire.testing import CallSimulator
+
+agent = AgentBase(name="orders", route="/orders")
+agent.prompt_add_section("Role", "You take orders.")
+agent.define_tool("place_order", "Place the order", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Order placed.").hangup())
+ctx = agent.define_contexts().add_context("default")
+ctx.add_step("take").set_text("Take the order.").set_functions("none")
+ctx.add_step("confirm").set_text("Confirm the order.").set_functions(["place_order"])
+
+outcome = CallSimulator(agent).call("place_order")
+print(outcome.ran, outcome.blocked_by)
+# False step
+print(outcome.response)
+# Nothing ran: place_order isn't available at this point in the call. The steps that offer it: confirm. No tools are available now.
+```

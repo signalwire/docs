@@ -1,0 +1,45 @@
+---
+title: "caller"
+slug: reference/python/agents/testing/call-simulator/caller
+description: Add the caller's words to the simulated call.
+max-toc-depth: 3
+---
+
+[ref-sim]: /docs/server-sdks/reference/python/agents/testing/call-simulator
+
+The caller says `text`. It's added to the call log as a `user` turn and clears
+`waiting_for_user`. A step that a tool changed is injected before the next
+request, so these words count as part of the exchange that entered it.
+
+## Parameters
+
+<ParamField path="text" type="str" required={true} toc={true}>
+  What the caller says, as the recognizer's final text.
+</ParamField>
+
+## Returns
+
+[`CallSimulator`][ref-sim] -- Self, for chaining.
+
+## Example
+
+```python {15-16}
+from signalwire import AgentBase, FunctionResult
+from signalwire.testing import CallSimulator
+
+agent = AgentBase(name="orders", route="/orders")
+agent.prompt_add_section("Role", "You take orders.")
+agent.define_tool("review_order", "Read the order back", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Read the order back.").swml_change_step("confirm"))
+agent.define_tool("place_order", "Place the order", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Order placed."))
+ctx = agent.define_contexts().add_context("default")
+ctx.add_step("take").set_text("Take the order.").set_functions(["review_order"])
+ctx.add_step("confirm").set_text("Confirm the order.").set_functions(["place_order"]).set_history("isolate")
+
+sim = CallSimulator(agent)
+sim.caller("A large tea, please.").agent_says("A large tea. Anything else?")
+sim.caller("No, that's all.")
+print([entry["role"] for entry in sim.call_log])
+# ['system', 'user', 'assistant', 'user']
+```

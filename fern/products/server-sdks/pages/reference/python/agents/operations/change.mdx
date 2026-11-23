@@ -1,0 +1,81 @@
+---
+title: "Change"
+slug: reference/python/agents/operations/change
+description: The change an operation's prepare() builds, with its read-back, what it touches, its writes, the money it moves, and what to say once it's made.
+max-toc-depth: 3
+---
+
+[operation]: /docs/server-sdks/reference/python/agents/operations/operation
+[write]: /docs/server-sdks/reference/python/agents/operations/write
+[money]: /docs/server-sdks/reference/python/agents/operations/money
+
+`Change` is what an [operation's][operation] `prepare()` returns when the request is
+valid and complete. The SDK keeps it as the change waiting for the caller's yes, and the
+platform says its `read_back`. `Change` is a dataclass.
+
+```python
+from signalwire.operations import Change
+```
+
+## Parameters
+
+<ParamField path="read_back" type="str" required={true} toc={true}>
+  The words the platform says and the caller says yes to. Put the change itself in the
+  first clause: a read-back cut off by the caller's answer is judged on what they heard.
+  May be empty for an operation with `confirm = False`.
+</ParamField>
+
+<ParamField path="touches" type="Sequence[str]" default="()" toc={true}>
+  Stable keys for everything the change acts on, such as `"order:#W1"` or
+  `"item:9494281769"`. A new request is compared with the waiting change by these.
+</ParamField>
+
+<ParamField path="writes" type="Sequence[Write]" default="()" toc={true}>
+  The backend [writes][write], run in order once the caller says yes.
+</ParamField>
+
+<ParamField path="money" type="Sequence[int | float | Decimal | str] | None" default="None" toc={true}>
+  The money each write moves: more than 0 is charged, less than 0 goes back to the
+  caller. Amounts are kept exactly. See [money][money].
+</ParamField>
+
+<ParamField path="currency" type="str | None" default="None" toc={true}>
+  The ISO 4217 code of `money`, such as `"EUR"`. Defaults to the service's `currency`.
+</ParamField>
+
+<ParamField path="done" type="Sequence[str] | str | None" default="None" toc={true}>
+  What to tell the caller once the writes went through: one string for the whole
+  change, or one per write. Defaults to the `done.default` wording, built from the
+  read-back.
+</ParamField>
+
+<ParamField path="after" type="str | None" default="None" toc={true}>
+  The kind of another change the caller asked for that has to go first. This change
+  isn't read back yet: it's set aside, the model is told to call that kind's tool, and
+  it's offered once a change of that kind is settled.
+</ParamField>
+
+<ParamField path="after_why" type="str" toc={true}>
+  Why the other change goes first, as a clause.
+</ParamField>
+
+<ParamField path="then" type="str | None" default="None" toc={true}>
+  What the model is told once the change is made, in place of the service's own text.
+  Use it for a change whose effect comes after the tool's result, such as a payment the
+  platform takes next.
+</ParamField>
+
+## Example
+
+```python
+from signalwire.operations import Change, Write
+
+change = Change(
+    read_back="Cancel order #W1, refunding $54.04. Shall I go ahead?",
+    touches=["order:#W1"],
+    writes=[Write("cancel_order", order_id="#W1")],
+    money=[-54.04],
+    currency="USD",
+    done="Order #W1 is cancelled.",
+)
+```

@@ -1,0 +1,69 @@
+---
+title: "Money"
+slug: reference/python/agents/operations/money
+description: How an operations agent keeps and states amounts of money, with currencies, format_money(), CURRENCIES, and money_format.
+max-toc-depth: 3
+---
+
+[change]: /docs/server-sdks/reference/python/agents/operations/change
+[operations]: /docs/server-sdks/reference/python/agents/operations/operations
+[record]: /docs/server-sdks/reference/python/agents/operations/record
+
+An operations agent keeps amounts exactly, as `Decimal`, in the currency each
+[`Change`][change] gives or the service's `currency`. Amounts in different currencies
+are never added together. After a second change that moves money, the model is told
+what the call comes to, per currency. Each settled change in the call's
+[record][record] carries its `money` as an exact decimal string and its `currency`.
+
+- `Change.money`: one amount per write, as an `int`, `float`, numeric `str`, or
+  `Decimal`. More than 0 is charged; less than 0 goes back to the caller.
+- `Change.currency`: the change's ISO 4217 code, defaulting to the service's.
+- `currency=` on [`Operations`][operations] or `ServiceAgent`: the default code,
+  checked to be three capital letters (`ValueError` otherwise).
+- `money_format=` on `Operations` or `ServiceAgent`: `fn(amount, currency)` replaces
+  `format_money` for the totals the service states. `amount` is a `Decimal`, never below
+  0, and `currency` is the code or `None`.
+
+```python
+from signalwire.operations import CURRENCIES, format_money
+```
+
+## format_money
+
+`format_money(amount, currency=None)` returns an amount as the model reads it, with
+the currency's symbol or code and its own decimal places: `$54.04`, `€54.04`,
+`¥5,404`, `KWD 1.235`. A code that isn't in `CURRENCIES` goes after the amount
+(`54.04 XOF`). With no currency, the number stands alone, with cents only when it has
+any.
+
+### Parameters
+
+<ParamField path="amount" type="int | float | str | Decimal" required={true} toc={true}>
+  The amount. A `bool`, a non-numeric string, or a non-finite value raises an error.
+</ParamField>
+
+<ParamField path="currency" type="str | None" default="None" toc={true}>
+  The ISO 4217 code. Must be three capital letters, or `ValueError` is raised.
+</ParamField>
+
+### Returns
+
+`str`
+
+## CURRENCIES
+
+A read-only mapping of 36 ISO 4217 codes to `(prefix, decimal places)`, such as
+`"USD": ("$", 2)`, `"JPY": ("¥", 0)`, and `"KWD": ("KWD ", 3)`. A symbol several
+currencies share is written so it isn't ambiguous (`CA$`, `A$`).
+
+## Example
+
+```python
+from signalwire.operations import ServiceAgent, format_money
+
+agent = ServiceAgent("boutique", role="You answer the phone for a boutique in Lyon.", currency="EUR")
+
+assert format_money(54.04, "EUR") == "€54.04"
+assert format_money(5404, "JPY") == "¥5,404"
+assert format_money("54.04", "XOF") == "54.04 XOF"
+```

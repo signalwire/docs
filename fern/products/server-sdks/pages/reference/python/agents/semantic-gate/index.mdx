@@ -11,6 +11,8 @@ max-toc-depth: 3
 [functionresult]: /docs/server-sdks/reference/python/agents/function-result
 [set-semantic-state]: /docs/server-sdks/reference/python/agents/function-result/set-semantic-state
 [set-semantic-gates]: /docs/server-sdks/reference/python/agents/agent-base/set-semantic-gates
+[set-semantic-gate-mark]: /docs/server-sdks/reference/python/agents/function-result/set-semantic-gate-mark
+[patterns-proposal]: /docs/server-sdks/reference/python/agents/patterns/proposal
 [swml-gates]: /docs/swml/reference/calling/ai/swaig/functions/gates
 [semantic-gates-guide]: /docs/platform/ai/semantic-gates
 
@@ -33,7 +35,8 @@ with [`set_semantic_state()`][set-semantic-state] instead of asking for it.
 <Info>
 Gates map to the SWML [gate object][swml-gates]. For how to write questions and
 pick thresholds, see the [semantic gates guide][semantic-gates-guide]. Call-wide
-settings are on [`set_semantic_gates()`][set-semantic-gates].
+settings are on [`set_semantic_gates()`][set-semantic-gates]. For a ready-made confirm
+step, see [`Proposal`][patterns-proposal].
 </Info>
 
 <Note>
@@ -62,9 +65,11 @@ the platform would refuse. That includes gates on these function names:
   is the response text. A [`FunctionResult`][functionresult] contributes its
   response, actions, and `post_process`. A dict is used as written, in the
   `data_map` output shape (`response`, optional `action`). Say that the function
-  didn't run: `ValueError` is raised when there's no response. Actions run as
-  written, without `${...}` expansion. Realtime (speech-to-speech) agents don't
-  use `tool_prompt`, so put everything in `tool_result` for them.
+  didn't run: `ValueError` is raised when there's no response. The platform
+  expands the output's `${...}` variables once, from the call's data, as it does
+  for a DataMap output, so `${global_data.semantic_state.proposal}` quotes the
+  current proposal. Realtime (speech-to-speech) agents don't use `tool_prompt`,
+  so put everything in `tool_result` for them.
 </ParamField>
 
 <ParamField path="id" type="str | None" default="None" toc={true}>
@@ -84,9 +89,60 @@ the platform would refuse. That includes gates on these function names:
   Keyword-only. How many of the caller's newest video frames the decision model
   sees with this gate, as `visual_input`: `True` is 1, `False` or `0` is none, or a
   whole number up to 5. Every gate on a function sees as many frames as the gate
-  that asks for the most. If the call has no video frame to show, the gate fails
-  without being asked. Omitted by default.
+  that asks for the most. The gate's provider must accept images; one that
+  doesn't makes the check a configuration error, which blocks the function. If the
+  call has no video frame to show, the gate fails without being asked. Omitted by
+  default.
 </ParamField>
+
+<ParamField path="on_unclear" type="str | FunctionResult | dict[str, Any] | None" default="None" toc={true}>
+  Keyword-only. What the AI gets when this is the first gate answered unclear and
+  none failed, in the same forms as `on_fail`, and expanded the same way. It should
+  ask the caller again. `ValueError` is raised when there's no response. Without it,
+  the platform uses its own text, which asks again.
+</ParamField>
+
+<ParamField path="unclear" type="bool | None" default="None" toc={true}>
+  Keyword-only. `True` lets the decision model answer yes, no, or unclear, where its
+  provider supports it; a yes below `threshold` also counts as unclear. An unclear
+  answer doesn't run the function: the AI gets `on_unclear`. Two unclear answers in
+  a row for the same function and `semantic_state` ask again, and the third counts
+  as a fail. A gate with `unclear` wants a lower threshold than a yes/no gate.
+  Omitted by default, which asks for yes or no.
+</ParamField>
+
+<ParamField path="dialogue" type="str | None" default="None" toc={true}>
+  Keyword-only. The dialogue this gate judges, in place of the agent-wide setting
+  from [`set_semantic_gates()`][set-semantic-gates]:
+
+  - `"window"` -- the newest entries.
+  - `"proposal"` -- the entries since `global_data.semantic_state` last changed.
+
+  A gate about what the caller asked before a proposal started wants `"window"` on an
+  agent that judges confirmations by the proposal.
+</ParamField>
+
+<ParamField path="history" type="int | None" default="None" toc={true}>
+  Keyword-only. How many of the newest dialogue entries this gate judges, a whole
+  number from 1 to 100, in place of the agent-wide setting.
+</ParamField>
+
+<ParamField path="since" type="str | None" default="None" toc={true}>
+  Keyword-only. The name of a mark, 1 to 64 letters, digits, or underscores, that
+  your code sets with [`set_semantic_gate_mark()`][set-semantic-gate-mark]. The gate
+  judges the dialogue from the agent's first turn at or after the mark, up to
+  `history` entries. Until the mark is set, the gate judges its `dialogue` as usual.
+</ParamField>
+
+Every gate on one function must set the same `dialogue`, `history`, and `since`, or
+leave them all unset, because the gates are asked together about one dialogue.
+Otherwise `ValueError` is raised when the tool is defined.
+
+<Note>
+`on_unclear`, `unclear`, `dialogue`, `history`, and `since` need a platform release
+that supports them. A release that supports gates but not one of these keys refuses
+the function.
+</Note>
 
 ## Methods
 
@@ -97,6 +153,8 @@ the platform would refuse. That includes gates on these function names:
 </CardGroup>
 
 ## Examples
+
+### Gate a cancellation on an explicit request
 
 ```python {6-16,20-21}
 from signalwire import AgentBase, FunctionResult, SemanticGate
@@ -125,4 +183,46 @@ def cancel_account(args, raw_data):
     return FunctionResult("The account is cancelled. Tell the caller.")
 
 agent.serve()
+```
+
+### Judge only the dialogue since a mark
+
+A gate with `since` judges the dialogue from the point where a tool set the mark. Here
+`give_quote` sets the mark, and the gate on `cancel_account` judges at most the 10
+entries that follow it.
+
+```python {7,14-16}
+from signalwire import AgentBase, FunctionResult, SemanticGate
+
+agent = AgentBase(name="accounts", route="/accounts")
+agent.prompt_add_section("Role", "You manage accounts.")
+
+def give_quote(args, raw_data):
+    return FunctionResult("Quoted the cancellation fee.").set_semantic_gate_mark("cancel_offer")
+
+def cancel(args, raw_data):
+    return FunctionResult("The account is cancelled.")
+
+agent.define_tool("give_quote", "Quote the cancellation fee", {"type": "object", "properties": {}}, give_quote)
+agent.define_tool(
+    "cancel_account", "Cancel the caller's account", {"type": "object", "properties": {}}, cancel,
+    gates=[SemanticGate("Has the caller asked to cancel in `conversation`?", 0.9,
+                        "cancel_account was not run.", id="asked",
+                        dialogue="window", history=10, since="cancel_offer")],
+)
+agent.serve()
+```
+
+### Let the decision model answer unclear
+
+```python {4-5}
+from signalwire import SemanticGate
+
+gate = SemanticGate("Did the caller say yes to the quote in `conversation`?", 0.6,
+                    "book_job was not run.", unclear=True,
+                    on_unclear="Ask the caller for a plain yes or no.")
+print(gate.to_dict())
+# {'question': 'Did the caller say yes to the quote in `conversation`?', 'threshold': 0.6,
+#  'on_fail': {'response': 'book_job was not run.'},
+#  'on_unclear': {'response': 'Ask the caller for a plain yes or no.'}, 'unclear': True}
 ```

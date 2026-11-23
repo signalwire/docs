@@ -6,6 +6,12 @@ max-toc-depth: 3
 ---
 
 [ref-functionresult]: /docs/server-sdks/reference/python/agents/function-result
+[ref-no-barge]: /docs/server-sdks/reference/python/agents/function-result/no-barge-next-response
+[ref-change-voice]: /docs/server-sdks/reference/python/agents/function-result/change-voice
+[ref-refresh-step]: /docs/server-sdks/reference/python/agents/function-result/refresh-step
+[ref-back-to-back]: /docs/server-sdks/reference/python/agents/function-result/back-to-back-functions
+[ref-update-settings]: /docs/server-sdks/reference/python/agents/function-result/update-settings
+[duration-values]: /docs/swml/reference/calling/ai/params#duration-values
 
 ### Basic Results
 
@@ -622,6 +628,34 @@ def auto_confirm(self, args, raw_data):
     )
 ```
 
+**Play the next reply in full:**
+
+[`no_barge_next_response()`][ref-no-barge] keeps the caller from cutting off the
+next spoken reply, such as a read-back they should hear before answering. Their
+words are held and delivered after the reply:
+
+```python
+def read_terms(self, args, raw_data):
+    return (
+        FunctionResult("Read the full terms to the caller.")
+        .no_barge_next_response()
+    )
+```
+
+**Change the voice:**
+
+[`change_voice()`][ref-change-voice] replaces the current language's voice for the
+rest of the call. Pass a list of up to 8 voices to give fallbacks, tried in order
+when the first fails:
+
+```python
+def calmer_voice(self, args, raw_data):
+    return (
+        FunctionResult("Switching voices.")
+        .change_voice(["elevenlabs.josh", "cartesia.kurt"])
+    )
+```
+
 ### Background Audio
 
 Play audio files in the background during conversation:
@@ -740,6 +774,23 @@ def move_to_checkout(self, args, raw_data):
     )
 ```
 
+**Refresh the current step:**
+
+Current platform releases expand a step's `${global_data.*}` values again
+whenever they change. On earlier releases and realtime models, the values stay
+as they were when the step was entered, so return
+[`refresh_step()`][ref-refresh-step] with the current step's name to enter it
+again with the new values:
+
+```python
+def add_drink(self, args, raw_data):
+    return (
+        FunctionResult("Added the drink.")
+        .update_global_data({"order_total": "$14.50"})
+        .refresh_step("take_order")
+    )
+```
+
 ### Function Control
 
 Dynamically enable or disable functions during the call:
@@ -766,27 +817,47 @@ def enable_escalation_on_timeout(self, args, raw_data):
     )
 ```
 
-**Update AI settings:**
+**Make the model answer in words:**
+
+[`back_to_back_functions(False)`][ref-back-to-back] makes the model answer the
+caller in words after every function result, rather than calling another function
+right away. The setting lasts for the call; `"forever"`, the default, turns
+chaining back on:
 
 ```python
-def adjust_speech_timing(self, args, raw_data):
+def read_back_order(self, args, raw_data):
     return (
-        FunctionResult("Adjusting response timing")
+        FunctionResult("Read the order back and wait for the caller to confirm it.")
+        .back_to_back_functions(False)
+    )
+```
+
+**Update AI settings:**
+
+[`update_settings()`][ref-update-settings] changes the model settings you name and
+leaves every other setting as it is:
+
+```python
+def adjust_model(self, args, raw_data):
+    return (
+        FunctionResult("Adjusting response parameters")
         .update_settings({
-            "end_of_speech_timeout": 1000,
-            "attention_timeout": 30000
+            "temperature": 0.3,
+            "barge-confidence": 0.8
         })
     )
 ```
 
 **Set speech timeouts:**
 
+Each timeout takes milliseconds or a [duration string][duration-values]:
+
 ```python
 def configure_timeouts(self, args, raw_data):
     return (
         FunctionResult()
         .set_end_of_speech_timeout(800)  # 800ms
-        .set_speech_event_timeout(5000)  # 5s
+        .set_speech_event_timeout("5s")
     )
 ```
 
@@ -998,7 +1069,7 @@ Most use cases are covered by the convenience methods above. Use `execute_swml()
 | `.swml_transfer(dest, ai_response, final)` | SWML-specific transfer with AI response |
 | `.sip_refer(to_uri)` | SIP REFER transfer |
 | `.hangup()` | End the call |
-| `.hold(timeout)` | Put caller on hold (default 300s, max 900s) |
+| `.hold(timeout)` | Put caller on hold (seconds or a duration string; default 300s, max 900s) |
 | `.send_sms(to, from, body, media)` | Send SMS message |
 | `.record_call(control_id, stereo, ...)` | Start call recording |
 | `.stop_record_call(control_id)` | Stop call recording |
@@ -1031,6 +1102,8 @@ Most use cases are covered by the convenience methods above. Use `execute_swml()
 | `.stop_background_file()` | Stop background audio |
 | `.simulate_user_input(text)` | Inject text as user speech |
 | `.wait_for_user(enabled, timeout, answer_first)` | Wait for user to speak |
+| `.no_barge_next_response()` | Play the next spoken reply in full |
+| `.change_voice(voice)` | Change the voice, or a list of fallback voices, for the rest of the call |
 
 #### Context & Workflow Actions
 
@@ -1039,6 +1112,7 @@ Most use cases are covered by the convenience methods above. Use `execute_swml()
 | `.switch_context(system_prompt, user_prompt)` | Advanced context switch with new prompts |
 | `.swml_change_context(ctx)` | Switch to named context |
 | `.swml_change_step(step)` | Change to specific workflow step |
+| `.refresh_step(step)` | Enter the current step again with the current global data |
 
 #### Data Management Actions
 
@@ -1055,6 +1129,7 @@ Most use cases are covered by the convenience methods above. Use `execute_swml()
 |--------|-------------|
 | `.toggle_functions(funcs)` | Enable/disable specific functions |
 | `.enable_functions_on_timeout(enabled)` | Enable functions when timeout occurs |
+| `.back_to_back_functions(value)` | Set whether the model can call another function right after a result |
 | `.update_settings(config)` | Modify AI settings dynamically |
 | `.set_end_of_speech_timeout(ms)` | Adjust speech timeout |
 | `.set_speech_event_timeout(ms)` | Adjust speech event timeout |

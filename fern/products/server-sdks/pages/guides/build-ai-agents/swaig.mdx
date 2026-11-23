@@ -9,6 +9,9 @@ max-toc-depth: 3
 [ref-agentbase]: /docs/server-sdks/reference/python/agents/agent-base
 [ref-datamap]: /docs/server-sdks/reference/python/agents/data-map
 [ref-functionresult]: /docs/server-sdks/reference/python/agents/function-result
+[ref-set-tool-resend-dedupe]: /docs/server-sdks/reference/python/agents/agent-base/set-tool-resend-dedupe
+[ref-tool-refusal]: /docs/server-sdks/reference/python/agents/tool-refusal
+[tool-outcomes]: /docs/server-sdks/guides/defining-functions#what-the-model-reads-as-the-outcome
 
 ### What is SWAIG?
 
@@ -611,6 +614,7 @@ SignalWire sends a POST request with this structure:
     "direction": "inbound"
   },
   "call_id": "uuid-here",
+  "tool_call_id": "call_abc123",
   "call_sid": "call-sid-here",
   "global_data": {
     "customer_name": "John Doe"
@@ -623,6 +627,8 @@ SignalWire sends a POST request with this structure:
 <Note>
 Call information (caller/callee numbers, call_id, direction) is **nested under the `call` key**. Always use defensive access: `call_data = raw_data.get("call", {})`. Some fields may also appear at the top level for backwards compatibility.
 </Note>
+
+`tool_call_id` is the id of the model's tool call. A request SignalWire sends again after a timeout, a failed connection, or a 5xx response carries the same id, and each new call by the model has its own. It's absent from requests the platform makes on its own (`startup_hook`, `hangup_hook`, `check_for_input`) and when the model's provider gave no id. The agent uses it to answer a retry with the first attempt's result; see [`set_tool_resend_dedupe()`][ref-set-tool-resend-dedupe].
 
 ### SWAIG Response Format
 
@@ -741,7 +747,7 @@ swaig-test my_agent.py --dump-swml | grep -A 50 '"SWAIG"'
 1. **Keep functions focused**: One function, one purpose
 2. **Write clear descriptions**: Help the AI understand when to use each function
 3. **Validate inputs**: Check for required arguments
-4. **Handle errors gracefully**: Return helpful error messages
+4. **Handle errors gracefully**: Return helpful error messages, and raise [`ToolRefusal`][ref-tool-refusal] to decline a call with an outcome you know. An unhandled exception tells the model the outcome is unknown; see [what the model reads as the outcome][tool-outcomes].
 5. **Use global_data**: Share state between function calls
 6. **Log for debugging**: Track function calls and responses
 

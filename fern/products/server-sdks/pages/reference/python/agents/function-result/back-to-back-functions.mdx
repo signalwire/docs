@@ -1,0 +1,63 @@
+---
+title: "back_to_back_functions"
+slug: reference/python/agents/function-result/back-to-back-functions
+description: Set whether the model can call another function right after a function result.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/server-sdks/reference/python/agents/function-result
+[semanticgate]: /docs/server-sdks/reference/python/agents/semantic-gate
+
+Set whether the model can call another function right after a function result,
+without answering the caller in words first.
+
+The setting lasts for the rest of the call, including a setting made by a
+[semantic gate's][semanticgate] `on_fail`. After a refused gate turns chaining
+off, return `"forever"` from a later result to turn it back on; otherwise every
+later function result needs a spoken answer after it. It applies to the text
+pipeline only: realtime models don't read it.
+
+## Parameters
+
+<ParamField path="value" type="bool | str" default="True" toc={true}>
+  One of:
+
+  - `"forever"` -- the model chains functions freely. This is the call's default.
+  - `False` -- the model answers in words after every function result.
+  - `True` -- while chaining is off, allow one more chain: the next request
+    after a function result can call a function, and then chaining is off
+    again. `True` never lowers `"forever"`.
+</ParamField>
+
+## Returns
+
+[`FunctionResult`][functionresult] -- self, for chaining.
+
+## Raises
+
+`ValueError` if `value` is not `True`, `False`, or `"forever"`.
+
+## Example
+
+```python {9}
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="orders", route="/orders")
+agent.set_prompt_text("You help callers with their orders.")
+
+@agent.tool(name="read_back_order", description="Read the order back to the caller")
+def read_back_order(args, raw_data):
+    return (
+        FunctionResult("Read the order back and wait for the caller to confirm it.")
+        .back_to_back_functions(False)
+    )
+
+agent.serve()
+```
+
+This result renders as:
+
+```json
+{"response": "Read the order back and wait for the caller to confirm it.",
+ "action": [{"back_to_back_functions": false}]}
+```

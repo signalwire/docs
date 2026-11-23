@@ -13,7 +13,7 @@ max-toc-depth: 3
 |-----------|-------------|---------|
 | `name` | Human-readable name | `"English"` |
 | `code` | Language code for STT. See [Language codes](#language-codes). | `"en-US"` |
-| `voice` | TTS voice identifier | `"rime.spore"` or `"elevenlabs.josh:eleven_turbo_v2_5"` |
+| `voice` | TTS voice identifier, or a list of up to 8 tried in order. See [Fallback voices](#fallback-voices). | `"rime.spore"` or `"elevenlabs.josh:eleven_turbo_v2_5"` |
 
 ### Fillers (natural speech)
 
@@ -77,6 +77,54 @@ default engine, and that default can change. Pass the engine in the voice string
 
 ```python
 self.add_language("English", "en-US", "josh", engine="elevenlabs")
+```
+
+## Fallback voices
+
+A voice can fail during a call. Give a language a list of up to 8 voices in the `engine.voice:model` form, and the platform
+tries them in order: the first one speaks, and the next takes over when it fails. A list
+can't be combined with the `engine` or `model` parameters.
+
+```python
+self.add_language(
+    "English", "en-US",
+    ["elevenlabs.rachel:eleven_flash_v2_5", "cartesia.kurt"],
+)
+```
+
+Three more settings cover the voices a language doesn't set. Each takes one voice or a
+list of up to 8:
+
+- [`set_agent_voice()`](/docs/server-sdks/reference/python/agents/agent-base/set-agent-voice)
+  sets the agent's own voice, which a language with no voice of its own uses.
+- [`set_fallback_voice()`](/docs/server-sdks/reference/python/agents/agent-base/set-fallback-voice)
+  sets the voices the platform tries once a language's voices, or the agent's, have all
+  failed.
+- [`set_default_voice()`](/docs/server-sdks/reference/python/agents/agent-base/set-default-voice)
+  fills every voice field the agent leaves empty, including multilingual languages. It
+  also takes a mapping from language codes to voices, with a `"default"` entry for the
+  rest.
+
+The platform tries an agent's voices in this order: the language's own voice or voice
+list, the agent's voice for a language with none, the fallback voices, and the
+platform's own last resort.
+
+```python
+from signalwire import AgentBase
+
+class ResilientVoiceAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="resilient-voice")
+        self.prompt_add_section("Role", "You answer sales calls.")
+
+        # The language's own voices, tried in order
+        self.add_language("English", "en-US", ["elevenlabs.rachel:eleven_flash_v2_5", "cartesia.kurt"])
+
+        # Tried after the language's voices have all failed
+        self.set_fallback_voice(["rime.spore:arcana", "elevenlabs.josh"])
+
+        # Fills any voice field left empty, per language
+        self.set_default_voice({"es": "elevenlabs.lucia", "default": "rime.spore"})
 ```
 
 ## Available TTS engines
