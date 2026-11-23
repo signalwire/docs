@@ -37,7 +37,7 @@ namespace SignalWireAPI.Fabric.AliasAddresses {
     @doc("""
       Lists the alias addresses in your SignalWire project. An alias is a named route in the `public` or `private` context that forwards calls and messages to the resource it points at. [SIP addresses](/docs/apis/rest/sip-addresses/list-sip-addresses) and [phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) are managed through their own operations.
 
-      ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
     list(...AliasAddressListQuery):
       | AliasAddressListResponse
@@ -50,7 +50,7 @@ namespace SignalWireAPI.Fabric.AliasAddresses {
     @doc("""
       Retrieves one alias address from your SignalWire project by ID. Use [List alias addresses](/docs/apis/rest/alias-addresses/list-alias-addresses) to find IDs. An ID that belongs to a different kind of address, such as a SIP address, returns a 404.
 
-      ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
     read(...AliasAddressPathID):
       | {
@@ -66,7 +66,7 @@ namespace SignalWireAPI.Fabric.AliasAddresses {
     @doc("""
       Creates an alias address that forwards to an existing resource in your project. `name` and `resource_id` are required; `display_name` defaults to `name`, `channels` to all three, `codecs` to none, and `context` to `public`. The handler resource can't be changed later: to point an alias at a different resource, delete it and create a new one.
 
-      ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
     @post
     create(@body request: AliasAddressCreateRequest):
@@ -84,7 +84,7 @@ namespace SignalWireAPI.Fabric.AliasAddresses {
     @doc("""
       Partially updates an alias address by ID; omitted fields keep their current values. Use it to rename the alias, change its display name, channels, or codecs, or move it between the `public` and `private` contexts. `resource_id` isn't accepted: to point an alias at a different resource, delete it and create a new one. An ID that belongs to a different kind of address, such as a SIP address, returns a 404.
 
-      ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
     @patch
     update(...AliasAddressPathID, @body request: AliasAddressUpdateRequest):
@@ -103,7 +103,7 @@ namespace SignalWireAPI.Fabric.AliasAddresses {
     @doc("""
       Deletes an alias address by ID, so `/<context>/<name>` no longer resolves. The handler resource it forwarded to isn't deleted. An ID that belongs to a different kind of address, such as a SIP address, returns a 404.
 
-      ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
     @delete
     delete(...AliasAddressPathID):

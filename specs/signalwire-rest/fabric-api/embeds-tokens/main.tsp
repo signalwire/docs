@@ -28,7 +28,7 @@ namespace SignalWireAPI.Fabric.EmbedsTokens {
 
       Use [Create Subscriber guest token](/docs/apis/rest/subscribers/tokens/create-subscriber-guest-token) when your server chooses the guest's allowed resource addresses, or [Create Subscriber token](/docs/apis/rest/subscribers/tokens/create-subscriber-token) for a known subscriber.
 
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post
     create(@body body: EmbedsTokensRequest):

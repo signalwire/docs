@@ -23,7 +23,7 @@ namespace SignalWireAPI.Fabric.FreeswitchConnectors {
     @doc("""
       Returns the project's FreeSWITCH Connector resources, which route communications to connected FreeSWITCH deployments. Use it to discover connectors before retrieving or changing one. Use a [Relay Application](/docs/apis/rest/relay-application/list-relay-applications) when a Relay Server SDK process handles events, or a [SIP Gateway](/docs/apis/rest/sip-gateway/list-sip-gateways) for calls sent to an external SIP destination.
       
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
       | FreeswitchConnectorListResponse
@@ -36,7 +36,7 @@ namespace SignalWireAPI.Fabric.FreeswitchConnectors {
     @doc("""
       Retrieves one FreeSWITCH Connector by resource ID. Use it when you know the connector ID; use [List FreeSWITCH connectors](/docs/apis/rest/freeswitch-connector/list-freeswitch-connectors) to discover IDs, or [Get Relay application](/docs/apis/rest/relay-application/get-relay-application) for a Relay Server SDK handler.
       
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     read(...FreeswitchConnectorPathID):
       | {
@@ -52,7 +52,7 @@ namespace SignalWireAPI.Fabric.FreeswitchConnectors {
     @doc("""
       Creates a resource for a FreeSWITCH deployment that has been connected with the supplied token. Use it when calls or messages should route to your own FreeSWITCH; use [Create Relay application](/docs/apis/rest/relay-application/create-relay-application) for a Relay Server SDK process, or [Create SIP gateway](/docs/apis/rest/sip-gateway/create-sip-gateway) for an external SIP destination.
       
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post
     create(@body request: FreeswitchConnectorCreateRequest):
@@ -70,7 +70,7 @@ namespace SignalWireAPI.Fabric.FreeswitchConnectors {
     @doc("""
       Changes how a connected FreeSWITCH deployment is identified when SignalWire routes communications through it. Relay Applications and SIP Gateways have separate update operations.
       
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @put
     update(
@@ -91,7 +91,7 @@ namespace SignalWireAPI.Fabric.FreeswitchConnectors {
     @doc("""
       Deletes a FreeSWITCH Connector resource by ID. Use it when SignalWire should no longer route communications to that connected FreeSWITCH; deleting a [Relay Application](/docs/apis/rest/relay-application/delete-relay-application) or [SIP Gateway](/docs/apis/rest/sip-gateway/delete-sip-gateway) requires that resource's endpoint.
       
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @delete
     delete(...FreeswitchConnectorPathID):

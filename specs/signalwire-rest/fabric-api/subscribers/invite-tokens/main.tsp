@@ -25,7 +25,7 @@ namespace SignalWireAPI.Fabric.SubscriberInviteTokens {
 
       Use [Create Subscriber guest token](/docs/apis/rest/subscribers/tokens/create-subscriber-guest-token) when your server grants guest access with a project API token instead. This endpoint requires the subscriber's SAT, not project-level Basic authentication.
 
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post
     create(...SubscriberInviteTokenCreateRequest):

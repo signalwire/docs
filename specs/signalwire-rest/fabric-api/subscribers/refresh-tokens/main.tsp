@@ -23,7 +23,7 @@ namespace SignalWireAPI.Fabric.SubscriberRefreshTokens {
 
       This operation consumes the `refresh_token` returned by [Create Subscriber token](/docs/apis/rest/subscribers/tokens/create-subscriber-token). A Browser SDK client with a fingerprint-bound `sat:refresh` token can refresh through the client flow instead.
 
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post
     create(...SubscriberRefreshTokenRequest):

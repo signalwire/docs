@@ -42,9 +42,11 @@ namespace SignalWireAPI.Fabric.PhoneNumberAddresses {
 
       Only the pagination parameters are supported; there are no filters. A `page_token` that is malformed or no longer resolves returns a `422` with the code `page_token_is_invalid`.
 
-      <Warning title="Beta">This API is in beta and may change.</Warning>
+      <Warning title="Beta">
+      This API is in beta and may change.
+      </Warning>
 
-      ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
     list(...PhoneNumberAddressListQuery):
       | PhoneNumberAddressListResponse
@@ -57,9 +59,11 @@ namespace SignalWireAPI.Fabric.PhoneNumberAddresses {
     @doc("""
       Retrieves one phone number address from your SignalWire project by ID. Use [List phone number addresses](/docs/apis/rest/phone-number-addresses/list-phone-number-addresses) to find the ID. The ID must belong to a phone number address in your project whose number you still own; an ID from another project, a different kind of resource address (for example, a SIP address), or a released number returns a 404.
 
-      <Warning title="Beta">This API is in beta and may change.</Warning>
+      <Warning title="Beta">
+      This API is in beta and may change.
+      </Warning>
 
-      ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
     read(...PhoneNumberAddressPathID):
       | {
@@ -83,9 +87,11 @@ namespace SignalWireAPI.Fabric.PhoneNumberAddresses {
       - `invalid_resource_type`: the resource can't handle the chosen channel.
       - `already_assigned`: the channel already has a resource. Use [Update the resource for a phone number](/docs/apis/rest/phone-number-addresses/update-phone-number-address) to re-point it instead.
 
-      <Warning title="Beta">This API is in beta and may change.</Warning>
+      <Warning title="Beta">
+      This API is in beta and may change.
+      </Warning>
 
-      ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
     @opExample(
       #{
@@ -139,9 +145,11 @@ namespace SignalWireAPI.Fabric.PhoneNumberAddresses {
       - `provided_id_is_unrecognized`: `resource_id` is not a resource in your project.
       - `invalid_resource_type`: the resource can't handle this address's channel.
 
-      <Warning title="Beta">This API is in beta and may change.</Warning>
+      <Warning title="Beta">
+      This API is in beta and may change.
+      </Warning>
 
-      ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
     @patch
     update(...PhoneNumberAddressPathID, @body request: PhoneNumberAddressUpdateRequest):
@@ -160,9 +168,11 @@ namespace SignalWireAPI.Fabric.PhoneNumberAddresses {
     @doc("""
       Removes the resource from a phone number's channel, so inbound calls or messages on that channel no longer reach it. The number stays in your project, the resource is not deleted, and the address remains with `resource_id` set to `null`, so it still appears in [List phone number addresses](/docs/apis/rest/phone-number-addresses/list-phone-number-addresses). To give up the number itself, use [Release phone number](/docs/apis/rest/phone-numbers/release-phone-number).
 
-      <Warning title="Beta">This API is in beta and may change.</Warning>
+      <Warning title="Beta">
+      This API is in beta and may change.
+      </Warning>
 
-      ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
     @delete
     delete(...PhoneNumberAddressPathID):

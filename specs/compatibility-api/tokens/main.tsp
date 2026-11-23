@@ -22,7 +22,9 @@ namespace CompatibilityAPI.Tokens {
       
       For the SignalWire REST API's project route, use [Create API token](/docs/apis/rest/project-tokens/create-token).
       
-      <Warning title="Save the token secret now">The response is the only place the token secret is returned. No later request, including [Update an API Token](/docs/compatibility-api/rest/tokens/update-token), can read it back. If you lose it, [Regenerate API token](/docs/apis/rest/project-tokens/regenerate-token) issues a new value for the same token and keeps its ID.</Warning>
+      <Warning title="Save the token secret now">
+      The response is the only place the token secret is returned. No later request, including [Update an API Token](/docs/compatibility-api/rest/tokens/update-token), can read it back. If you lose it, [Regenerate API token](/docs/apis/rest/project-tokens/regenerate-token) issues a new value for the same token and keeps its ID.
+      </Warning>
       
       ${tokenPermissions<"_Management_">}
       """)

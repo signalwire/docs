@@ -22,7 +22,7 @@ namespace SignalWireAPI.Fabric.PhoneRoutes {
     @doc("""
       Assigns an existing Fabric resource as a phone number's calling or messaging handler. Use it when inbound traffic to an owned number should run an AI Agent, script, Call Flow, Relay Application, or another resource. This operation does not purchase or import the number; use [Purchase phone number](/docs/apis/rest/phone-numbers/purchase-phone-number) or [Import phone number](/docs/apis/rest/phone-numbers/create-imported-phone-number) first when needed.
       
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post
     assign(...PhoneRoutePathID, @body request: PhoneRouteAssignRequest):

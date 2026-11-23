@@ -24,7 +24,7 @@ namespace SignalWireAPI.Fabric.DomainApplications {
       Currently only supports `calling` as a handler and automatically defaults to it.
       </Note>
       
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post
     assign(

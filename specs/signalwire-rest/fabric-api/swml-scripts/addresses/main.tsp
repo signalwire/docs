@@ -19,7 +19,7 @@ namespace SignalWireAPI.Fabric.SWMLScript.Addresses {
     @doc("""
       Returns the project-scoped resource addresses assigned to one SWML Script. Use these callable handles to see how calls or messages can reach the stored script; use [List SWML Scripts](/docs/apis/rest/swml-scripts/list-swml-scripts) for the resources themselves, or the SWML Webhook address operation for server-generated SWML handlers.
       
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...SWMLScriptAddressPathID):
       | SWMLScriptAddressListResponse
