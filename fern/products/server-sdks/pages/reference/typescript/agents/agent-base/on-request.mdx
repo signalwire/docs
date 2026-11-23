@@ -1,22 +1,22 @@
 ---
 title: "onRequest"
 slug: reference/typescript/agents/agent-base/on-request
-description: Public hook called on every inbound request before SWML rendering.
+description: Passes a request body to onSwmlRequest() and returns the SWML modifications it produces.
 max-toc-depth: 3
 ---
 
 [on-swml-request]: /docs/server-sdks/reference/typescript/agents/agent-base/on-swml-request
 [set-on-request-callback]: /docs/server-sdks/reference/typescript/agents/swml-service/set-on-request-callback
 
-Public hook called on every inbound request before the SWML document is
-rendered. The default implementation delegates to
-[`onSwmlRequest()`][on-swml-request]. Override it to return a dictionary of SWML
-modifications, or `void` to render with the default behavior.
+Passes a request body to [`onSwmlRequest()`][on-swml-request] and returns its
+result: a dictionary of SWML modifications, or `void` to render with the
+default behavior. A `null` or missing body is passed on as an empty object.
 
 <Note>
-Most subclasses override [`onSwmlRequest()`][on-swml-request] instead, which is
-the conventional per-request customization hook. `onRequest` is the lower-level
-`WebMixin` parity entry point.
+The agent's request handler calls [`onSwmlRequest()`][on-swml-request]
+directly, not `onRequest`. Overriding `onRequest` doesn't change how served
+requests render. Override `onSwmlRequest()` to customize them, and call
+`onRequest` when you want the modifications for a request body you supply.
 </Note>
 
 <Note>
@@ -27,13 +27,13 @@ use [`setOnRequestCallback()`][set-on-request-callback] on `SWMLService`.
 
 ## **Parameters**
 
-<ParamField path="requestData" type={"Record<string, unknown> | null"} toc={true}>
-  The parsed request body. Contains call metadata such as `call_id` and
-  `caller_id_number`.
+<ParamField path="requestData" type={"SwmlRequestData | null"} toc={true}>
+  The request body. Call details sit under `call`, for example `call.call_id`
+  and the caller's address in `call.from`.
 </ParamField>
 
 <ParamField path="callbackPath" type="string | null" toc={true}>
-  Optional callback path from the request.
+  Optional routing-callback path, passed on to `onSwmlRequest()`.
 </ParamField>
 
 ## **Returns**
@@ -43,18 +43,26 @@ modifications to merge before rendering, or `void` for default rendering.
 
 ## **Example**
 
-```typescript {6}
-import { AgentBase } from '@signalwire/sdk';
+```typescript {5}
+import { AgentBase, type SwmlRequestData } from '@signalwire/sdk';
 
 class PersonalizedAgent extends AgentBase {
-  override async onRequest(
-    requestData?: Record<string, unknown> | null,
-  ): Promise<Record<string, unknown> | void> {
-    const caller = (requestData?.caller_id_number as string) ?? 'unknown';
+  override onSwmlRequest(rawData: SwmlRequestData): Record<string, unknown> {
+    const caller = rawData.call?.from ?? 'unknown';
     return { global_data: { caller_number: caller } };
   }
 }
 
 const agent = new PersonalizedAgent({ name: 'personalized', route: '/' });
-await agent.serve();
+
+// Preview the modifications for a sample request body
+const modifications = await agent.onRequest({
+  call: {
+    call_id: 'sample-call-id',
+    project_id: 'sample-project-id',
+    space_id: 'sample-space-id',
+    from: '+15551234567',
+  },
+});
+console.log(modifications); // { global_data: { caller_number: '+15551234567' } }
 ```
