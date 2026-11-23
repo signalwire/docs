@@ -2842,7 +2842,7 @@
                             "pepperoni"
                         ]
                     ],
-                    "description": "Words and phrases that help the agent understand what the caller says. Each string is passed to speech\nrecognition as a hint, making that word or phrase more likely to be recognized.\nHints don't change how the agent speaks; use `pronounce` for that.\nAn object can set a `hint`, a `pattern` and `replace` pair that rewrites matching text in what the agent\nhears before the AI reads it, or both.\nOne hint list covers every language the agent uses; there are no per-language hints. When speech recognition\nruns in code-switching mode, because `multilingual` is set or a `languages` entry's `code` is `multi` on\nDeepgram speech recognition, recognition hints are not used. That covers string entries and `hint` values, and no error is returned.\nRewrite rules still apply to the transcript in every mode."
+                    "description": "Words and phrases that help the agent understand what the caller says. Each string is passed to speech\nrecognition as a hint, making that word or phrase more likely to be recognized.\nHints don't change how the agent speaks; use `pronounce` for that.\nAn object can set a `hint`, a `pattern` and `replace` pair that rewrites matching text in what the agent\nhears before the AI reads it, or both.\nOne hint list covers every language the agent uses; there are no per-language hints. When Deepgram speech recognition\nruns in code-switching mode, because `multilingual` is set with Deepgram, its default engine, or a `languages` entry's\n`code` is `multi` on Deepgram, recognition hints are not used. That covers string entries and `hint` values, and no error\nis returned. Other speech recognition engines receive hints in every mode.\nRewrite rules still apply to the transcript in every mode."
                 },
                 "languages": {
                     "type": "array",
@@ -6060,7 +6060,7 @@
                     "examples": [
                         30000
                     ],
-                    "description": "Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `1,000` - `600,000`. **Default:** `5000` ms."
+                    "description": "Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `1,000` - `600,000`.\nA nonzero value lower than `end_of_speech_timeout` is raised to `end_of_speech_timeout` plus 1,000 ms. **Default:** `5000` ms."
                 },
                 "attention_timeout_prompt": {
                     "type": "string",
@@ -6153,7 +6153,14 @@
                     "examples": [
                         true
                     ],
-                    "description": "Before each reply, a smaller planning model reviews the conversation and the available functions,\nthen gives the agent a short directive on how to respond. This can improve function use and\ncoherence. The reply waits for the plan, which adds latency to every turn. The planning model is\n`utility_model` if set, otherwise `ai_model`. Billed separately from the agent's per-minute rate.\nTo cover the wait, set `double_turn_fillers` on each entry in `languages`."
+                    "description": "Before each reply, a smaller planning model reviews the conversation and the available functions,\nthen gives the agent a short directive on how to respond. This can improve function use and\ncoherence. The reply waits for the plan, which adds latency to every turn. The planning model is\n`double_turn_model` if set, otherwise `utility_model` if set, otherwise `ai_model`. Billed separately\nfrom the agent's per-minute rate. To cover the wait, set `double_turn_fillers` on each entry in `languages`."
+                },
+                "double_turn_model": {
+                    "type": "string",
+                    "examples": [
+                        "gpt-4.1-mini"
+                    ],
+                    "description": "The model that plans each reply when `double_turns` is enabled. It takes priority over `utility_model`\nfor planning, so you can plan with one model and run background tasks with another. If the model isn't\nrecognized, the planning step is skipped and the agent replies without a plan. Has no effect unless\n`double_turns` is `true`."
                 },
                 "enable_inner_dialog": {
                     "type": "boolean",
@@ -6204,16 +6211,17 @@
                     "examples": [
                         "Cancel order"
                     ],
-                    "description": "Takes a string, including a regular expression, defining barge behavior.\nFor example, this param can direct the AI to stop when the word 'hippopotamus' is input."
+                    "description": "Takes a string, including a regular expression, defining barge behavior.\nFor example, this param can direct the AI to stop when the word 'hippopotamus' is input.\nSetting this param turns off `transparent_barge`, even when `transparent_barge` is set to `true`.\nWhen `barge_min_words` is also set, either condition is enough: the caller interrupts the agent by\nsaying at least that many words or by saying something that matches this string."
                 },
                 "barge_min_words": {
                     "type": "integer",
+                    "default": 0,
                     "examples": [
                         3
                     ],
-                    "minimum": 1,
+                    "minimum": 0,
                     "maximum": 99,
-                    "description": "Defines the number of words that must be input before triggering barge behavior, in a range of `1-99`."
+                    "description": "Defines the number of words that must be input before triggering barge behavior, in a range of `1-99`.\n`0`, the default, turns the word count off, and any value outside `1-99` is ignored.\nWhen `barge_match_string` is also set, either condition is enough to interrupt the agent.\n**Default:** `0`."
                 },
                 "barge_functions": {
                     "type": "boolean",
@@ -6551,7 +6559,7 @@
                     "examples": [
                         true
                     ],
-                    "description": "When enabled, barges agent upon any sound interruption longer than 1 second. The 1-second threshold can't be changed. **Default:** `false`."
+                    "description": "When enabled, barges agent upon any sound interruption longer than 1 second. The 1-second threshold can't be changed.\nThe sound doesn't need to be recognized as words, so a cough, background conversation, or music can interrupt the agent.\nThis interruption ignores `enable_barge`, `barge_min_words`, and `barge_match_string`, and it interrupts a static\ngreeting even when `static_greeting_no_barge` is `true`. **Default:** `false`."
                 },
                 "interrupt_prompt": {
                     "type": "string",
@@ -6714,7 +6722,7 @@
                     "examples": [
                         true
                     ],
-                    "description": "If `true`, the static greeting will not be interrupted by the user if they speak over the greeting. If `false`, the static greeting can be interrupted by the user if they speak over the greeting."
+                    "description": "If `true`, the static greeting will not be interrupted by the user if they speak over the greeting. If `false`, the static greeting can be interrupted by the user if they speak over the greeting.\nWith `true`, what the caller says during the greeting is kept and answered after the greeting finishes.\nA DTMF key press still interrupts the greeting, and so does `interrupt_on_noise`.\nWith `false`, the greeting stops once the caller finishes speaking over it. This interruption ignores\n`barge_min_words`, `barge_match_string`, and `enable_barge`, which apply only after the greeting."
                 },
                 "summary_mode": {
                     "anyOf": [
@@ -6921,13 +6929,17 @@
                         {
                             "type": "string",
                             "const": "national"
+                        },
+                        {
+                            "type": "string",
+                            "const": "generic"
                         }
                     ],
                     "default": "e164",
                     "examples": [
                         "national"
                     ],
-                    "description": "The format for the AI agent to reference phone numbers.\nAllowed values are `e164`, `international`, and `national`.\n**Default:** `e164`.\n\n**Example:**\n- `e164`: `+12345678901`\n- `international`: `+1 234-567-8901`\n- `national`: `(234) 567-8901`"
+                    "description": "The format for the AI agent to reference phone numbers.\nAllowed values are `e164`, `international`, `national`, and `generic`.\nAn unrecognized value is ignored and `e164` is used.\n**Default:** `e164`.\n\n**Example:**\n- `e164`: `+12345678901`\n- `international`: `+1 234-567-8901`\n- `national`: `(234) 567-8901`\n- `generic`: `234 567 8901`"
                 },
                 "verbose_logs": {
                     "type": "boolean",

@@ -39463,9 +39463,10 @@ components:
             Hints don't change how the agent speaks; use `pronounce` for that.
             An object can set a `hint`, a `pattern` and `replace` pair that rewrites matching text in what the agent
             hears before the AI reads it, or both.
-            One hint list covers every language the agent uses; there are no per-language hints. When speech recognition
-            runs in code-switching mode, because `multilingual` is set or a `languages` entry's `code` is `multi` on
-            Deepgram speech recognition, recognition hints are not used. That covers string entries and `hint` values, and no error is returned.
+            One hint list covers every language the agent uses; there are no per-language hints. When Deepgram speech recognition
+            runs in code-switching mode, because `multilingual` is set with Deepgram, its default engine, or a `languages` entry's
+            `code` is `multi` on Deepgram, recognition hints are not used. That covers string entries and `hint` values, and no error
+            is returned. Other speech recognition engines receive hints in every mode.
             Rewrite rules still apply to the transcript in every mode.
           examples:
             - - pizza
@@ -39597,7 +39598,9 @@ components:
             - type: number
               enum:
                 - 0
-          description: 'Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `1,000` - `600,000`. **Default:** `5000` ms.'
+          description: |-
+            Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `1,000` - `600,000`.
+            A nonzero value lower than `end_of_speech_timeout` is raised to `end_of_speech_timeout` plus 1,000 ms. **Default:** `5000` ms.
           examples:
             - 30000
         attention_timeout_prompt:
@@ -39672,11 +39675,20 @@ components:
             Before each reply, a smaller planning model reviews the conversation and the available functions,
             then gives the agent a short directive on how to respond. This can improve function use and
             coherence. The reply waits for the plan, which adds latency to every turn. The planning model is
-            `utility_model` if set, otherwise `ai_model`. Billed separately from the agent's per-minute rate.
-            To cover the wait, set `double_turn_fillers` on each entry in `languages`.
+            `double_turn_model` if set, otherwise `utility_model` if set, otherwise `ai_model`. Billed separately
+            from the agent's per-minute rate. To cover the wait, set `double_turn_fillers` on each entry in `languages`.
           examples:
             - true
           default: false
+        double_turn_model:
+          type: string
+          description: |-
+            The model that plans each reply when `double_turns` is enabled. It takes priority over `utility_model`
+            for planning, so you can plan with one model and run background tasks with another. If the model isn't
+            recognized, the planning step is skipped and the agent replies without a plan. Has no effect unless
+            `double_turns` is `true`.
+          examples:
+            - gpt-4.1-mini
         enable_inner_dialog:
           type: boolean
           description: |-
@@ -39727,15 +39739,23 @@ components:
           description: |-
             Takes a string, including a regular expression, defining barge behavior.
             For example, this param can direct the AI to stop when the word 'hippopotamus' is input.
+            Setting this param turns off `transparent_barge`, even when `transparent_barge` is set to `true`.
+            When `barge_min_words` is also set, either condition is enough: the caller interrupts the agent by
+            saying at least that many words or by saying something that matches this string.
           examples:
             - Cancel order
         barge_min_words:
           type: integer
-          minimum: 1
+          minimum: 0
           maximum: 99
-          description: Defines the number of words that must be input before triggering barge behavior, in a range of `1-99`.
+          description: |-
+            Defines the number of words that must be input before triggering barge behavior, in a range of `1-99`.
+            `0`, the default, turns the word count off, and any value outside `1-99` is ignored.
+            When `barge_match_string` is also set, either condition is enough to interrupt the agent.
+            **Default:** `0`.
           examples:
             - 3
+          default: 0
         barge_functions:
           type: boolean
           description: If `true`, allows functions to be executed while the AI is being interrupted. **Default:** `false`.
@@ -39995,7 +40015,11 @@ components:
           default: 2000
         interrupt_on_noise:
           type: boolean
-          description: When enabled, barges agent upon any sound interruption longer than 1 second. The 1-second threshold can't be changed. **Default:** `false`.
+          description: |-
+            When enabled, barges agent upon any sound interruption longer than 1 second. The 1-second threshold can't be changed.
+            The sound doesn't need to be recognized as words, so a cough, background conversation, or music can interrupt the agent.
+            This interruption ignores `enable_barge`, `barge_min_words`, and `barge_match_string`, and it interrupts a static
+            greeting even when `static_greeting_no_barge` is `true`. **Default:** `false`.
           examples:
             - true
         interrupt_prompt:
@@ -40144,7 +40168,12 @@ components:
             - Hello! Welcome to our customer service. How can I help you today?
         static_greeting_no_barge:
           type: boolean
-          description: If `true`, the static greeting will not be interrupted by the user if they speak over the greeting. If `false`, the static greeting can be interrupted by the user if they speak over the greeting.
+          description: |-
+            If `true`, the static greeting will not be interrupted by the user if they speak over the greeting. If `false`, the static greeting can be interrupted by the user if they speak over the greeting.
+            With `true`, what the caller says during the greeting is kept and answered after the greeting finishes.
+            A DTMF key press still interrupts the greeting, and so does `interrupt_on_noise`.
+            With `false`, the greeting stops once the caller finishes speaking over it. This interruption ignores
+            `barge_min_words`, `barge_match_string`, and `enable_barge`, which apply only after the greeting.
           examples:
             - true
           default: false
@@ -40331,15 +40360,18 @@ components:
             - 'e164'
             - international
             - national
+            - generic
           description: |-
             The format for the AI agent to reference phone numbers.
-            Allowed values are `e164`, `international`, and `national`.
+            Allowed values are `e164`, `international`, `national`, and `generic`.
+            An unrecognized value is ignored and `e164` is used.
             **Default:** `e164`.
 
             **Example:**
             - `e164`: `+12345678901`
             - `international`: `+1 234-567-8901`
             - `national`: `(234) 567-8901`
+            - `generic`: `234 567 8901`
           examples:
             - national
           default: 'e164'

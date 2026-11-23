@@ -90,7 +90,10 @@ model AIParams {
   @example(true)
   asr_smart_format?: boolean;
 
-  @doc("Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `1,000` - `600,000`. **Default:** `5000` ms.")
+  @doc("""
+    Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `1,000` - `600,000`.
+    A nonzero value lower than `end_of_speech_timeout` is raised to `end_of_speech_timeout` plus 1,000 ms. **Default:** `5000` ms.
+    """)
   @example(30000)
   attention_timeout?: AttentionTimeout | 0;
 
@@ -148,11 +151,20 @@ model AIParams {
     Before each reply, a smaller planning model reviews the conversation and the available functions,
     then gives the agent a short directive on how to respond. This can improve function use and
     coherence. The reply waits for the plan, which adds latency to every turn. The planning model is
-    `utility_model` if set, otherwise `ai_model`. Billed separately from the agent's per-minute rate.
-    To cover the wait, set `double_turn_fillers` on each entry in `languages`.
+    `double_turn_model` if set, otherwise `utility_model` if set, otherwise `ai_model`. Billed separately
+    from the agent's per-minute rate. To cover the wait, set `double_turn_fillers` on each entry in `languages`.
     """)
   @example(true)
   double_turns?: boolean = false;
+
+  @doc("""
+    The model that plans each reply when `double_turns` is enabled. It takes priority over `utility_model`
+    for planning, so you can plan with one model and run background tasks with another. If the model isn't
+    recognized, the planning step is skipped and the agent replies without a plan. Has no effect unless
+    `double_turns` is `true`.
+    """)
+  @example("gpt-4.1-mini")
+  double_turn_model?: string;
 
   @doc("""
     Enables the inner dialog feature, which runs a separate AI process in the background
@@ -197,15 +209,23 @@ model AIParams {
   @doc("""
     Takes a string, including a regular expression, defining barge behavior.
     For example, this param can direct the AI to stop when the word 'hippopotamus' is input.
+    Setting this param turns off `transparent_barge`, even when `transparent_barge` is set to `true`.
+    When `barge_min_words` is also set, either condition is enough: the caller interrupts the agent by
+    saying at least that many words or by saying something that matches this string.
     """)
   @example("Cancel order")
   barge_match_string?: string;
 
-  @doc("Defines the number of words that must be input before triggering barge behavior, in a range of `1-99`.")
-  @minValue(1)
+  @doc("""
+    Defines the number of words that must be input before triggering barge behavior, in a range of `1-99`.
+    `0`, the default, turns the word count off, and any value outside `1-99` is ignored.
+    When `barge_match_string` is also set, either condition is enough to interrupt the agent.
+    **Default:** `0`.
+    """)
+  @minValue(0)
   @maxValue(99)
   @example(3)
-  barge_min_words?: integer;
+  barge_min_words?: integer = 0;
 
   @doc("If `true`, allows functions to be executed while the AI is being interrupted. **Default:** `false`.")
   @example(true)
@@ -408,7 +428,12 @@ model AIParams {
   @example(2000)
   input_poll_freq?: integer = 2000;
 
-  @doc("When enabled, barges agent upon any sound interruption longer than 1 second. The 1-second threshold can't be changed. **Default:** `false`.")
+  @doc("""
+    When enabled, barges agent upon any sound interruption longer than 1 second. The 1-second threshold can't be changed.
+    The sound doesn't need to be recognized as words, so a cough, background conversation, or music can interrupt the agent.
+    This interruption ignores `enable_barge`, `barge_min_words`, and `barge_match_string`, and it interrupts a static
+    greeting even when `static_greeting_no_barge` is `true`. **Default:** `false`.
+    """)
   @example(true)
   interrupt_on_noise?: boolean;
 
@@ -534,7 +559,13 @@ model AIParams {
   @example("Hello! Welcome to our customer service. How can I help you today?")
   static_greeting?: string;
 
-  @doc("If `true`, the static greeting will not be interrupted by the user if they speak over the greeting. If `false`, the static greeting can be interrupted by the user if they speak over the greeting.")
+  @doc("""
+    If `true`, the static greeting will not be interrupted by the user if they speak over the greeting. If `false`, the static greeting can be interrupted by the user if they speak over the greeting.
+    With `true`, what the caller says during the greeting is kept and answered after the greeting finishes.
+    A DTMF key press still interrupts the greeting, and so does `interrupt_on_noise`.
+    With `false`, the greeting stops once the caller finishes speaking over it. This interruption ignores
+    `barge_min_words`, `barge_match_string`, and `enable_barge`, which apply only after the greeting.
+    """)
   @example(true)
   static_greeting_no_barge?: boolean = false;
 
@@ -680,16 +711,18 @@ model AIParams {
 
   @doc("""
     The format for the AI agent to reference phone numbers.
-    Allowed values are `e164`, `international`, and `national`.
+    Allowed values are `e164`, `international`, `national`, and `generic`.
+    An unrecognized value is ignored and `e164` is used.
     **Default:** `e164`.
-    
+
     **Example:**
     - `e164`: `+12345678901`
     - `international`: `+1 234-567-8901`
     - `national`: `(234) 567-8901`
+    - `generic`: `234 567 8901`
     """)
   @example("national")
-  tts_number_format?: "e164" | "international" | "national" = "e164";
+  tts_number_format?: "e164" | "international" | "national" | "generic" = "e164";
 
   @doc("Has no effect and can be omitted.")
   verbose_logs?: boolean;
