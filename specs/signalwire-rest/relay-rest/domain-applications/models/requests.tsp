@@ -9,11 +9,12 @@ model CreateDomainApplicationRequest {
   name: string;
 
   @doc("""
-    The identifier portion of the domain application's domain, at most 50 characters.
+    The identifier portion of the domain application's domain, at most 50 characters. Use letters, digits, and hyphens only: the identifier must start and end with a letter or digit and can't contain two hyphens in a row.
 
-    The domain, made of your Space name, a hyphen (two hyphens in some Spaces), and the identifier, can be at most 63 characters, the longest a single part of a hostname can be. With a long Space name, the identifier's limit drops below 50: 63 minus the Space name and the hyphen. A longer domain returns a `422`, unless a domain application in your Space already uses that domain.
+    The domain, made of your Space name, a hyphen (two hyphens in some Spaces), and the identifier, can be at most 63 characters, the longest a single part of a hostname can be. With a long Space name, the identifier's limit drops below 50, to 63 minus the length of your Space name and separator. The `domain` field in the response shows the full domain your Space builds. A longer domain returns a `422`, unless a domain application in your Space already uses that domain. If a domain application in another Space already uses the domain, the request returns a `422` with the detail `Identifier is not available`.
     """)
   @maxLength(50)
+  @pattern("^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$")
   identifier: string;
 
   @doc("The user portion of the domain application.")
@@ -124,11 +125,14 @@ model UpdateDomainApplicationRequest {
   name?: string;
 
   @doc("""
-    The identifier portion of the domain application's domain, at most 50 characters.
+    The identifier portion of the domain application's domain, at most 50 characters. Use letters, digits, and hyphens only: the identifier must start and end with a letter or digit and can't contain two hyphens in a row.
 
-    The domain, made of your Space name, a hyphen (two hyphens in some Spaces), and the identifier, can be at most 63 characters, the longest a single part of a hostname can be. With a long Space name, the identifier's limit drops below 50: 63 minus the Space name and the hyphen. A longer domain returns a `422`, unless a domain application in your Space already uses that domain. The check runs only when you change `identifier`.
+    The domain, made of your Space name, a hyphen (two hyphens in some Spaces), and the identifier, can be at most 63 characters, the longest a single part of a hostname can be. With a long Space name, the identifier's limit drops below 50, to 63 minus the length of your Space name and separator. The `domain` field in the response shows the full domain your Space builds. A longer domain returns a `422`, unless a domain application in your Space already uses that domain. If a domain application in another Space already uses the domain, the request returns a `422` with the detail `Identifier is not available`.
+
+    The length check runs only when you change `identifier`. Changing it rebuilds the domain with the separator your Space uses now, so a domain that used one hyphen can come back with two.
     """)
   @maxLength(50)
+  @pattern("^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$")
   identifier?: string;
 
   @doc("A string representing the user portion of the domain application.")
