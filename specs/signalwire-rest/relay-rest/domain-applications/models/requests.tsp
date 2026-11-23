@@ -8,7 +8,12 @@ model CreateDomainApplicationRequest {
   @example("Test App")
   name: string;
 
-  @doc("A string representing the identifier portion of the domain application.")
+  @doc("""
+    The identifier portion of the domain application's domain, at most 50 characters.
+
+    The domain, made of your Space name, a hyphen (two hyphens in some Spaces), and the identifier, can be at most 63 characters, the longest a single part of a hostname can be. With a long Space name, the identifier's limit drops below 50: 63 minus the Space name and the hyphen. A longer domain returns a `422`, unless a domain application in your Space already uses that domain.
+    """)
+  @maxLength(50)
   identifier: string;
 
   @doc("The user portion of the domain application.")
@@ -118,7 +123,12 @@ model UpdateDomainApplicationRequest {
   @example("Test App")
   name?: string;
 
-  @doc("A string representing the identifier portion of the domain application.")
+  @doc("""
+    The identifier portion of the domain application's domain, at most 50 characters.
+
+    The domain, made of your Space name, a hyphen (two hyphens in some Spaces), and the identifier, can be at most 63 characters, the longest a single part of a hostname can be. With a long Space name, the identifier's limit drops below 50: 63 minus the Space name and the hyphen. A longer domain returns a `422`, unless a domain application in your Space already uses that domain. The check runs only when you change `identifier`.
+    """)
+  @maxLength(50)
   identifier?: string;
 
   @doc("A string representing the user portion of the domain application.")
