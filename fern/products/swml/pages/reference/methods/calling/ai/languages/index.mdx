@@ -14,6 +14,9 @@ max-toc-depth: 3
 [turn-filler-sources]: /docs/swml/reference/calling/ai/params#paramsturn_filler_sources
 [ai-pronounce]: /docs/swml/reference/calling/ai#aipronounce
 [ai-hints]: /docs/swml/reference/calling/ai#aihints
+[voice-fallback]: /docs/swml/reference/calling/ai#voice-fallback
+[default-voices]: /docs/swml/reference/calling/ai#default-voices
+[heygen]: /docs/platform/voice/tts/heygen
 [cartesia]: /docs/platform/voice/tts/cartesia
 [elevenlabs]: /docs/platform/voice/tts/elevenlabs
 [fish]: /docs/platform/voice/tts/fish
@@ -58,15 +61,19 @@ key rather than emptying it.
 <Info> If a different STT model was selected using the [`openai_asr_engine` parameter][openai-asr-engine], you must select a code supported by that engine.</Info>
 </ParamField>
 
-<ParamField path="languages[].voice" type="string" required={true} toc={true}>
+<ParamField path="languages[].voice" type="string | string[]" toc={true}>
   String format: `<engine id>.<voice id>`, with an optional `:<model id>` suffix for engines that offer a choice of model.
 {/* hidden 2026-10-05
 Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `deepgram`, `cartesia`, `rime`, `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`. Select voice from [TTS provider reference][tts-providers].
 */}
-Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `deepgram`, `cartesia`, `rime`, `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, or `fish`. Select voice from [TTS provider reference][tts-providers].
+Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `deepgram`, `cartesia`, `rime`, `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `heygen`. Select voice from [TTS provider reference][tts-providers].
 For example, `"gcloud.fr-FR-Neural2-B"` or `"elevenlabs.rachel:eleven_flash_v2_5"`.
 Always name the engine: a bare voice id resolves against a default engine that can change.
 See [`voice` usage](#use-voice-strings) for more details.
+
+  Supply an array of up to 8 voice strings to give this language backup voices. The first voice speaks, and when it fails, the agent goes on with the next voice that opens, then [`ai.fallback_voice`][voice-fallback]. See [Voice fallback][voice-fallback].
+
+  Required unless the [`default_voice`][default-voices] SWML variable supplies a voice for this language. Without either, the entry is skipped.
 </ParamField>
 
 <ParamField path="languages[].auto_emotion" type="boolean" default="false" toc={true}>
@@ -154,6 +161,14 @@ See [`voice` usage](#use-voice-strings) for more details.
   </Info>
   </ParamField>
 
+  <ParamField path="params.expressiveness_boost" type="number | string" toc={true}>
+    How expressive the voice is. Valid values range from `0` to `1`; HeyGen suggests `0.5` to keep a voice's character.
+    A string that holds only a number is also accepted. A value out of range, or not a number, isn't sent, and HeyGen's default of `1` applies.
+    <Info>
+  Only works with the [HeyGen][heygen] TTS engine.
+  </Info>
+  </ParamField>
+
   {/* hidden 2026-10-05
   <ParamField path="params.speed" type="number" default="1.0" toc={true}>
     How quickly the voice speaks.
@@ -213,7 +228,7 @@ Compose the `voice` string using the `<engine id>.<voice id>` syntax, optionally
 {/* hidden 2026-10-05
 First, select your engine using the `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `deepgram`, `cartesia`, `rime`, `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify` identifier. 
 */}
-First, select your engine using the `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `deepgram`, `cartesia`, `rime`, `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, or `fish` identifier. 
+First, select your engine using the `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `deepgram`, `cartesia`, `rime`, `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `heygen` identifier. 
 Append a period (`.`), and then the specific voice ID from the TTS provider, giving `gcloud.en-US-Casual-K`. 
 Where an engine offers more than one model, append a colon (`:`) and the model ID, as in `elevenlabs.rachel:eleven_flash_v2_5`.
 The model suffix is read only when the string starts with an engine: in `rachel:eleven_flash_v2_5`, the whole
@@ -368,6 +383,58 @@ ai:
         }
       }
     ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Give each language backup voices
+
+Each language has its own voice array, and both share `fallback_voice`. English tries Rachel, then Cartesia's
+Kurt, then OpenAI Alloy, then the platform's last-resort voice. Spanish tries Elvira, then Google
+`es-ES-Neural2-A`, then OpenAI Alloy, then the last-resort voice. See [Voice fallback][voice-fallback].
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+ai:
+  prompt:
+    text: You are a bilingual support agent.
+  languages:
+    - name: English
+      code: en-US
+      voice:
+        - elevenlabs.rachel:eleven_flash_v2_5
+        - cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e
+    - name: Spanish
+      code: es-ES
+      voice:
+        - azure.es-ES-ElviraNeural
+        - gcloud.es-ES-Neural2-A
+  fallback_voice: openai.alloy
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "ai": {
+    "prompt": {
+      "text": "You are a bilingual support agent."
+    },
+    "languages": [
+      {
+        "name": "English",
+        "code": "en-US",
+        "voice": ["elevenlabs.rachel:eleven_flash_v2_5", "cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e"]
+      },
+      {
+        "name": "Spanish",
+        "code": "es-ES",
+        "voice": ["azure.es-ES-ElviraNeural", "gcloud.es-ES-Neural2-A"]
+      }
+    ],
+    "fallback_voice": "openai.alloy"
   }
 }
 ```

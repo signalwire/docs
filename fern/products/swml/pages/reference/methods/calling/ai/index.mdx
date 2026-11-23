@@ -141,8 +141,20 @@ it is recommended to read the [prompt engineering][prompt-engineering] guide.
 </ParamField>
 
 <ParamField path="post_prompt.model" type="string" toc={true}>
-  The AI model that writes the summary. When omitted, the agent's model is used. If the model you name isn't
-  available, a default model is used instead; if no default model is available either, the agent doesn't start.
+  The AI model that writes the summary. When omitted, the agent's model is used. Name a model from the
+  [supported models](/docs/swml/reference/calling/ai/prompt#supported-models), optionally as `model@provider`.
+  Any other name runs as `gpt-4o-mini`, and the call gets a non-fatal `calling.error` whose `error` is
+  `post_model_substituted`. If no model is available at all, the agent doesn't start.
+</ParamField>
+
+<ParamField path="post_prompt.reasoning_effort" type="string" toc={true}>
+  How much the summary model reasons before it replies. The accepted values and the default depend on the model; see
+  [reasoning and verbosity](/docs/swml/reference/calling/ai/prompt#reasoning-and-verbosity).
+</ParamField>
+
+<ParamField path="post_prompt.verbosity" type="string" default="low" toc={true}>
+  How long the summary model's replies are: `low`, `medium`, or `high`. Any other value uses the default. Applies to
+  the models listed in [reasoning and verbosity](/docs/swml/reference/calling/ai/prompt#reasoning-and-verbosity).
 </ParamField>
 
 <ParamField path="post_prompt.max_tokens" type="integer" toc={true}>
@@ -151,10 +163,12 @@ it is recommended to read the [prompt engineering][prompt-engineering] guide.
 
 <ParamField path="post_prompt.temperature" type="number" default="1.0" toc={true}>
   Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random.
+  On a model that takes `reasoning_effort`, it applies only when `reasoning_effort` is `none`.
 </ParamField>
 
 <ParamField path="post_prompt.top_p" type="number" default="1.0" toc={true}>
   Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make the output less random.
+  On a model that takes `reasoning_effort`, it applies only when `reasoning_effort` is `none`.
 </ParamField>
 
 <ParamField path="post_prompt.confidence" type="number" deprecated={true} toc={true}>
@@ -162,11 +176,11 @@ it is recommended to read the [prompt engineering][prompt-engineering] guide.
 </ParamField>
 
 <ParamField path="post_prompt.presence_penalty" type="number" default="0" toc={true}>
-  Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics.
+  Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. Not used on `gpt-6-luna`.
 </ParamField>
 
 <ParamField path="post_prompt.frequency_penalty" type="number" default="0" toc={true}>
-  Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim.
+  Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. Not used on `gpt-6-luna`.
 </ParamField>
 
 </Indent>
@@ -217,11 +231,26 @@ it is recommended to read the [prompt engineering][prompt-engineering] guide.
 </ParamField>
 
 
-<ParamField path="ai.voice" type="string" toc={true}>
+<ParamField path="ai.voice" type="string | string[]" toc={true}>
   The voice the agent speaks with when neither `ai.languages` nor `ai.multilingual` is set.
   Format: `<engine id>.<voice id>`, with an optional `:<model id>` suffix for engines that offer a choice of model,
-  the same as [`languages[].voice`][voice-strings]. When `ai.languages` or `ai.multilingual` is set, the voices
-  configured there are used instead.
+  the same as [`languages[].voice`][voice-strings].
+
+  Supply an array of up to 8 voice strings to give the voice backups. The first voice speaks, and when it fails,
+  the agent goes on with the next voice that opens. See [Voice fallback](#voice-fallback).
+
+  When `ai.languages` or `ai.multilingual` is set, the voices configured there are used instead. With
+  `ai.languages`, only this voice's engine prefix is read, as the engine the entries inherit.
+
+  With no voice set anywhere, the agent speaks with the [`default_voice`](#default-voices) SWML variable when
+  it's set, otherwise with the platform's default voice, `elevenlabs.mark`.
+</ParamField>
+
+
+<ParamField path="ai.fallback_voice" type="string | string[]" toc={true}>
+  Backup voices shared by every language: one voice string, or an array of up to 8. They're tried in order once
+  a language's own voices have all failed, or the `ai.voice` array has, for an agent without `ai.languages` or
+  `ai.multilingual`. After them comes the platform's last-resort voice. See [Voice fallback](#voice-fallback).
 </ParamField>
 
 </Indent>
@@ -230,6 +259,7 @@ it is recommended to read the [prompt engineering][prompt-engineering] guide.
 
 - **ai_result:** (out) `success` | `failed`. Whether the agent ran. `failed` also covers an `agent` value that isn't a valid ID.
   When `agent` runs a saved agent, this method doesn't set `ai_result` itself.
+- **default_voice:** (in) The voices for any voice field the method leaves out. See [Default voices](#default-voices).
 
 ## post_prompt_url callback
 
@@ -266,6 +296,78 @@ agent resumes with it:
 }
 ```
 
+
+## Voice fallback
+
+Every voice field takes one voice string or an array of up to 8: `ai.voice`, [`languages[].voice`][languages],
+[`multilingual.languages[].voice`][multilingual], and `ai.fallback_voice`. The first voice of an array speaks.
+When the speaking voice fails to open, or fails during the call, the agent goes on with the next voice that
+opens instead of going silent or ending the call.
+
+Each language tries its voices in this order:
+
+1. The rest of its own array, in order. For an agent without `languages` or `multilingual`, that's the `ai.voice` array.
+2. `ai.fallback_voice`: one voice, or its array in order.
+3. The platform's last-resort voice, Cartesia's Kurt (`cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e`).
+
+Every language shares the same `fallback_voice` voices and the same last-resort voice. The last-resort voice
+differs from the platform's default voice, ElevenLabs Mark, which speaks only when an agent names no voice at all.
+To keep Mark ahead of Kurt, name `elevenlabs.mark` in `fallback_voice`.
+
+An array's elements follow these rules:
+
+- Each element is a voice string, `<engine>.<voice>` or `<engine>.<voice>:<model>`. An element that isn't a non-empty string is dropped.
+- `voice`, `languages[].voice`, and `multilingual.languages[].voice` hold the speaking voice and up to 7 backups; `fallback_voice` holds up to 8 voices. Elements past the eighth are dropped.
+- A string that holds a JSON array, such as `"[\"elevenlabs.rachel\",\"openai.alloy\"]"`, is read as that array. This helps when the value comes from a SWML variable.
+- An element after the first with no engine takes the engine its name implies: a Google-shaped name such as `en-US-Neural2-C` is a Google Cloud voice, and any other name uses ElevenLabs. Name the engine on every element to be sure.
+- Only the first voice takes the entry's `model` and `params`. The voices after it are opened from their own voice strings alone.
+
+During the call:
+
+- The agent only moves forward through the voices. A voice that failed isn't tried again, except the last-resort voice, which is tried again on a fresh connection once the rest are used up.
+- A voice that won't open is passed over at once, and the next is tried.
+- A backup voice speaks in the caller's language, except a Google Cloud or Azure voice, whose name carries its own locale: `gcloud.en-US-Neural2-C` speaks `en-US`.
+- The caller hears a short line at each recovery: "Excuse me, I need to adjust something." at startup and for most failures, "Sorry about that, let me get myself sorted out." when the engine fails while being sent text, and "One moment." when a streaming voice stalls.
+- A streaming voice that goes silent mid-sentence is first reopened as the same voice without streaming, and the agent moves on only if that fails. A voice that opens a reply's first sentence but sends no audio for 3 seconds is tried once more, then treated as failed.
+- Each voice change fires a `calling.error` event that names the failed voice and the voice that took over.
+- Text sent to a voice that failed before speaking it isn't billed.
+
+The call ends when no voice opens, with the reason `voice_open_failed`, or when voices keep failing without
+producing audio, with the reason `voice_unrecoverable`. That happens after as many voice changes without audio
+as there are voices to try, plus one, and never fewer than 2; audio from any voice resets the count. Both
+reasons are reported to the [`hangup_hook`](/docs/swml/reference/calling/ai/swaig/functions#hangup_hook) function.
+
+A SWAIG function can change the voice mid-call with the
+[`change_voice`](/docs/swml/reference/calling/ai/swaig/functions/data-map#actionchange_voice) action. An array there replaces the current language's own voices;
+a single voice keeps the language's backups. Either way, the agent starts again from the first voice.
+
+## Default voices
+
+The `default_voice` SWML variable gives the voice for every voice field the `ai` method leaves out, so one
+script can set the voices for several agents, or for each language, in one place. Set it before the `ai`
+method runs, for example with [`set`](/docs/swml/reference/calling/set). The method reads it once, when it
+starts, so a later change applies to the next `ai` method.
+
+Its value can be:
+
+- one voice string;
+- an array of voice strings, read the same way as a voice field's array;
+- an object whose keys are language codes and whose values are a voice string or an array, with an optional `default` key;
+- text that holds a JSON array or object, which is read as that JSON.
+
+For an object, a language takes the entry for its exact code, then for its base language (`es` for `es-MX`),
+then `default`. Keys match in any case.
+
+The variable fills:
+
+- `ai.voice`, when the method has no `voice`, `languages`, or `multilingual`, looked up as `en-US`;
+- each `languages[]` entry with no `voice`, looked up by the entry's first `code`;
+- each `multilingual.languages[]` entry with no `voice`, looked up by its `language`;
+- a `multilingual` object with no `languages` at all: each key of the object becomes an entry, with `default` as the catch-all, and a string or array becomes a single catch-all entry. The keys must then be language codes the multilingual speech recognizer accepts.
+
+A voice set on the method always wins over the variable, and the variable wins over the platform's default
+voice. Without the variable, a `languages[]` entry with no `voice` is skipped. The variable doesn't fill
+`fallback_voice`, `change_voice`, or [`live_translate`](/docs/swml/reference/calling/live-translate) voices.
 
 ## Examples
 
@@ -408,6 +510,119 @@ sections:
               "replace": "GIF",
               "with": "jif"
             }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+
+### Backup voices
+
+The agent speaks with ElevenLabs Rachel. If Rachel fails, it goes on with Cartesia's Kurt, then OpenAI Alloy,
+then Google `en-US-Neural2-C`, then the platform's last-resort voice.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - ai:
+        prompt:
+          text: You are a helpful receptionist.
+        voice:
+          - elevenlabs.rachel
+          - cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e
+        fallback_voice:
+          - openai.alloy
+          - gcloud.en-US-Neural2-C
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "answer": {}
+      },
+      {
+        "ai": {
+          "prompt": {
+            "text": "You are a helpful receptionist."
+          },
+          "voice": ["elevenlabs.rachel", "cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e"],
+          "fallback_voice": ["openai.alloy", "gcloud.en-US-Neural2-C"]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+
+### Default voices per language
+
+English (`en-US`) takes the `en` entry, Spanish (`es-MX`) the `es` entry, and French the `default` entry.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - set:
+        default_voice:
+          en:
+            - elevenlabs.rachel
+            - cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e
+          es: azure.es-ES-ElviraNeural
+          default: elevenlabs.rachel:eleven_multilingual_v2
+    - ai:
+        prompt:
+          text: You are a bilingual support agent.
+        languages:
+          - name: English
+            code: en-US
+          - name: Spanish
+            code: es-MX
+          - name: French
+            code: fr-FR
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "set": {
+          "default_voice": {
+            "en": ["elevenlabs.rachel", "cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e"],
+            "es": "azure.es-ES-ElviraNeural",
+            "default": "elevenlabs.rachel:eleven_multilingual_v2"
+          }
+        }
+      },
+      {
+        "ai": {
+          "prompt": {
+            "text": "You are a bilingual support agent."
+          },
+          "languages": [
+            { "name": "English", "code": "en-US" },
+            { "name": "Spanish", "code": "es-MX" },
+            { "name": "French", "code": "fr-FR" }
           ]
         }
       }

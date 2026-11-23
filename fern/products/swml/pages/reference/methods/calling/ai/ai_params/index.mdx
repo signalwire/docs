@@ -19,6 +19,7 @@ max-toc-depth: 3
 
 Parameters for AI that can be passed in `ai.params` at the top level of the [`ai` method](/docs/swml/reference/calling/ai).
 These parameters control the fundamental behavior and capabilities of the AI agent, including model selection, conversation management, and advanced features like thinking and vision.
+Timing parameters take a number or a duration string such as `"1.5s"` or `"20m"`; see [Duration values](#duration-values).
 
 ## **Properties**
 
@@ -29,7 +30,7 @@ These parameters control the fundamental behavior and capabilities of the AI age
 <Indent>
 
 <ParamField path="params.ai_model" type="string" default="gpt-4o-mini" toc={true}>
-  The AI model that the AI Agent will use during the conversation.
+  The AI model for the conversation, used when [`prompt.model`](/docs/swml/reference/calling/ai/prompt#promptmodel) isn't set. Name a model on the [supported model list](/docs/swml/reference/calling/ai/prompt#supported-models), optionally as `model@provider`. Any other name runs as `gpt-4o-mini`, and the call gets a non-fatal `calling.error` whose `error` is `model_substituted`.
 </ParamField>
 
 <ParamField path="params.ai_name" type="string" default="computer" toc={true}>
@@ -64,7 +65,7 @@ These parameters control the fundamental behavior and capabilities of the AI age
 </ParamField>
 
 <ParamField path="convo[].content" type="string" required={true} toc={true}>
-  The text content of the message.
+  The text content of the message. With [`redact_prompt`](#paramsredact_prompt) set, `user` entries are exported as `----` in the call logs.
 </ParamField>
 
 <ParamField path="convo[].lang" type="string" default="en" toc={true}>
@@ -80,7 +81,7 @@ These parameters control the fundamental behavior and capabilities of the AI age
 
 
 <ParamField path="params.conversation_sliding_window" type="integer" toc={true}>
-  Sets the size of the sliding window for conversation history. This limits how much conversation history is sent to the AI model.
+  Sets the size of the sliding window for conversation history. This limits how much conversation history is sent to the AI model. The current step's instructions and the current gather question are never dropped from the window.
 </ParamField>
 
 
@@ -91,6 +92,17 @@ These parameters control the fundamental behavior and capabilities of the AI age
 
 <ParamField path="params.double_turns" type="boolean" default="false" toc={true}>
   Before each reply, a smaller planning model reviews the conversation and the available functions, then gives the agent a short directive on how to respond. This can improve function use and coherence. The reply waits for the plan, which adds latency to every turn. The planning model is [`utility_model`](#paramsutility_model) if set, otherwise `ai_model`. Billed separately from the agent's per-minute rate. To cover the wait, set [`double_turn_fillers`](/docs/swml/reference/calling/ai/languages#languagesdouble_turn_fillers) on each entry in `languages`.
+</ParamField>
+
+
+<ParamField path="params.enable_end_call" type="boolean" default="true" toc={true}>
+  Whether the model can end the call itself. Set it to `false` and the call ends only when the caller hangs up, through a SWAIG action such as `hangup`, `transfer`, or `stop`, or through [`hard_stop_time`](#paramshard_stop_time) or [`inactivity_timeout`](#paramsinactivity_timeout). With it off:
+
+  - The model isn't taught how to hang up.
+  - An end-call marker the model writes anyway is removed from the spoken words, and no hangup is queued.
+  - A hangup tool call is refused, and the model is told to continue the conversation.
+
+  `false`, `0`, and the strings `"false"`, `"no"`, `"off"`, `"f"`, `"disabled"`, `"inactive"`, `"disallow"`, and `"0"` turn it off. Any other value, `1` included, leaves it on.
 </ParamField>
 
 
@@ -140,16 +152,39 @@ These parameters control the fundamental behavior and capabilities of the AI age
   A plain-language description of sensitive content to redact from everything the platform records or transmits about the call — logs, events, webhook payloads, the call timeline, and the post-conversation `call_log` and `raw_call_log`. For example: `"credit card numbers, social security numbers, and full names"`. Redacted content is replaced with `----`. Set this parameter to enable redaction; omit it to leave redaction off.
 
   The caller still hears the content in full, and **the AI still receives the real text** — redaction protects what is recorded and transmitted, not what the AI processes. Redaction can occasionally miss content, so treat it as a safeguard for your logs and integrations rather than an absolute guarantee.
+
+  With redaction on, these are also masked:
+
+  - A caller turn with no redacted form is exported as `----`, never as said. That covers a turn whose redaction failed, a turn that doesn't wake the agent (under `speak_when_spoken_to`, or while paused), and `user` entries given in [`convo`](#paramsconvo).
+  - Recognizer details on caller entries, such as an entity's value and the raw and formatted text of each formatting span, show `----`.
+  - Words from other speakers under [`asr_speaker_affinity`](#paramsasr_speaker_affinity) are exported as `Speaker N said: ----`.
+  - `calling.ai.partial_result` is sent without its text, and `calling.ai.speech_detect` isn't sent.
+</ParamField>
+
+
+<ParamField path="params.rescue_model" type="string" default="gpt-6-luna" toc={true}>
+  The model that answers a turn the agent's model couldn't. A model name, or `model@provider`. When the agent's model gives unusable replies, the turn goes once to the rescue model instead of the platform retrying the same model until the call fails. The rescue model gets the same conversation, tools, and step, and its reply is spoken and kept like any other. The next turn goes back to the agent's model.
+
+  A turn goes to the rescue model when any of these happens:
+
+  - Two replies in one request are discarded as degenerate output, such as padding or a word repeated without end.
+  - A reply writes a tool call as text instead of making it, twice in one request.
+  - The provider refuses the model's calls to a tool the request didn't offer more than twice in one caller turn.
+  - The provider refuses the request even when it is sent again without tools.
+
+  There is no rescue when the agent's model is the rescue model, when the name isn't a model the platform has configured, or for HTTP errors and timeouts. To turn rescue off, set this to the agent's own model.
 </ParamField>
 
 
 <ParamField path="params.save_conversation" type="boolean" default="false" toc={true}>
-  Send a summary of the conversation after the call ends. This requires [`post_prompt_url`][post-prompt-url] to be set and the `conversation_id` defined. This eliminates the need for a `post_prompt` in the `ai` parameters. Separately from that end-of-call report, an agent that starts with a `conversation_id` asks `post_prompt_url` for the summary you stored for that ID, and resumes the conversation with it. See [responding to post prompt requests](/docs/swml/reference/calling/ai#responding-to-post-prompt-requests) for the reply format.
+  Send a summary of the conversation after the call ends. This requires [`post_prompt_url`][post-prompt-url] to be set and the `conversation_id` defined. This eliminates the need for a `post_prompt` in the `ai` parameters.
+
+  The platform stores nothing: the summary goes to `post_prompt_url` as `conversation_summary`, and keeping it is up to you. The next call that starts with the same `conversation_id` asks `post_prompt_url` for the summary you stored, and resumes the conversation with the `conversation_summary` in your reply. See [responding to post prompt requests](/docs/swml/reference/calling/ai#responding-to-post-prompt-requests) for the reply format.
 </ParamField>
 
 
 <ParamField path="params.summary_mode" type="string" toc={true}>
-  Summary generation mode. Valid values: `"string"`, `"original"`.
+  Summary generation mode. Only `"string"` and `"original"` are accepted.
 </ParamField>
 
 
@@ -188,6 +223,13 @@ Configure how the AI agent processes and understands spoken input, including spe
 </ParamField>
 
 
+<ParamField path="params.background_sounds" type="boolean" default="false" toc={true}>
+  Tells the model about sounds in the background of the caller's turn. The groups are dog barking, phone ringing, alarm going off, and siren. On a turn with words, the groups heard are added after the caller's words, each once and in the order heard, so the model reads `Yes. (background: dog barking, phone ringing)`. The note becomes part of the caller's turn text.
+
+  Sounds heard with no words after them don't start a turn or move any of the caller's timers. Each adds a system-log entry with `action: "background_sound"` and the group to the call log.
+</ParamField>
+
+
 <ParamField path="params.asr_smart_format" type="boolean" default="false" toc={true}>
   Enables smart formatting in ASR (Automatic Speech Recognition). This improves the formatting of numbers, dates, times, and other entities in the transcript.
 </ParamField>
@@ -204,12 +246,12 @@ Configure how the AI agent processes and understands spoken input, including spe
 
 
 <ParamField path="params.asr_speaker_affinity" type="boolean" default="false" toc={true}>
-  If true, will force the AI Agent to only respond to the speaker who responds to the AI Agent first. Any other speaker will be ignored.
+  If true, will force the AI Agent to only respond to the speaker who responds to the AI Agent first. Any other speaker will be ignored. With [`redact_prompt`](#paramsredact_prompt) set, other speakers' words are exported as `Speaker N said: ----`.
 </ParamField>
 
 
-<ParamField path="params.end_of_speech_timeout" type="integer" default="700" toc={true}>
-  Amount of silence, in ms, at the end of an utterance to detect end of speech. Allowed values from `0`-`10,000`.
+<ParamField path="params.end_of_speech_timeout" type="integer | string" default="700" toc={true}>
+  Amount of silence, in ms, at the end of an utterance to detect end of speech. Allowed values from `0`-`10,000`. Also accepts a [duration](#duration-values).
 </ParamField>
 
 
@@ -218,8 +260,8 @@ Configure how the AI agent processes and understands spoken input, including spe
 </ParamField>
 
 
-<ParamField path="params.first_word_timeout" type="integer" default="1000" toc={true}>
-  Amount of time, in ms, to wait for the first word after speech is detected. Allowed values from `0`-`10,000`.
+<ParamField path="params.first_word_timeout" type="integer | string" default="1000" toc={true}>
+  Amount of time, in ms, to wait for the first word after speech is detected. Allowed values from `0`-`10,000`. Also accepts a [duration](#duration-values).
 </ParamField>
 
 
@@ -228,8 +270,27 @@ Configure how the AI agent processes and understands spoken input, including spe
 </ParamField>
 
 
+<ParamField path="params.noisy_line_ms" type="integer | string" default="4000" toc={true}>
+  How much loud audio with no recognized words, in ms, the caller's line can carry before the agent says it seems very noisy on the caller's side, that it might have trouble hearing them, and asks whether they can make it a little quieter. The agent says this in the language of the conversation. Allowed values from `0` to `600,000`, where `0` turns the notice off. Also accepts a [duration](#duration-values).
+
+  Two things trigger it:
+
+  - Sustained noise. Loud audio with no words is counted from a baseline taken 1 second after the agent stops speaking. Once the count passes this value, while the agent isn't speaking and no request is out, the model's next turn gives the notice, unless the caller has said something since. It's given again only after the caller has said words and the count has passed the threshold again.
+  - A noisy turn. A turn that ended with no words over noise filling most of it, or with noise after its last words, also gets the notice. With no words, the notice is its own turn; with words, the reply that answers them includes it. It's given again only after a turn that wasn't noisy.
+
+  Loud audio is never taken for speech: no turn is ended, held, or re-asked because of it. Each notice adds a system-log entry with `action: "noisy_line"` to the call log. The notice needs a speech recognizer that reports line loudness.
+</ParamField>
+
+
 <ParamField path="params.openai_asr_engine" type="string" default="deepgram:nova-3" toc={true}>
   The ASR (Automatic Speech Recognition) engine to use. Common values include `deepgram:nova-2`, `deepgram:nova-3`, and other supported ASR engines.
+</ParamField>
+
+
+<ParamField path="params.text_normalization_show_heard" type="boolean" default="false" toc={true}>
+  When the Deepgram recognizer formats the transcript, the model also reads the words as spoken after each span the formatting changed. For example, the model reads `The order number is w7123456 (heard: w seven one two three four five six).` The annotation becomes part of the caller's turn text.
+
+  Nothing is added for a span the formatter restored to its spoken words, or for one that can't be placed in the text. Recognizers that don't format the transcript themselves get no annotation.
 </ParamField>
 
 
@@ -259,6 +320,31 @@ Customize the AI agent's voice output, including volume control, voice character
 </ParamField>
 
 
+<ParamField path="params.cartesia_max_buffer_delay_ms" type="integer | string" default="500" toc={true}>
+  The maximum buffer delay, in ms, for Cartesia voices. Allowed values from `0` to `5,000`. Also accepts a duration with units, such as `"0.5s"`, read as a [strict millisecond value](#duration-values). A value out of range, or one that's neither a number nor a duration, keeps the default.
+</ParamField>
+
+
+<ParamField path="params.heygen_key" type="string" toc={true}>
+  Your HeyGen API key, used by HeyGen Voice (`heygen.<voice>` voices). Without it, the platform's key is used. The key can contain only letters, digits, `-`, `_`, and `.`; a key with other characters doesn't open. It needs HeyGen's `voices:write` scope, and HeyGen refuses a key without it.
+</ParamField>
+
+
+<ParamField path="params.heygen_model" type="string" default="heygen-voice-1-turbo" toc={true}>
+  The HeyGen Voice model, used when the voice string doesn't name one (`heygen.<voice>:<model>`). Valid values:
+
+  - `heygen-voice-1-turbo`: lower latency.
+  - `heygen-voice-1`: higher latency, especially on short phrases.
+
+  Any other value uses the default.
+</ParamField>
+
+
+<ParamField path="params.heygen_stream_first" type="boolean" default="true" toc={true}>
+  Whether a HeyGen voice streams each reply's first sentence, so playback starts at its first audio while the rest is generated in the background. Set it to `false` to turn that streaming off.
+</ParamField>
+
+
 <ParamField path="params.max_emotion" type="integer" toc={true}>
   Has no effect and can be omitted. Setting it does not change the voice.
 </ParamField>
@@ -270,7 +356,16 @@ Customize the AI agent's voice output, including volume control, voice character
 
 
 <ParamField path="params.tts_number_format" type="string" default="e164" toc={true}>
-  The format of the number the AI will reference the phone number. Valid values: `e164` (e.g. +12345678901), `international` (e.g. +1 234-567-8901), or `national` (e.g. (234) 567-8901).
+  The format of the number the AI will reference the phone number. Valid values: `e164` (e.g. +12345678901), `international` (e.g. +1 234-567-8901), or `national` (e.g. (234) 567-8901). `e.164` is accepted as another spelling of `e164`.
+</ParamField>
+
+
+<ParamField path="params.tts_pause_cap_ms" type="integer | string" default="300" toc={true}>
+  The longest pause, in ms, that plays inside the agent's speech. Some voices pause for most of a second after a short sentence such as "Yes.", and a caller can take that pause as the end of the agent's turn. A quiet stretch between two sounds of a reply plays up to the cap, and the rest is dropped. Quiet before a reply's first sound and after its last isn't played. Quiet means a 20 ms frame below about −45 dBFS, or digital silence.
+
+  Allowed values from `0` to `2,000`, where `0` plays speech as the engine made it. A value outside the range is clamped to it. Also accepts a duration, read as a [strict millisecond value](#duration-values); a value that's neither a number nor a duration keeps the default.
+
+  The cap applies to the platform's built-in TTS engines, such as ElevenLabs, Cartesia, Rime, OpenAI, Deepgram, and Azure, when they don't stream. Speech plays as made on a voice with `streaming: true` and on the `polly`, `gcloud`, and `amazon` engines.
 </ParamField>
 
 <ParamField path="params.video_blank_image" type="string" toc={true}>
@@ -316,6 +411,10 @@ Manage how the AI agent handles interruptions when users speak over it, includin
 
 <ParamField path="params.barge_functions" type="boolean" default="false" toc={true}>
   Allow functions to be called during barging. When `false`, functions are not executed if the user is speaking.
+
+  With `false`, a function's filler holds back the caller's words while it is playing or queued, and neither keypad input nor [`interrupt_on_noise`](#paramsinterrupt_on_noise) cuts it. Once the calls have returned and no filler or `say` is left, the reply after them can be barged. Under [`transparent_barge`](#paramstransparent_barge), a turn whose function ran is kept rather than discarded. A function has run once its call was sent; a call that a semantic gate blocked, or that names no available function, didn't run.
+
+  With `true`, a turn that transparent barge discards also loses its tool calls and results: actions it queued with `post_process` don't run, and a call that hadn't run yet is dropped.
 </ParamField>
 
 
@@ -331,11 +430,25 @@ Manage how the AI agent handles interruptions when users speak over it, includin
 
 <ParamField path="params.enable_barge" type="string" toc={true}>
   Controls when user can interrupt the AI. Valid values: `"complete"`, `"partial"`, `"all"`, or boolean. Set to `false` to disable barging.
+
+  With partial transcripts enabled (the default includes `partial`), a partial transcript that passes the barge checks while the model request is still out, before any of its reply has played, cancels that request, and none of the reply plays. [`barge_min_words`](#paramsbarge_min_words), [`barge_match_string`](#paramsbarge_match_string), and [`barge_functions`](#paramsbarge_functions) apply as they do while the agent speaks. Under [`transparent_barge`](#paramstransparent_barge), only a statement begun inside the window cancels the request; one begun later is the caller's next turn, and the reply plays first. `calling.ai.partial_result` carries `barged: true` when a partial cut the reply or cancelled the request.
+</ParamField>
+
+
+<ParamField path="params.ignore_backchannels" type="boolean" default="true" toc={true}>
+  Ignores a bare acknowledgement that the caller says over the agent's speech, such as "mm-hmm", "uh-huh", "yeah", "okay", "right", or "got it": it doesn't interrupt the agent and isn't treated as a turn. "Yes", "no", "stop", and "wait" are never treated as acknowledgements, and "Yeah, but the…" barges as usual. Set it to `false` to treat acknowledgements like any other speech.
+
+  - Over the agent's speech means the caller began while the agent's audio was playing, or during the stretch of audio just before it, such as a filler. Speech begun in a silence between them, or before the agent's first audio, doesn't count.
+  - Said into silence, an acknowledgement is a turn as usual.
+  - During a reply that a `no_barge_next_response` action protects, an acknowledgement is held until the reply has played, and then it's the caller's answer.
+  - Each ignored acknowledgement adds a system-log entry with `action: "backchannel"` to the call log.
+
+  "Okay", "alright", and "right" also answer questions, so one said over the end of a question the agent is still finishing is ignored.
 </ParamField>
 
 
 <ParamField path="params.interrupt_on_noise" type="boolean" default="false" toc={true}>
-  When enabled, barges agent upon any sound interruption longer than 1 second. The 1-second threshold can't be changed.
+  When enabled, barges agent upon any sound interruption longer than 1 second. The 1-second threshold can't be changed. With [`barge_functions`](#paramsbarge_functions) off, it doesn't cut a function's filler.
 </ParamField>
 
 
@@ -347,12 +460,18 @@ Manage how the AI agent handles interruptions when users speak over it, includin
 
 
 <ParamField path="params.transparent_barge" type="boolean" default="true" toc={true}>
-  When enabled, the AI will not respond to the user's input when the user is speaking over the agent. The agent will wait for the user to finish speaking before responding. Additionally, any attempt the LLM makes to barge will be ignored and scraped from the conversation logs.
+  Lets the caller correct or extend what they just said. When the caller's next statement begins within [`transparent_barge_max_time`](#paramstransparent_barge_max_time) of their previous one, the agent's turn in between is discarded and the two statements go to the model as one, each part as said. Off when [`barge_match_string`](#paramsbarge_match_string) is set.
+
+  - Inside the window, the turn in between is discarded whether its reply was whole, partial, or not started, and whether or not any of it played. A request still in flight is cancelled.
+  - At or past the window, the agent's turn stands and the new words are a turn of their own. A request in flight runs on and its reply plays.
+  - Speech the barge settings hold back never discards a turn on its own: speech with `enable_barge` off, below `barge_min_words`, or said over a function's filler with `barge_functions` off.
+  - With [`barge_functions`](#paramsbarge_functions) off, a turn whose function ran is kept.
+  - The greeting comes before the caller's first statement and is never discarded.
 </ParamField>
 
 
-<ParamField path="params.transparent_barge_max_time" type="integer" default="3000" toc={true}>
-  Maximum duration for transparent barge mode. Allowed values from `0`-`60,000` ms.
+<ParamField path="params.transparent_barge_max_time" type="integer | string" default="3000" toc={true}>
+  The transparent barge window, in ms. It runs from when the caller's previous final transcript arrived to when their next statement began: its first partial transcript with words, its final transcript if no partial came first, or the first key for keypad input. Allowed values from `0` to `60,000`, where `0` means no limit, so every next statement is inside the window. Also accepts a [duration](#duration-values).
 </ParamField>
 
 
@@ -360,8 +479,8 @@ Manage how the AI agent handles interruptions when users speak over it, includin
 
 Set various timing parameters that control wait times, response delays, and session limits to optimize the conversation flow and prevent dead air.
 
-<ParamField path="params.attention_timeout" type="integer" default="5000" toc={true}>
-  Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `1,000`-`600,000`.
+<ParamField path="params.attention_timeout" type="integer | string" default="5000" toc={true}>
+  Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `1,000`-`600,000`. Also accepts a [duration](#duration-values).
 </ParamField>
 
 
@@ -370,8 +489,8 @@ Set various timing parameters that control wait times, response delays, and sess
 </ParamField>
 
 
-<ParamField path="params.digit_timeout" type="integer" default="3000" toc={true}>
-  Time, in ms, at the end of digit input to detect end of input. Allowed values from `1`-`29,999`; any other value keeps the default.
+<ParamField path="params.digit_timeout" type="integer | string" default="3000" toc={true}>
+  Time, in ms, at the end of digit input to detect end of input. Allowed values from `1`-`29,999`; any other value keeps the default. Also accepts a [duration](#duration-values).
 </ParamField>
 
 
@@ -383,35 +502,38 @@ Set various timing parameters that control wait times, response delays, and sess
 <ParamField path="params.hard_stop_time" type="string" toc={true}>
   The maximum time the AI Agent stays active. Once it has passed, the next time the agent is waiting for the caller it receives [`hard_stop_prompt`](#paramshard_stop_prompt) as a final instruction for its last reply. The conversation then ends and the next SWML instruction runs. The stop is not exact and does not cut off speech in progress.
 
-  Time format: a string in `HH:MM:SS` or `MM:SS` form, or a whole number of seconds. For example, `"30:00"` and `"1800"` are both 30 minutes. In the colon forms, minutes and seconds go up to `59`.
-
-  <Warning title="Unit suffixes are not converted">
-  Values such as `30m` or `1h` are not read as minutes or hours: the letters are ignored, so `30m` sets a 30-second limit. Use the colon form or a number of seconds instead.
-  </Warning>
+  The value is a [duration](#duration-values) in which a bare number is seconds, rounded to the second. For example, `"30m"`, `"30:00"`, and `"1800"` are all 30 minutes, and `"1h30m"` is 90 minutes. A string the duration rules refuse is read by its digits and colons with the letters `h`, `m`, and `s` dropped, so `"30ss"` is 30 seconds. A value that reads neither way sets no stop.
 </ParamField>
 
-<ParamField path="params.inactivity_timeout" type="integer" default="600000" toc={true}>
-  Amount of time, in ms, to wait before exiting the app due to inactivity. Allowed values: `0` (to disable) or `10,000`-`3,600,000`.
+<ParamField path="params.inactivity_timeout" type="integer | string" default="600000" toc={true}>
+  Amount of time, in ms, to wait before exiting the app due to inactivity. Allowed values: `0` (to disable) or `10,000`-`3,600,000`. The default is 10 minutes. Also accepts a [duration](#duration-values), such as `"15m"`.
 </ParamField>
 
 
-<ParamField path="params.initial_sleep_ms" type="integer" default="0" toc={true}>
-  Amount of time, in ms, to wait before the AI Agent starts processing. Allowed values from `0`-`300,000`.
+<ParamField path="params.initial_sleep_ms" type="integer | string" default="0" toc={true}>
+  Amount of time, in ms, to wait before the AI Agent starts processing. Allowed values from `0`-`300,000`. Also accepts a [duration](#duration-values). Speech recognition is already running during the wait, and anything the caller says during it is taken once the wait ends.
 </ParamField>
 
 
-<ParamField path="params.outbound_attention_timeout" type="integer" default="120000" toc={true}>
-  Sets a time duration for the outbound call recipient to respond to the AI agent before timeout. Allowed values from `10,000`-`600,000` ms.
+<ParamField path="params.outbound_attention_timeout" type="integer | string" default="120000" toc={true}>
+  How long, in ms, the agent waits for the caller's first words. When it runs out and the caller has never spoken, the call ends. Allowed values from `10,000`-`600,000`. Also accepts a [duration](#duration-values).
 </ParamField>
 
 
-<ParamField path="params.speech_event_timeout" type="integer" default="0" toc={true}>
-  Timeout for speech events processing. Allowed values from `0`-`10,000` ms. `0`, or leaving it unset, lets speech recognition set this timing itself.
+<ParamField path="params.speech_event_timeout" type="integer | string" default="0" toc={true}>
+  Timeout for speech events processing. Allowed values from `0`-`10,000` ms. `0`, or leaving it unset, lets speech recognition set this timing itself. Also accepts a [duration](#duration-values).
 </ParamField>
 
 
 <ParamField path="params.speech_timeout" type="integer" toc={true}>
   Has no effect and can be omitted. Setting it does not change speech timing on your calls.
+</ParamField>
+
+
+<ParamField path="params.target_first_segment_ms" type="integer | string" default="200" toc={true}>
+  How long, in ms, the model's first words can take before the agent plays a filler to cover the wait. Allowed values from `0` to `5,000`. Also accepts a [duration](#duration-values). Under [`transparent_barge`](#paramstransparent_barge), this filler doesn't hold back the caller's words.
+
+  Separately, when the model has sent nothing for 3 seconds after a request, the agent plays one of the current language's thinking fillers ([`speech_fillers`](/docs/swml/reference/calling/ai/languages#languagesspeech_fillers), or [`multilingual.fillers`](/docs/swml/reference/calling/ai/multilingual#aimultilingualfillers)). Once that filler has played, the filler from this param stays silent, so the caller never hears both. The 3-second filler plays once per request, retries included, and also right after a function call. It doesn't play while the agent is paused, after the caller's words have cut the request, or when the language has no thinking fillers, and its timing can't be changed.
 </ParamField>
 
 
@@ -487,21 +609,42 @@ Configure SignalWire AI Gateway (SWAIG) function capabilities, including permiss
 </ParamField>
 
 
+<ParamField path="params.unavailable_function_response" type="string" toc={true}>
+  What the model is told when it calls a function that can't run right now: one that's switched off, used up, or not in the current step's functions, or a name the agent doesn't have. Nothing runs either way. These variables are filled in:
+
+  - `${function}`: the name the model called.
+  - `${tools}`: the tools the request offered, comma-separated.
+  - `${steps}`: the other steps in the current context that offer the function, comma-separated. Empty for a name the agent doesn't have.
+
+  For example: `"${function} cannot run right now. Available: ${tools}."` Without it, the model is told that nothing ran, which steps offer the function, and which tools are available now.
+</ParamField>
+
+
 <ParamField path="params.semantic_gates_enabled" type="boolean" default="true" toc={true}>
   Whether the call checks the [semantic gates][semantic-gates] on its SWAIG functions. Set it to `false` to turn gate checks off for the call: gated functions then run without being checked.
 </ParamField>
 
 
-<ParamField path="params.semantic_gate_timeout_ms" type="integer" default="2500" toc={true}>
-  How long one semantic gate check may take in total, in milliseconds. A check that runs out of time blocks the function. Allowed values from `500` to `10000`.
+<ParamField path="params.semantic_gate_timeout_ms" type="integer | string" default="2500" toc={true}>
+  How long one semantic gate check may take in total, in milliseconds, retries included. A check that runs out of time blocks the function. Allowed values from `500` to `10000`. Also accepts a duration, such as `"2.5s"`, read as a [strict millisecond value](#duration-values).
 </ParamField>
 
 
 <ParamField path="params.semantic_gate_history" type="integer" default="20" toc={true}>
-  How many recent conversation entries a semantic gate check reads. Allowed values from `0` to `100`.
+  How many recent conversation entries a semantic gate check reads. Allowed values from `0` to `100`. A gate's own `history` replaces it for that gate.
 </ParamField>
 
-A `semantic_gate_timeout_ms` or `semantic_gate_history` value outside its range is clamped to it, and a number's fraction is dropped. A string is read as a whole number (`"3000"`); a string that isn't one (`"3000ms"`, `"2.5"`), a boolean, or `null` keeps the default.
+
+<ParamField path="params.semantic_gate_dialogue" type="string" default="window" toc={true}>
+  Which part of the conversation a semantic gate check judges, unless a gate sets its own `dialogue`. Valid values:
+
+  - `window`: the newest [`semantic_gate_history`](#paramssemantic_gate_history) entries.
+  - `proposal`: only what was said since `semantic_state` last changed, from the agent's first turn after the change: the read-back and the caller's reply. If the agent has said nothing since, the conversation is empty, so a yes is never judged against a read-back that never came. With no `semantic_state` set, `window` is used.
+
+  Only the word `proposal`, in any case, selects it; any other value is `window`. See [semantic gates][semantic-gates].
+</ParamField>
+
+A `semantic_gate_timeout_ms` or `semantic_gate_history` value outside its range is clamped to it, and a number's fraction is dropped. `semantic_gate_history` reads a string only when it's a whole number (`"30"`). `semantic_gate_timeout_ms` reads a whole number (`"3000"`) or a duration (`"3000ms"`, `"2.5s"`), but not a bare decimal string (`"2.5"`). Any other string, a boolean, or `null` keeps the default.
 
 
 ### Input & DTMF
@@ -513,8 +656,8 @@ Handle dual-tone multi-frequency (DTMF) input and configure input polling for in
 </ParamField>
 
 
-<ParamField path="params.input_poll_freq" type="integer" default="2000" toc={true}>
-  Check for input function with `check_for_input`. Allowed values from `1,000`-`10,000` ms. Example use case: Feeding an inbound SMS to AI on a voice call, eg., for collecting an email address or other complex information.
+<ParamField path="params.input_poll_freq" type="integer | string" default="2000" toc={true}>
+  Check for input function with `check_for_input`. Allowed values from `1,000`-`10,000` ms. Also accepts a [duration](#duration-values). Example use case: Feeding an inbound SMS to AI on a voice call, eg., for collecting an email address or other complex information.
 </ParamField>
 
 
@@ -586,7 +729,7 @@ Configure the inner dialog feature, which enables a secondary AI process to anal
 Control the agent's listening behavior, including pause/resume functionality and activation triggers for hands-free scenarios.
 
 <ParamField path="params.speak_when_spoken_to" type="boolean" default="false" toc={true}>
-  When enabled, the AI agent remains silent until directly addressed by name (set via `ai_name`). This creates a "push-to-talk" style interaction where the agent only responds when explicitly called upon, useful for scenarios where the agent should listen but not interrupt.
+  When enabled, the AI agent remains silent until directly addressed by name (set via `ai_name`). This creates a "push-to-talk" style interaction where the agent only responds when explicitly called upon, useful for scenarios where the agent should listen but not interrupt. With [`redact_prompt`](#paramsredact_prompt) set, turns that don't wake the agent are exported as `----`.
 </ParamField>
 
 
@@ -605,7 +748,7 @@ Control the agent's listening behavior, including pause/resume functionality and
 Fine-tune advanced AI behavior settings including response limits, data persistence, prompt formatting, and voice activity detection.
 
 <ParamField path="params.max_response_tokens" type="integer" toc={true}>
-  Has no effect and can be omitted. Setting it does not limit the length of the AI's responses.
+  How many tokens to keep free for the reply when the platform summarizes a long conversation to fit the model's context window. Summarizing starts early enough to leave this much room. Setting it does not limit the length of the AI's responses.
 </ParamField>
 
 
@@ -631,10 +774,10 @@ Fine-tune advanced AI behavior settings including response limits, data persiste
 </ParamField>
 
 
-<ParamField path="params.turn_detection_timeout" type="integer" default="Value of end_of_speech_timeout" toc={true}>
+<ParamField path="params.turn_detection_timeout" type="integer | string" default="Value of end_of_speech_timeout" toc={true}>
   Time in milliseconds the agent waits after deciding the caller's turn has ended before it finalizes the transcript. A partial transcript arriving inside the window cancels the decision, so this is a ceiling on how long a turn can hang rather than latency added to every turn. A caller who has finished usually commits well inside it.
 
-  Lowering it therefore doesn't make the agent answer faster, and values below `500` degrade transcription accuracy on words the recognizer needs the extra audio to disambiguate. Allowed values from `0` to `10000`, where `0` uses the default. Has no effect when [`enable_turn_detection`](#paramsenable_turn_detection) is `off` or `acoustic_only`.
+  Lowering it therefore doesn't make the agent answer faster, and values below `500` degrade transcription accuracy on words the recognizer needs the extra audio to disambiguate. Allowed values from `0` to `10000`, where `0` uses the default. Also accepts a [duration](#duration-values). Has no effect when [`enable_turn_detection`](#paramsenable_turn_detection) is `off` or `acoustic_only`.
 </ParamField>
 
 
@@ -643,8 +786,8 @@ Fine-tune advanced AI behavior settings including response limits, data persiste
 </ParamField>
 
 
-<ParamField path="params.turn_filler_min_ms" type="integer" default="0" toc={true}>
-  How long a wait must already have run, in milliseconds, before a backchannel plays. Off by default: waits open the moment the agent decides to hold, and `spell` and `number` are meant to be answered right then. A positive `<token>:<ms>` suffix in `turn_filler_sources` replaces this for that token, but `:0` does not clear it. To answer one source immediately while delaying others, leave this at `0` and put suffixes on the others.
+<ParamField path="params.turn_filler_min_ms" type="integer | string" default="0" toc={true}>
+  How long a wait must already have run, in milliseconds, before a backchannel plays. Also accepts a [duration](#duration-values). Off by default: waits open the moment the agent decides to hold, and `spell` and `number` are meant to be answered right then. A positive `<token>:<ms>` suffix in `turn_filler_sources` replaces this for that token, but `:0` does not clear it. To answer one source immediately while delaying others, leave this at `0` and put suffixes on the others.
 </ParamField>
 
 
@@ -659,9 +802,16 @@ Fine-tune advanced AI behavior settings including response limits, data persiste
   - `acoustic` — the audio suggests the caller is mid-sentence
   - `veto` — any of the above
 
-  The default answers `spell` and `number` only, because those pauses are expected and cannot be shortened. A backchannel during `text` or `acoustic` usually talks over a caller who is still going, so give either its own delay with a `<token>:<ms>` suffix rather than listing it bare, as in `spell,number,text:1200`.
+  The default answers `spell` and `number` only, because those pauses are expected and cannot be shortened. A backchannel during `text` or `acoustic` usually talks over a caller who is still going, so give either its own delay with a `<token>:<ms>` suffix rather than listing it bare, as in `spell,number,text:1200`. The delay can also be a [duration](#duration-values), as in `veto:2s`.
 
   Tokens are matched whole and case-insensitively, and a space after a comma is fine. A token that is not one of the five above matches no wait, so nothing here is validated and a misspelling silently leaves the agent with no backchannels at all.
+</ParamField>
+
+
+<ParamField path="params.turn_filler_volume" type="number" default="0.5" toc={true}>
+  How loud [`languages[].turn_fillers`](/docs/swml/reference/calling/ai/languages#languagesturn_fillers) and [`multilingual.turn_fillers`](/docs/swml/reference/calling/ai/multilingual#aimultilingualturn_fillers) play, relative to the agent's voice as the caller hears it. `1` is the agent's own level, `0.5` is half the amplitude (−6 dB), and `0.25` is −12 dB. Allowed values above `0` and up to `1`; a numeric string is also read, and any other value keeps the default. Levels are applied in whole dB, and a level at or below −50 dB is silence.
+
+  It applies to both text phrases and audio-file entries, and it includes [`ai_volume`](#paramsai_volume) on voices that apply it: the platform's built-in engines, `gcloud`, and `amazon`.
 </ParamField>
 
 
@@ -670,6 +820,72 @@ Fine-tune advanced AI behavior settings including response limits, data persiste
 </ParamField>
 
 </Indent>
+
+## Duration values
+
+A timing parameter takes a number or a duration string. A string with a unit letter or a colon is read as a duration, so `"20m"` is 20 minutes and `"1.5s"` is one and a half seconds.
+
+- Units are `h` (hours), `m` (minutes), `s` (seconds), and `ms` (milliseconds). They are case-insensitive, and spaces are allowed anywhere, as in `"1h 30m"`.
+- Several units combine with the larger unit first, each at most once: `"1h30m"`, `"2m30s"`, `"1s500ms"`. `"30m1h"` and `"1m1m"` aren't durations.
+- Decimals are allowed: `"1.5s"`, `".5m"`, `"1.25h"`.
+- A bare number after a unit is in the next smaller unit: `"1h30"` is 1 hour 30 minutes, `"2m30"` is 2 minutes 30 seconds, and `"1s500"` is 1.5 seconds.
+- Clock form is `[[h:]m:]s`: `"1:30"` is 90 seconds, and `"1:02:30"` is 1 hour, 2 minutes, and 30 seconds. Minutes and seconds go up to `59`. Colons can't be mixed with unit letters or decimals. A colon at the start or end is ignored (`":30"` is 30 seconds), and two colons side by side aren't a duration.
+- The result is rounded to the nearest millisecond, or to the nearest second for a value counted in seconds.
+- A parameter's range applies to the result: `"15m"` for `inactivity_timeout` is `900000` ms, which is inside its range.
+
+How a parameter reads a value depends on which of three kinds it is:
+
+| Kind | Parameters | How a value is read |
+|---|---|---|
+| Millisecond | Every parameter on this page whose value is in ms, except the strict ones | A number is milliseconds, and a duration is converted to milliseconds, so `"1:30"` is `90000`, not 1.3 seconds. Any other string is read by its leading whole number: `"700"` is `700`, `"1500.25"` is `1500`, and a word is `0`. |
+| Strict millisecond | [`semantic_gate_timeout_ms`](#paramssemantic_gate_timeout_ms), [`tts_pause_cap_ms`](#paramstts_pause_cap_ms), [`cartesia_max_buffer_delay_ms`](#paramscartesia_max_buffer_delay_ms) | A number is milliseconds. A string must be a whole number in digits or a duration with units; anything else, including a bare decimal such as `"0.5"`, keeps the default. |
+| Second | [`hard_stop_time`](#paramshard_stop_time), and the `hold` function result action | A bare number is seconds, and the result is rounded to the second. |
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: You are a helpful assistant.
+        params:
+          attention_timeout: 10s
+          end_of_speech_timeout: 0.8s
+          inactivity_timeout: 15m
+          transparent_barge_max_time: 2.5s
+          tts_pause_cap_ms: 250ms
+          hard_stop_time: 1h30m
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "ai": {
+          "prompt": {
+            "text": "You are a helpful assistant."
+          },
+          "params": {
+            "attention_timeout": "10s",
+            "end_of_speech_timeout": "0.8s",
+            "inactivity_timeout": "15m",
+            "transparent_barge_max_time": "2.5s",
+            "tts_pause_cap_ms": "250ms",
+            "hard_stop_time": "1h30m"
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
 
 ## debug_webhook_url callback
 

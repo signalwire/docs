@@ -11,6 +11,8 @@ max-toc-depth: 3
 [openai-asr-engine]: /docs/swml/reference/calling/ai/params#paramsopenai_asr_engine
 [turn-filler-sources]: /docs/swml/reference/calling/ai/params#paramsturn_filler_sources
 [ai-hints]: /docs/swml/reference/calling/ai#aihints
+[voice-fallback]: /docs/swml/reference/calling/ai#voice-fallback
+[default-voices]: /docs/swml/reference/calling/ai#default-voices
 
 Use `ai.multilingual` to let one AI Agent detect the language a caller is speaking and answer
 in that language, switching whenever the caller does. You give it a voice per language, and the
@@ -40,12 +42,17 @@ is not accepted here either, because the value is validated before variables are
 
 <Indent>
 
-<ParamField path="ai.multilingual.languages" type="object[]" required={true} toc={true}>
+<ParamField path="ai.multilingual.languages" type="object[]" toc={true}>
   An array of voices, one per language the agent speaks.
 
   At least one entry must supply a `voice` — either an entry whose `language` is `default`, or
   the first language listed. Without one, multilingual mode does not start and the agent falls
   back to a single English voice.
+
+  Required unless the [`default_voice`][default-voices] SWML variable is set. Without
+  `languages`, each key of that variable becomes an entry, with its `default` key as the
+  catch-all, and a single voice or array becomes one catch-all entry. The keys must then be
+  language codes the speech recognizer accepts.
 </ParamField>
 
 <Indent>
@@ -57,12 +64,17 @@ is not accepted here either, because the value is validated before variables are
   language that has no entry of its own, and it is the voice the agent opens the call with.
 </ParamField>
 
-<ParamField path="ai.multilingual.languages[].voice" type="string" toc={true}>
+<ParamField path="ai.multilingual.languages[].voice" type="string | string[]" toc={true}>
   Voice to use for this language, in the format `<engine id>.<voice id>`, with an optional
   `:<model id>` suffix. For example, `elevenlabs.rachel` or `elevenlabs.rachel:eleven_flash_v2_5`.
 
-  Only the catch-all entry has to carry a voice. An entry that leaves it out is answered in the
-  catch-all voice instead.
+  Supply an array of up to 8 voice strings to give this language backup voices. The first voice
+  speaks, and when it fails, the agent goes on with the next voice that opens, then
+  [`ai.fallback_voice`][voice-fallback]. See [Voice fallback][voice-fallback].
+
+  Only the catch-all entry has to carry a voice. An entry that leaves it out takes its voice from
+  the [`default_voice`][default-voices] SWML variable when it's set, and is otherwise answered in
+  the catch-all voice.
 
   Always name the engine. A bare voice id resolves against a default engine that can change.
   Refer to [Supported voices and languages][voices-and-languages] for the voice ids each provider offers.
@@ -93,6 +105,8 @@ is not accepted here either, because the value is validated before variables are
 
   Every code must be supported by the ASR engine and model in use, or multilingual mode does not
   start. Omit to let the agent follow the caller into any language the ASR engine detects.
+
+  On Deepgram, these codes are also the recognizer's [language hints](#language-hints).
 </ParamField>
 
 <ParamField path="ai.multilingual.engine" type="string" toc={true}>
@@ -179,6 +193,16 @@ The two `languages` arrays are not interchangeable. An `ai.multilingual.language
 Where the two arrays share a property, they behave identically: `voice`, `model`, and `params` mean
 the same thing in both, and `engine` is deprecated in both in favor of naming the engine in the
 `voice` string.
+
+## Language hints
+
+On Deepgram's `nova-3` model, SignalWire sends the call's languages to the speech recognizer as
+language hints, which bias language detection toward them. A hint doesn't stop the recognizer from
+transcribing another language.
+
+The hints are the codes in `allowed` when it's set. Otherwise they're the `language` values of the
+`languages` entries, without `default`, or `en` when no entry names a language. Each code is sent
+once and as written, so a regional code such as `zh-HK` stays regional.
 
 ## **Examples**
 
@@ -342,6 +366,56 @@ ai:
         "default": ["mmhm"]
       }
     }
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Give each language backup voices
+
+Each entry lists its own backup voices, and every language shares `fallback_voice`. See
+[Voice fallback][voice-fallback].
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+ai:
+  prompt:
+    text: You are a multilingual assistant.
+  multilingual:
+    languages:
+      - language: default
+        voice:
+          - elevenlabs.rachel:eleven_multilingual_v2
+          - cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e
+      - language: es
+        voice:
+          - azure.es-ES-ElviraNeural
+          - elevenlabs.rachel:eleven_multilingual_v2
+  fallback_voice: openai.alloy
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "ai": {
+    "prompt": {
+      "text": "You are a multilingual assistant."
+    },
+    "multilingual": {
+      "languages": [
+        {
+          "language": "default",
+          "voice": ["elevenlabs.rachel:eleven_multilingual_v2", "cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e"]
+        },
+        {
+          "language": "es",
+          "voice": ["azure.es-ES-ElviraNeural", "elevenlabs.rachel:eleven_multilingual_v2"]
+        }
+      ]
+    },
+    "fallback_voice": "openai.alloy"
   }
 }
 ```
