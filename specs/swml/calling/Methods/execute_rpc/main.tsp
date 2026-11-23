@@ -12,19 +12,19 @@ model ExecuteRpc {
   execute_rpc: {
     @doc("""
       The command to run, without the `calling.` prefix: for example `ai_message`, `ai_hold`, `ai_unhold`, `user_event`, `transfer`, or `dial`.
-      Every command except `dial` needs `call_id`.
+      Most commands need `call_id`. `dial` starts a new call and doesn't take one.
       """)
     @example("ai_message")
     method: string;
 
     @doc("""
       ID of the call to send the command to. The call must belong to the same project as this script.
-      Omit it only for `dial`, which starts a new call and can't target an existing one.
+      Most commands need it. Omit it for `dial`, which starts a new call and can't target an existing one.
       """)
     @example("6a1f8c2e-4b7d-4e0a-9c3f-2d8e5b1a7c90")
     call_id?: string;
 
-    @doc("ID of the node handling the target call, as reported in that call's events. Optional: SignalWire finds the call from `call_id` when this is omitted or doesn't match.")
+    @doc("ID of the node handling the target call, as reported in that call's events. Optional: SignalWire finds the call from `call_id` when this is omitted.")
     @example("a0d4e6e5-5d07-413d-9668-55542992eec0")
     node_id?: string;
 
