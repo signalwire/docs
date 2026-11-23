@@ -1,0 +1,1234 @@
+---
+title: Let callers leave voicemail
+slug: voice/voicemail
+description: Send calls to your SignalWire number to voicemail with SWML, Relay, cXML, or Call Flow Builder, forward them to a phone first and take a message only when nobody answers, and get each recording's URL in your app.
+max-toc-depth: 3
+---
+
+[make-and-receive-calls]: /docs/platform/voice/make-and-receive-calls
+[prepare-calls]: /docs/platform/voice/make-and-receive-calls#prepare-for-your-first-call
+[answer-swml]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml
+[answer-relay]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-websocket-relay
+[forward-calls]: /docs/platform/voice/forward-calls
+[record-calls]: /docs/platform/voice/record-calls
+[recordings-api]: /docs/platform/voice/record-calls#get-recordings-with-the-recordings-api
+[recording-law]: /docs/platform/voice/record-calls#call-recording-and-the-law
+[machine-detection]: /docs/platform/voice/machine-detection
+[detect-voicemail-swml]: /docs/platform/voice/machine-detection#detect-voicemail-via-swml
+[detect-voicemail-relay]: /docs/platform/voice/machine-detection#detect-voicemail-via-websocket-relay
+[media-protection]: /docs/platform/media-protection
+[trial-mode]: /docs/platform/trial-mode
+[server-sdks]: /docs/server-sdks
+[swml-intro]: /docs/swml
+[swml-record]: /docs/swml/reference/calling/record
+[swml-connect]: /docs/swml/reference/calling/connect
+[compatibility-api]: /docs/compatibility-api
+[cxml-record]: /docs/compatibility-api/cxml/reference/voice/record
+[cxml-dial]: /docs/compatibility-api/cxml/reference/voice/dial
+[rest-update-number]: /docs/apis/rest/phone-numbers/update-phone-number
+[rest-list-numbers]: /docs/apis/rest/phone-numbers/list-phone-numbers
+[cfb-intro]: /docs/call-flow-builder
+[cfb-voicemail]: /docs/call-flow-builder/reference/voicemail-recording
+[cfb-forward]: /docs/call-flow-builder/reference/forward-to-phone
+[cfb-play]: /docs/call-flow-builder/reference/play-audio-or-tts
+[cfb-request]: /docs/call-flow-builder/reference/request
+[cfb-hangup]: /docs/call-flow-builder/reference/hangup-call
+
+When nobody can take a call, voicemail lets the caller leave a message and hands your app the
+recording to act on. Start by sending every call to your number to a greeting that records a
+message, then forward calls to a phone first and take a message only when nobody answers, and use
+each recording's URL in your app.
+
+## Choose an approach
+
+Each approach below takes the same message, but each needs its own code and its own kind of
+Resource on your number, so pick one and follow only its tab in each step. Every step on this page
+uses the same tabs, and your choice follows you from step to step.
+
+- [SWML][swml-intro]: answer calls with a document that SignalWire runs. The
+  [Server SDKs][server-sdks] build the document and serve it from your server, which also receives
+  each recording's URL.
+- WebSocket (Relay): answer calls with the [Server SDKs][server-sdks] in code that holds a
+  connection to SignalWire. The recording's URL arrives in that code, so no webhook is needed.
+- [cXML][compatibility-api]: answer calls with XML documents your server returns, as the
+  Compatibility API does. Choose it when your app already uses cXML.
+- [Call Flow Builder][cfb-intro]: draw the flow on a canvas, with no code.
+
+## Prepare for voicemail
+
+Start with working call setup from [Make and receive calls][make-and-receive-calls]. Have these
+values ready:
+
+- Your Space URL, such as `<YOUR_SPACE>.signalwire.com`.
+- Your Project ID and an API token with the **Voice** permission.
+- A phone number in your Space.
+- A phone to call your number from, and for forwarding, a second phone that receives the forwarded
+  call.
+- For SWML and cXML, a public HTTPS URL for your server, such as an [ngrok](https://ngrok.com/)
+  tunnel to port `8080`.
+
+<Warning title="Trial projects only call and receive calls from verified numbers">
+A [trial project][trial-mode] only places calls to and receives calls from numbers you've purchased
+or verified, and can't call internationally. Verify the phones you'll test with, as
+[Prepare for your first call][prepare-calls] shows.
+</Warning>
+
+<Warning title="Recording is regulated">
+A voicemail is a recording of the caller. Consent rules differ by jurisdiction, so read
+[Call recording and the law][recording-law] before you take real messages.
+</Warning>
+
+Replace these values in the samples you run:
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
+| `<YOUR_PROJECT_ID>` | Your Project ID |
+| `<YOUR_API_TOKEN>` | Your API token with the Voice permission, used only in server code |
+| `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for the SWML your server serves |
+| `<YOUR_PUBLIC_HOST>` | The public hostname of your server or tunnel, such as the hostname ngrok prints |
+| `<YOUR_DESTINATION>` | The phone that receives forwarded calls, in E.164 format, such as `+12025550123` |
+| `<YOUR_PHONE_NUMBER_ID>` | Your phone number's ID from its Dashboard page or [List phone numbers][rest-list-numbers], when you assign it in code |
+
+## How voicemail works
+
+A voicemail is a greeting followed by a recording of the caller. The greeting asks for a message,
+a beep marks the start, and the recording runs until one of these happens:
+
+- The caller presses the key that ends the message, such as `#`.
+- The caller stops talking for a few seconds.
+- The message reaches its maximum length.
+- The caller hangs up.
+
+When the recording ends, SignalWire stores it and gives your app its URL, and the call moves on to
+whatever comes next, such as a goodbye. Each product names the same settings differently:
+
+| Setting | SWML and Relay | cXML | Call Flow Builder |
+|---|---|---|---|
+| Play a beep before recording | `beep` | `playBeep` | **Beep** |
+| Key that ends the message | `terminators` | `finishOnKey` | **Terminators** |
+| Seconds of silence that end the message | `end_silence_timeout` | `timeout` | **End Silence Timeout** |
+| Longest message, in seconds | `max_length` | `maxLength` | **Maximum Recording Length** |
+
+SWML and Relay also end the recording when the caller doesn't start talking within
+`initial_timeout` seconds of the beep. Defaults differ between products, so the samples on this
+page set each value: a beep, `#` to finish, five seconds of silence, and two minutes at most, with
+ten seconds for the caller to start where the product has that setting.
+
+## Take a message on every call
+
+Bayview Taxi's after-hours line sends every caller straight to voicemail and passes each message to
+its dispatch app. This walkthrough sets that up on your number and prints each new message's URL.
+
+<Steps>
+
+<Step title="Run the voicemail handler" id="run-the-voicemail-handler">
+
+Run the handler for your approach and leave it running while you test.
+
+<Tabs groupId="outbound-api">
+<Tab title="SWML">
+
+The server serves a SWML document that plays the greeting, records with [`record`][swml-record],
+and says goodbye. `record` holds the document until the message ends. Its `status_url` sends the
+recording's events to the server's `/voicemail` route, which prints the URL of each finished
+message. The document is served only to requests that carry the username `signalwire` and the
+password you set.
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python
+# Install: python -m pip install signalwire-sdk fastapi "uvicorn[standard]"
+# Save as voicemail_app.py and run: python voicemail_app.py
+import uvicorn
+from fastapi import FastAPI, Request
+from signalwire import SWMLBuilder, SWMLService
+
+service = SWMLService(
+    name="voicemail",
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+(
+    SWMLBuilder(service)
+    .say("You've reached Bayview Taxi. Leave your name, number, and pickup address after the beep, then press pound.")
+    .record(
+        beep=True,
+        initial_timeout=10,
+        end_silence_timeout=5,
+        max_length=120,
+        terminators="#",
+        status_url="https://<YOUR_PUBLIC_HOST>/voicemail",
+    )
+    .say("Thanks. Ada will call you back soon. Goodbye.")
+)
+
+app = FastAPI()
+# SignalWire fetches the call's SWML from the server's root URL.
+app.include_router(service.as_router())
+
+
+# SignalWire posts each recording's events to /voicemail.
+@app.post("/voicemail")
+async def voicemail(request: Request):
+    params = (await request.json())["params"]
+    if params["state"] == "finished":
+        print(f"New voicemail on call {params['call_id']}: {params['url']} ({params['duration']} s)")
+    elif params["state"] == "no_input":
+        print(f"No message on call {params['call_id']}")
+    return {}
+
+
+uvicorn.run(app, host="0.0.0.0", port=8080)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+// Install: npm install @signalwire/sdk @hono/node-server hono
+// This sample also runs as JavaScript: save as voicemail-app.mjs,
+// then run: node voicemail-app.mjs
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
+import { SWMLService } from "@signalwire/sdk";
+
+const service = new SWMLService({
+  name: "voicemail",
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+service.getBuilder()
+  .say("You've reached Bayview Taxi. Leave your name, number, and pickup address after the beep, then press pound.")
+  .record({
+    beep: true,
+    initial_timeout: 10,
+    end_silence_timeout: 5,
+    max_length: 120,
+    terminators: "#",
+    status_url: "https://<YOUR_PUBLIC_HOST>/voicemail",
+  })
+  .say("Thanks. Ada will call you back soon. Goodbye.");
+
+const app = new Hono();
+
+// SignalWire posts each recording's events to /voicemail.
+app.post("/voicemail", async (c) => {
+  const { params } = await c.req.json();
+  if (params.state === "finished") {
+    console.log(`New voicemail on call ${params.call_id}: ${params.url} (${params.duration} s)`);
+  } else if (params.state === "no_input") {
+    console.log(`No message on call ${params.call_id}`);
+  }
+  return c.json({});
+});
+
+// SignalWire fetches the call's SWML from the server's root URL.
+app.route("/", service.getApp());
+
+serve({ fetch: app.fetch, port: 8080 });
+console.log("Listening on port 8080");
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - play:
+        url: "say:You've reached Bayview Taxi. Leave your name, number, and pickup address after the beep, then press pound."
+    - record:
+        beep: true
+        initial_timeout: 10
+        end_silence_timeout: 5
+        max_length: 120
+        terminators: '#'
+        status_url: https://<YOUR_PUBLIC_HOST>/voicemail
+    - play:
+        url: say:Thanks. Ada will call you back soon. Goodbye.
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "play": {
+          "url": "say:You've reached Bayview Taxi. Leave your name, number, and pickup address after the beep, then press pound."
+        }
+      },
+      {
+        "record": {
+          "beep": true,
+          "initial_timeout": 10,
+          "end_silence_timeout": 5,
+          "max_length": 120,
+          "terminators": "#",
+          "status_url": "https://<YOUR_PUBLIC_HOST>/voicemail"
+        }
+      },
+      {
+        "play": {
+          "url": "say:Thanks. Ada will call you back soon. Goodbye."
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Start a tunnel to port `8080`, such as `ngrok http 8080`, and put its hostname in `status_url`
+before you start the server. Check that the document is reachable through the tunnel:
+
+```bash
+curl -u "signalwire:<YOUR_BASIC_AUTH_PASSWORD>" "https://<YOUR_PUBLIC_HOST>/"
+```
+
+The response is the SWML document, starting with `{"version": "1.0.0"`. A `401` means the password
+doesn't match the one in your server.
+
+</Tab>
+<Tab title="WebSocket (Relay)">
+
+The handler subscribes to the `voicemail` topic. When a call arrives, it answers, plays the
+greeting, and records. `record` returns as soon as SignalWire accepts the command, so the handler
+waits on the recording until the message ends, then prints its URL, says goodbye, and hangs up.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk
+# Save as voicemail_relay.py and run: python voicemail_relay.py
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["voicemail"],
+)
+
+
+async def take_message(call, greeting):
+    caller = call.device.get("params", {}).get("from_number")
+    prompt = await call.play_tts(greeting)
+    await prompt.wait()  # play returns as soon as the command is accepted
+
+    recording = await call.record(audio={
+        "beep": True,
+        "initial_timeout": 10,
+        "end_silence_timeout": 5,
+        "max_length": 120,
+        "terminators": "#",
+    })
+    event = await recording.wait()
+    if event.params.get("state") == "finished":
+        print(f"New voicemail from {caller}: {event.params['url']} ({event.params.get('duration')} s)")
+        if call.state != "ended":
+            goodbye = await call.play_tts("Thanks. Ada will call you back soon. Goodbye.")
+            await goodbye.wait()
+    else:
+        print(f"No message from {caller}")
+    if call.state != "ended":
+        await call.hangup()
+
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+    await take_message(
+        call,
+        "You've reached Bayview Taxi. Leave your name, number, and pickup address after the beep, then press pound.",
+    )
+
+client.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk
+// Save as voicemail-relay.mts and run: npx tsx voicemail-relay.mts
+import { RelayClient, type Call } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["voicemail"],
+});
+
+async function takeMessage(call: Call, greeting: string) {
+  // An inbound phone call's device carries the caller's number in params.from_number.
+  const { params } = call.device as { params?: { from_number?: string } };
+  const caller = params?.from_number;
+  const prompt = await call.playTTS(greeting);
+  await prompt.wait(); // play returns as soon as the command is accepted
+
+  // The SDK's record() type doesn't list max_length; passing a variable sends it unchanged.
+  const audio = {
+    beep: true,
+    initial_timeout: 10,
+    end_silence_timeout: 5,
+    max_length: 120,
+    terminators: "#",
+  };
+  const recording = await call.record(audio);
+  const event = await recording.wait();
+  if (event.params.state === "finished") {
+    console.log(`New voicemail from ${caller}: ${event.params.url} (${event.params.duration} s)`);
+    if (call.state !== "ended") {
+      const goodbye = await call.playTTS("Thanks. Ada will call you back soon. Goodbye.");
+      await goodbye.wait();
+    }
+  } else {
+    console.log(`No message from ${caller}`);
+  }
+  if (call.state !== "ended") await call.hangup();
+}
+
+client.onCall(async (call) => {
+  await call.answer();
+  await takeMessage(
+    call,
+    "You've reached Bayview Taxi. Leave your name, number, and pickup address after the beep, then press pound.",
+  );
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
+
+</Tab>
+<Tab title="cXML">
+
+SignalWire requests `/incoming` when someone calls your number. The server returns a document that
+says the greeting and records with [`<Record>`][cxml-record]. When the message ends, SignalWire
+requests the `action` URL, `/recorded`, with the recording's URL, and the server prints it and
+returns a goodbye.
+
+<CodeBlocks>
+<CodeBlock title="Python — cXML server">
+```python
+# Install: python -m pip install fastapi "uvicorn[standard]" python-multipart
+# Save as voicemail_cxml.py and run: python voicemail_cxml.py
+import uvicorn
+from fastapi import FastAPI, Request, Response
+
+app = FastAPI()
+
+
+def cxml(verbs: str) -> Response:
+    return Response(f"<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response>{verbs}</Response>", media_type="text/xml")
+
+
+# SignalWire requests this URL when someone calls your number.
+@app.api_route("/incoming", methods=["GET", "POST"])
+async def incoming():
+    return cxml(
+        "<Say>You've reached Bayview Taxi. Leave your name, number, "
+        "and pickup address after the beep, then press pound.</Say>"
+        '<Record action="/recorded" timeout="5" finishOnKey="#" maxLength="120" />'
+    )
+
+
+# When the recording ends, SignalWire posts its URL here.
+@app.post("/recorded")
+async def recorded(request: Request):
+    form = await request.form()
+    if not form.get("RecordingUrl"):
+        print(f"No message from {form.get('From')}")
+        return cxml("<Hangup />")
+    print(f"New voicemail from {form.get('From')}: {form['RecordingUrl']} ({form.get('RecordingDuration')} s)")
+    return cxml("<Say>Thanks. Ada will call you back soon. Goodbye.</Say><Hangup />")
+
+
+uvicorn.run(app, host="0.0.0.0", port=8080)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — cXML server">
+```typescript
+// Install: npm install @hono/node-server hono
+// Save as voicemail-cxml.mts and run: npx tsx voicemail-cxml.mts
+import { serve } from "@hono/node-server";
+import { Hono, type Context } from "hono";
+
+const app = new Hono();
+const cxml = (c: Context, verbs: string) =>
+  c.body(`<?xml version="1.0" encoding="UTF-8"?><Response>${verbs}</Response>`, 200, {
+    "Content-Type": "text/xml",
+  });
+
+// SignalWire requests this URL when someone calls your number.
+app.on(["GET", "POST"], "/incoming", (c) =>
+  cxml(
+    c,
+    "<Say>You've reached Bayview Taxi. Leave your name, number, " +
+      "and pickup address after the beep, then press pound.</Say>" +
+      '<Record action="/recorded" timeout="5" finishOnKey="#" maxLength="120" />',
+  ),
+);
+
+// When the recording ends, SignalWire posts its URL here.
+app.post("/recorded", async (c) => {
+  const form = await c.req.parseBody();
+  if (!form.RecordingUrl) {
+    console.log(`No message from ${form.From}`);
+    return cxml(c, "<Hangup />");
+  }
+  console.log(`New voicemail from ${form.From}: ${form.RecordingUrl} (${form.RecordingDuration} s)`);
+  return cxml(c, "<Say>Thanks. Ada will call you back soon. Goodbye.</Say><Hangup />");
+});
+
+serve({ fetch: app.fetch, port: 8080 });
+console.log("Listening on port 8080");
+```
+</CodeBlock>
+</CodeBlocks>
+
+Keep the `action` attribute. Without it, a finished `<Record>` requests the current document again,
+so the caller hears the greeting and records a second message instead of hearing your goodbye.
+
+Start a tunnel to port `8080`, such as `ngrok http 8080`. Check that the document is reachable
+through the tunnel:
+
+```bash
+curl -X POST "https://<YOUR_PUBLIC_HOST>/incoming"
+```
+
+The response is the cXML document, starting with `<?xml`.
+
+</Tab>
+<Tab title="Call Flow Builder">
+
+Build the flow in the Dashboard:
+
+1. Open **Tools** > **Call Flow Builder**, select **Add New**, name the flow **Voicemail**, and
+   select **Save**.
+2. Connect **Handle Call** to a [Play Audio or TTS][cfb-play] node that speaks the greeting.
+3. Connect it to a [Voicemail Recording][cfb-voicemail] node. Turn on **Beep**, set
+   **Terminators** to `#`, **End Silence Timeout** to `5`, and **Maximum Recording Length** to
+   `120`.
+4. Connect that to a second Play Audio or TTS node that says goodbye, then to a
+   [Hang Up Call][cfb-hangup] node.
+5. Select **Deploy**.
+
+The Voicemail Recording node puts the recording's URL in the `%{record_url}` variable for the nodes
+after it. [Get each voicemail in your app](#get-each-voicemail-in-your-app) sends it to your app.
+
+</Tab>
+</Tabs>
+
+</Step>
+
+<Step title="Point your phone number at the handler" id="point-your-phone-number-at-the-handler">
+
+<Tabs groupId="outbound-api">
+<Tab title="SWML">
+
+Create a SWML Script that fetches the document from your server:
+
+1. Open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
+2. Name it **Voicemail** and leave **Used For** set to **Calling**.
+3. Under **Handle Calls Using**, choose **External URL** and enter
+   `https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/` in **Primary Script URL**.
+4. Select **Create**.
+
+Then assign the script to your number as shown below. To do both in code, see
+[Answer a call via SWML][answer-swml].
+
+</Tab>
+<Tab title="WebSocket (Relay)">
+
+Create a Relay Application for the topic:
+
+1. Open **My Resources**, select **+ Add**, then **Relay Application**.
+2. Name it **Voicemail** and enter `voicemail` as the **Topic**. It must match the `contexts` value
+   in your code.
+3. Select **Create**.
+
+Then assign the application to your number as shown below. To assign it in code, see
+[Answer a call via WebSocket (Relay)][answer-relay].
+
+</Tab>
+<Tab title="cXML">
+
+The [Server SDKs][server-sdks] point your number at the server's `/incoming` URL in one request,
+replacing the number's current call handler:
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk
+# Save as assign_cxml_webhook.py and run: python assign_cxml_webhook.py
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+client.phone_numbers.set_cxml_webhook(
+    "<YOUR_PHONE_NUMBER_ID>",
+    "https://<YOUR_PUBLIC_HOST>/incoming",
+)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk
+// This sample also runs as JavaScript: save as assign-cxml-webhook.mjs,
+// then run: node assign-cxml-webhook.mjs
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+await client.phoneNumbers.setCxmlWebhook(
+  "<YOUR_PHONE_NUMBER_ID>",
+  "https://<YOUR_PUBLIC_HOST>/incoming",
+);
+```
+</CodeBlock>
+<CodeBlock title="cURL — Phone Numbers API">
+```bash
+curl -X PUT "https://<YOUR_SPACE>.signalwire.com/api/relay/rest/phone_numbers/<YOUR_PHONE_NUMBER_ID>" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "call_handler": "laml_webhooks",
+    "call_request_url": "https://<YOUR_PUBLIC_HOST>/incoming"
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+The cURL example calls [Update phone number][rest-update-number]. The number is ready, so skip the
+Dashboard steps below.
+
+</Tab>
+<Tab title="Call Flow Builder">
+
+The flow you deployed is the Resource. Assign it to your number as shown below.
+
+</Tab>
+</Tabs>
+
+<Markdown src="/snippets/common/dashboard/_assign-resource-to-number.mdx" />
+
+</Step>
+
+<Step title="Leave a message" id="leave-a-message">
+
+Call your SignalWire number. You hear the greeting, then a beep. Say a few words and press
+`#`: you hear the goodbye, and the call ends. Your handler prints the message's URL and
+its length in seconds:
+
+```text
+New voicemail from +15551230000: https://files.signalwire.com/<SPACE_ID>/<PROJECT_ID>/recordings/<RECORDING_ID>.wav (6 s)
+```
+
+The SWML server prints the call's ID in place of the caller's number. With Call Flow Builder,
+find the message under **Storage** > **Recordings** in your Space. Call again and hang up after the
+beep without speaking: the SWML and Relay handlers print `No message` instead.
+
+If it doesn't work, check the symptom:
+
+- **The call ends right away, or you hear an error.** SignalWire couldn't reach your handler.
+  Check that the server and tunnel are running, that the URL on the number uses the current tunnel
+  hostname, and for SWML, that the URL's password matches the server's.
+- **You hear your number's old behavior.** The number still points at another Resource. Open it
+  under **Phone Numbers** and check **Inbound Call Settings**.
+- **Relay: the call never reaches your handler.** Check that the handler is running and that its
+  `contexts` value matches the Relay Application's **Topic** exactly.
+- **SWML: you hear the goodbye, but the server prints nothing.** The `status_url` doesn't reach the
+  server. Check that its hostname is your current tunnel's.
+- **cXML: you hear the greeting again after the beep.** The `<Record>` has no `action`, or its URL
+  doesn't reach the server's `/recorded` route.
+
+</Step>
+
+</Steps>
+
+## Forward calls first, then take a message
+
+Most business lines ring a person first and fall back to voicemail. The forward rings your second
+phone, and only when nobody answers, the line is busy, or the call is declined does the caller hear
+the greeting. If the forwarded call connects, the call ends when either side hangs up, and no
+message is recorded. [Forward calls][forward-calls] explains forwarding itself, including the
+timeout and caller ID it uses.
+
+<Steps>
+
+<Step title="Run the forwarding handler" id="run-the-forwarding-handler">
+
+Stop the handler from the previous section and run this one in its place. It uses the same port,
+topic, and URLs, so your number already points at it. It rings your second phone for twenty seconds
+and shows the caller's number on it.
+
+<Tabs groupId="outbound-api">
+<Tab title="SWML">
+
+[`connect`][swml-connect] rings the destination and holds the document until the forwarded call
+ends. Its `result` branches on the outcome: `connected` hangs up once the conversation is over, and
+`failed` runs the voicemail steps from the previous section.
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python
+# Install: python -m pip install signalwire-sdk fastapi "uvicorn[standard]"
+# Save as forward_voicemail_app.py and run: python forward_voicemail_app.py
+import uvicorn
+from fastapi import FastAPI, Request
+from signalwire import SWMLBuilder, SWMLService
+
+# The voicemail steps, run only when nobody answers the forwarded call.
+take_message = [
+    {"play": {"url": "say:Sorry, nobody at Bayview Taxi can take your call. Leave your name, number, and pickup address after the beep, then press pound."}},
+    {
+        "record": {
+            "beep": True,
+            "initial_timeout": 10,
+            "end_silence_timeout": 5,
+            "max_length": 120,
+            "terminators": "#",
+            "status_url": "https://<YOUR_PUBLIC_HOST>/voicemail",
+        }
+    },
+    {"play": {"url": "say:Thanks. Ada will call you back soon. Goodbye."}},
+]
+
+service = SWMLService(
+    name="forward-voicemail",
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+SWMLBuilder(service).connect(
+    # from is a Python keyword, so unpack the connect settings from a dict.
+    **{
+        "to": "<YOUR_DESTINATION>",
+        "from": "${call.from}",
+        "timeout": 20,
+        "result": {"case": {"connected": [{"hangup": {}}], "failed": take_message}},
+    }
+)
+
+app = FastAPI()
+# SignalWire fetches the call's SWML from the server's root URL.
+app.include_router(service.as_router())
+
+
+# SignalWire posts each recording's events to /voicemail.
+@app.post("/voicemail")
+async def voicemail(request: Request):
+    params = (await request.json())["params"]
+    if params["state"] == "finished":
+        print(f"New voicemail on call {params['call_id']}: {params['url']} ({params['duration']} s)")
+    elif params["state"] == "no_input":
+        print(f"No message on call {params['call_id']}")
+    return {}
+
+
+uvicorn.run(app, host="0.0.0.0", port=8080)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+// Install: npm install @signalwire/sdk @hono/node-server hono
+// This sample also runs as JavaScript: save as forward-voicemail-app.mjs,
+// then run: node forward-voicemail-app.mjs
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
+import { SWMLService } from "@signalwire/sdk";
+
+// The voicemail steps, run only when nobody answers the forwarded call.
+const takeMessage = [
+  { play: { url: "say:Sorry, nobody at Bayview Taxi can take your call. Leave your name, number, and pickup address after the beep, then press pound." } },
+  {
+    record: {
+      beep: true,
+      initial_timeout: 10,
+      end_silence_timeout: 5,
+      max_length: 120,
+      terminators: "#",
+      status_url: "https://<YOUR_PUBLIC_HOST>/voicemail",
+    },
+  },
+  { play: { url: "say:Thanks. Ada will call you back soon. Goodbye." } },
+];
+
+const service = new SWMLService({
+  name: "forward-voicemail",
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+service.getBuilder().connect({
+  to: "<YOUR_DESTINATION>",
+  from: "${call.from}",
+  timeout: 20,
+  result: { case: { connected: [{ hangup: {} }], failed: takeMessage } },
+});
+
+const app = new Hono();
+
+// SignalWire posts each recording's events to /voicemail.
+app.post("/voicemail", async (c) => {
+  const { params } = await c.req.json();
+  if (params.state === "finished") {
+    console.log(`New voicemail on call ${params.call_id}: ${params.url} (${params.duration} s)`);
+  } else if (params.state === "no_input") {
+    console.log(`No message on call ${params.call_id}`);
+  }
+  return c.json({});
+});
+
+// SignalWire fetches the call's SWML from the server's root URL.
+app.route("/", service.getApp());
+
+serve({ fetch: app.fetch, port: 8080 });
+console.log("Listening on port 8080");
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - connect:
+        to: <YOUR_DESTINATION>
+        from: '${call.from}'
+        timeout: 20
+        result:
+          case:
+            connected:
+              - hangup: {}
+            failed:
+              - play:
+                  url: say:Sorry, nobody at Bayview Taxi can take your call. Leave your name, number, and pickup address after the beep, then press pound.
+              - record:
+                  beep: true
+                  initial_timeout: 10
+                  end_silence_timeout: 5
+                  max_length: 120
+                  terminators: '#'
+                  status_url: https://<YOUR_PUBLIC_HOST>/voicemail
+              - play:
+                  url: say:Thanks. Ada will call you back soon. Goodbye.
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "connect": {
+          "to": "<YOUR_DESTINATION>",
+          "from": "${call.from}",
+          "timeout": 20,
+          "result": {
+            "case": {
+              "connected": [
+                {
+                  "hangup": {}
+                }
+              ],
+              "failed": [
+                {
+                  "play": {
+                    "url": "say:Sorry, nobody at Bayview Taxi can take your call. Leave your name, number, and pickup address after the beep, then press pound."
+                  }
+                },
+                {
+                  "record": {
+                    "beep": true,
+                    "initial_timeout": 10,
+                    "end_silence_timeout": 5,
+                    "max_length": 120,
+                    "terminators": "#",
+                    "status_url": "https://<YOUR_PUBLIC_HOST>/voicemail"
+                  }
+                },
+                {
+                  "play": {
+                    "url": "say:Thanks. Ada will call you back soon. Goodbye."
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Without `result`, the document would also run the voicemail steps after a conversation the
+destination hung up first, because the caller is still on the line.
+
+</Tab>
+<Tab title="WebSocket (Relay)">
+
+The handler answers, then sends a connect command. The command returns as soon as SignalWire
+accepts it, so the handler follows the forward through `calling.call.connect` events: on `failed`
+it takes a message, and on `disconnected`, after a conversation, it hangs up.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk
+# Save as forward_voicemail_relay.py and run: python forward_voicemail_relay.py
+from signalwire.relay import ConnectEvent, RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["voicemail"],
+)
+
+
+async def take_message(call, greeting):
+    caller = call.device.get("params", {}).get("from_number")
+    prompt = await call.play_tts(greeting)
+    await prompt.wait()  # play returns as soon as the command is accepted
+
+    recording = await call.record(audio={
+        "beep": True,
+        "initial_timeout": 10,
+        "end_silence_timeout": 5,
+        "max_length": 120,
+        "terminators": "#",
+    })
+    event = await recording.wait()
+    if event.params.get("state") == "finished":
+        print(f"New voicemail from {caller}: {event.params['url']} ({event.params.get('duration')} s)")
+        if call.state != "ended":
+            goodbye = await call.play_tts("Thanks. Ada will call you back soon. Goodbye.")
+            await goodbye.wait()
+    else:
+        print(f"No message from {caller}")
+    if call.state != "ended":
+        await call.hangup()
+
+
+@client.on_call
+async def handle_call(call):
+    caller = call.device.get("params", {}).get("from_number")
+
+    async def on_connect(event: ConnectEvent):
+        print(f"Forward: {event.connect_state}")
+        if call.state == "ended":
+            return
+        if event.connect_state == "failed":
+            # Nobody answered, the line was busy, or the call was declined.
+            await take_message(
+                call,
+                "Sorry, nobody at Bayview Taxi can take your call. Leave your name, number, and pickup address after the beep, then press pound.",
+            )
+        elif event.connect_state == "disconnected":
+            await call.hangup()
+
+    call.on("calling.call.connect", on_connect)
+    await call.answer()
+    await call.connect(
+        devices=[[{
+            "type": "phone",
+            "params": {
+                "to_number": "<YOUR_DESTINATION>",
+                "from_number": caller,
+                "timeout": 20,
+            },
+        }]],
+        ringback=[{"type": "ringtone", "params": {"name": "us"}}],
+    )
+    await call.wait_for_ended()
+
+client.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk
+// Save as forward-voicemail-relay.mts and run: npx tsx forward-voicemail-relay.mts
+import { RelayClient, type Call } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["voicemail"],
+});
+
+async function takeMessage(call: Call, greeting: string) {
+  // An inbound phone call's device carries the caller's number in params.from_number.
+  const { params } = call.device as { params?: { from_number?: string } };
+  const caller = params?.from_number;
+  const prompt = await call.playTTS(greeting);
+  await prompt.wait(); // play returns as soon as the command is accepted
+
+  // The SDK's record() type doesn't list max_length; passing a variable sends it unchanged.
+  const audio = {
+    beep: true,
+    initial_timeout: 10,
+    end_silence_timeout: 5,
+    max_length: 120,
+    terminators: "#",
+  };
+  const recording = await call.record(audio);
+  const event = await recording.wait();
+  if (event.params.state === "finished") {
+    console.log(`New voicemail from ${caller}: ${event.params.url} (${event.params.duration} s)`);
+    if (call.state !== "ended") {
+      const goodbye = await call.playTTS("Thanks. Ada will call you back soon. Goodbye.");
+      await goodbye.wait();
+    }
+  } else {
+    console.log(`No message from ${caller}`);
+  }
+  if (call.state !== "ended") await call.hangup();
+}
+
+client.onCall(async (call) => {
+  const { params } = call.device as { params?: { from_number?: string } };
+  const caller = params?.from_number;
+
+  call.on("calling.call.connect", async (event) => {
+    const state = event.params.connect_state;
+    console.log(`Forward: ${state}`);
+    if (call.state === "ended") return;
+    if (state === "failed") {
+      // Nobody answered, the line was busy, or the call was declined.
+      await takeMessage(
+        call,
+        "Sorry, nobody at Bayview Taxi can take your call. Leave your name, number, and pickup address after the beep, then press pound.",
+      );
+    } else if (state === "disconnected") {
+      await call.hangup();
+    }
+  });
+  await call.answer();
+  await call.connect(
+    [[{
+      type: "phone",
+      params: {
+        to_number: "<YOUR_DESTINATION>",
+        from_number: caller,
+        timeout: 20,
+      },
+    }]],
+    { ringback: [{ type: "ringtone", params: { name: "us" } }] },
+  );
+  await call.waitForEnded();
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
+
+</Tab>
+<Tab title="cXML">
+
+[`<Dial>`][cxml-dial] rings the destination. When the forwarded call ends, SignalWire requests the
+`action` URL, `/dial-result`, with its outcome in `DialCallStatus`. `completed` means the call
+connected, so the server hangs up; any other status gets the voicemail document from the previous
+section.
+
+<CodeBlocks>
+<CodeBlock title="Python — cXML server">
+```python
+# Install: python -m pip install fastapi "uvicorn[standard]" python-multipart
+# Save as forward_voicemail_cxml.py and run: python forward_voicemail_cxml.py
+import uvicorn
+from fastapi import FastAPI, Request, Response
+
+DESTINATION = "<YOUR_DESTINATION>"
+
+app = FastAPI()
+
+
+def cxml(verbs: str) -> Response:
+    return Response(f"<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response>{verbs}</Response>", media_type="text/xml")
+
+
+# SignalWire requests this URL when someone calls your number.
+@app.api_route("/incoming", methods=["GET", "POST"])
+async def incoming():
+    return cxml(f'<Dial timeout="20" action="/dial-result"><Number>{DESTINATION}</Number></Dial>')
+
+
+# When the forwarded call ends, SignalWire posts its outcome here.
+@app.post("/dial-result")
+async def dial_result(request: Request):
+    form = await request.form()
+    if form.get("DialCallStatus") == "completed":
+        return cxml("<Hangup />")
+    return cxml(
+        "<Say>Sorry, nobody at Bayview Taxi can take your call. Leave your name, number, "
+        "and pickup address after the beep, then press pound.</Say>"
+        '<Record action="/recorded" timeout="5" finishOnKey="#" maxLength="120" />'
+    )
+
+
+# When the recording ends, SignalWire posts its URL here.
+@app.post("/recorded")
+async def recorded(request: Request):
+    form = await request.form()
+    if not form.get("RecordingUrl"):
+        print(f"No message from {form.get('From')}")
+        return cxml("<Hangup />")
+    print(f"New voicemail from {form.get('From')}: {form['RecordingUrl']} ({form.get('RecordingDuration')} s)")
+    return cxml("<Say>Thanks. Ada will call you back soon. Goodbye.</Say><Hangup />")
+
+
+uvicorn.run(app, host="0.0.0.0", port=8080)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — cXML server">
+```typescript
+// Install: npm install @hono/node-server hono
+// Save as forward-voicemail-cxml.mts and run: npx tsx forward-voicemail-cxml.mts
+import { serve } from "@hono/node-server";
+import { Hono, type Context } from "hono";
+
+const DESTINATION = "<YOUR_DESTINATION>";
+
+const app = new Hono();
+const cxml = (c: Context, verbs: string) =>
+  c.body(`<?xml version="1.0" encoding="UTF-8"?><Response>${verbs}</Response>`, 200, {
+    "Content-Type": "text/xml",
+  });
+
+// SignalWire requests this URL when someone calls your number.
+app.on(["GET", "POST"], "/incoming", (c) =>
+  cxml(c, `<Dial timeout="20" action="/dial-result"><Number>${DESTINATION}</Number></Dial>`),
+);
+
+// When the forwarded call ends, SignalWire posts its outcome here.
+app.post("/dial-result", async (c) => {
+  const form = await c.req.parseBody();
+  if (form.DialCallStatus === "completed") return cxml(c, "<Hangup />");
+  return cxml(
+    c,
+    "<Say>Sorry, nobody at Bayview Taxi can take your call. Leave your name, number, " +
+      "and pickup address after the beep, then press pound.</Say>" +
+      '<Record action="/recorded" timeout="5" finishOnKey="#" maxLength="120" />',
+  );
+});
+
+// When the recording ends, SignalWire posts its URL here.
+app.post("/recorded", async (c) => {
+  const form = await c.req.parseBody();
+  if (!form.RecordingUrl) {
+    console.log(`No message from ${form.From}`);
+    return cxml(c, "<Hangup />");
+  }
+  console.log(`New voicemail from ${form.From}: ${form.RecordingUrl} (${form.RecordingDuration} s)`);
+  return cxml(c, "<Say>Thanks. Ada will call you back soon. Goodbye.</Say><Hangup />");
+});
+
+serve({ fetch: app.fetch, port: 8080 });
+console.log("Listening on port 8080");
+```
+</CodeBlock>
+</CodeBlocks>
+
+A `<Dial>` without `action` moves on to the next verb whatever the outcome, so voicemail verbs
+placed after it would also run after a conversation. The `action` request is what lets the server
+choose.
+
+</Tab>
+<Tab title="Call Flow Builder">
+
+Edit the **Voicemail** flow:
+
+1. Insert a [Forward to Phone][cfb-forward] node between **Handle Call** and the greeting. Set
+   **To** to `<YOUR_DESTINATION>`, **From** to `%{call.from}`, and **Timeout** to `20`.
+2. Connect its **No Answer**, **Busy**, **Decline**, and **Error** outputs to the greeting node.
+   Leave **Success** unconnected, so the call ends when the conversation does.
+3. Select **Deploy**.
+
+</Tab>
+</Tabs>
+
+</Step>
+
+<Step title="Call your number twice" id="call-your-number-twice">
+
+Call your SignalWire number. Your second phone rings and shows your first phone's number. Answer it
+and talk, then hang up the second phone: the call ends, and no message is recorded.
+
+Call again and let the second phone ring. After twenty seconds you hear the greeting and the beep.
+Leave a message and press `#`: the handler prints its URL, as in the previous section.
+
+If the second phone never rings and you hear the greeting at once, check that `<YOUR_DESTINATION>`
+is in E.164 format, and in a trial project, that it's a verified number. If you hear the second
+phone's own voicemail greeting instead of yours, that phone sent the call to its voicemail before
+twenty seconds passed. Shorten the timeout.
+
+</Step>
+
+</Steps>
+
+## Get each voicemail in your app
+
+Every approach hands your app the recording's URL when the message ends, but in a different place:
+
+| Approach | Where the URL arrives | A caller who left no message |
+|---|---|---|
+| SWML | `params.url` in the `calling.call.record` event that `status_url` receives, when `params.state` is `finished` | `params.state` is `no_input` |
+| WebSocket (Relay) | `url` on the event the recording's `wait()` returns, when `state` is `finished` | `state` is `no_input` |
+| cXML | `RecordingUrl` in the `action` request, with `RecordingDuration` in seconds | The request has no `RecordingUrl` |
+
+The SWML event also carries `duration`, `size`, and `recording_id`. The full payload is in the
+[`record`][swml-record] reference. SWML also sets a `record_url` variable for the instructions after
+`record`, but it holds a URL even when the caller left no message, so check the event's state before
+you treat a recording as a message.
+
+Call Flow Builder puts the URL in the `%{record_url}` variable for the nodes after Voicemail
+Recording. To send it to your app, put a [Request][cfb-request] node after the
+Voicemail Recording node, set its **Method** to `POST` and its **URL** to your endpoint, and
+include `%{call.from}` and `%{record_url}` in its body. A later recording in the same flow replaces
+`%{record_url}`, so send it right after the message.
+
+What your app does next is up to it: text the URL to the person on call, attach it to a ticket, or
+transcribe it. The same recordings appear under **Storage** > **Recordings** in your Space, and the
+[Recordings API][recordings-api] lists, fetches, and deletes them.
+
+<Warning title="Recording URLs are public by default">
+Anyone with a recording's URL can play it until you turn on [Media URL protection][media-protection],
+which requires your project's API credentials to fetch it. Turning it on breaks any app that fetches
+recordings without credentials, so update those apps first.
+</Warning>
+
+## Leave a voicemail on a call you place
+
+The reverse case, leaving a message on someone else's voicemail, starts from a call you place. Detect
+the voicemail greeting, wait for its beep, then play your message.
+[Detect machines][machine-detection] walks through it with
+[SWML][detect-voicemail-swml] and [Relay][detect-voicemail-relay].
+
+## Next steps
+
+<CardGroup cols={2}>
+
+<Card title="Record calls" href="/docs/platform/voice/record-calls" icon="regular microphone">
+  Record whole calls and conferences, and manage the files with the Recordings API.
+</Card>
+
+<Card title="Forward calls" href="/docs/platform/voice/forward-calls" icon="regular phone-arrow-right">
+  Set the forward's timeout and caller ID, and forward a call already in progress.
+</Card>
+
+<Card title="record reference" href="/docs/swml/reference/calling/record" icon="regular circle-dot">
+  Every SWML recording setting, the variables it sets, and the status event payload.
+</Card>
+
+<Card title="Record verb" href="/docs/compatibility-api/cxml/reference/voice/record" icon="regular code">
+  Every cXML recording attribute and the parameters your action URL receives.
+</Card>
+
+</CardGroup>
