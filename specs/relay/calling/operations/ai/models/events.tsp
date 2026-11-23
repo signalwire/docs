@@ -48,6 +48,10 @@ model AiCompletionEvent
   is SignalwireEvent<typeof callingAiCompletion, AiCompletionEventData>;
 
 @summary("AI response event")
+@doc("""
+  The assistant's full response for a turn. With a standard (non-realtime) model, the event is also
+  posted to the agent's `event_webhook_url`, when set, with `event_type` `ai.response`.
+  """)
 model AiResponseEventData {
   ...CallEventAddress;
 
@@ -63,6 +67,11 @@ model AiResponseEvent
   is SignalwireEvent<typeof callingAiResponseEvent, AiResponseEventData>;
 
 @summary("AI response utterance event")
+@doc("""
+  One spoken segment of the assistant's response. With a standard (non-realtime) model, the event
+  is also posted to the agent's `event_webhook_url`, when set, with `event_type`
+  `ai.response_utterance`.
+  """)
 model AiResponseUtteranceEventData {
   ...CallEventAddress;
 
@@ -85,8 +94,39 @@ model AiSpeechDetectEventData {
   ...CallEventAddress;
 
   @doc("The caller's final recognized transcript for the turn. Not sent when the app has `redact_prompt` set, except with a realtime speech-to-speech model or on `calling.amazon_bedrock`.")
-  @example("I'd like to order a large pepperoni pizza for delivery.")
+  @example("My code is F as in Frank 2 9.")
   text: string;
+
+  @doc("""
+    The recognizer's own words for the final transcript, in order, each in its punctuated form when
+    the recognizer gives one. These are the words as heard, so they need not match `text` word for
+    word: hearing hints, transcript formatting, and merged turns change `text` but not `words`.
+    Absent when the recognizer gives no words, and with a realtime speech-to-speech model.
+    """)
+  @example(#[
+    #{ word: "My", confidence: 0.99 },
+    #{ word: "code", confidence: 0.98 },
+    #{ word: "is", confidence: 0.99 },
+    #{ word: "F", confidence: 0.76 },
+    #{ word: "as", confidence: 0.97 },
+    #{ word: "in", confidence: 0.98 },
+    #{ word: "Frank", confidence: 0.95 },
+    #{ word: "2", confidence: 0.93 },
+    #{ word: "9.", confidence: 0.94 }
+  ])
+  words?: AiSpeechDetectWord[];
+}
+
+@summary("AI speech detect word")
+@doc("One word of the caller's final transcript, as the speech recognizer heard it.")
+model AiSpeechDetectWord {
+  @doc("The word, punctuated when the recognizer gives that form.")
+  @example("Frank")
+  word: string;
+
+  @doc("The recognizer's confidence in the word.")
+  @example(0.95)
+  confidence: float64;
 }
 
 const callingAiSpeechDetect = "calling.ai.speech_detect";
@@ -99,11 +139,15 @@ model AiSpeechDetectEvent
 model AiPartialResultEventData {
   ...CallEventAddress;
 
-  @doc("The caller's interim (partial) speech-recognition transcript. Absent when you use `calling.amazon_bedrock`, where this event fires with an empty body.")
+  @doc("The caller's interim (partial) speech-recognition transcript. Absent when the app has `redact_prompt` set, and when you use `calling.amazon_bedrock`, where this event fires with an empty body.")
   @example("I'd like to order a large")
   text?: string;
 
-  @doc("Present and `true` only when this partial transcript triggered a barge-in of the assistant's speech.")
+  @doc("""
+    Present and `true` only when this partial transcript cut off the assistant's reply, or
+    cancelled the model request for the turn before any of its reply played. Still sent when the
+    app has `redact_prompt` set.
+    """)
   @example(true)
   barged?: boolean;
 }
@@ -166,20 +210,27 @@ model AiWarningEvent
   is SignalwireEvent<typeof callingAiWarning, AiWarningEventData>;
 
 @summary("AI transparent barge event")
+@doc("""
+  Reports how a transparent barge was handled. Transparent barge lets a caller correct or extend
+  what they just said: when their next statement begins within `transparent_barge_max_time` of
+  their previous one, the agent's turn in between is discarded and the two statements go to the
+  model as one. Each event carries one of two shapes: `combined_text` when the turn was discarded
+  and the statements merged, or `context_rewritten: false` when the turn was kept.
+  """)
 model AiTransparentBargeEventData {
   ...CallEventAddress;
 
   @doc("""
-    The caller's merged turn text after a transparent barge — when the caller interrupts but the
-    assistant keeps listening and merges the interruption into the same turn. Present only when
-    non-empty.
+    The caller's merged statement, each part as said. Present when the agent's turn was discarded
+    and the caller's two statements were merged into one.
     """)
-  @example("Actually, make that two large pepperoni pizzas.")
+  @example("I want to change my order. The one from Tuesday.")
   combined_text?: string;
 
   @doc("""
-    Present and `false` when the barge did not rewrite the conversation — for
-    example, because the assistant's answer had already been delivered.
+    Present and `false` when the agent's turn was kept and the caller's new words became a turn of
+    their own: the new statement began at or past the `transparent_barge_max_time` window, or the
+    turn ran a function while `barge_functions` was off.
     """)
   @example(false)
   context_rewritten?: boolean;
@@ -202,7 +253,7 @@ model AiStopEventData {
   @example(1718000000000000)
   start_time: int64;
 
-  @doc("When the AI session ended, as a Unix timestamp in microseconds.")
+  @doc("When the AI session ended, as a Unix timestamp in microseconds. Subtract `start_time` for the session's duration.")
   @example(1718000123000000)
   end_time: int64;
 
@@ -220,18 +271,114 @@ const callingAiStopEvent = "calling.ai.stop";
 model AiStopEvent
   is SignalwireEvent<typeof callingAiStopEvent, AiStopEventData>;
 
-@summary("AI post-prompt event")
-@doc("End-of-call summary payload. Beyond the call address, the body is caller-defined with no fixed schema; only fires when the app has a `post_prompt_url` set.")
-model AiPostPromptEventData {
+@summary("AI response heard event")
+@doc("""
+  Reports what the caller heard of one of the assistant's replies. It fires as the reply's audio
+  stops, once for each reply that made a sound and has words: a model reply, or the greeting,
+  including a static, cached, or replayed greeting. Words the model speaks before calling a
+  function that doesn't wait for them to play are reported once their audio has finished, or when
+  a barge-in flushes them, and carry `approximate: true`.
+
+  When the caller cut the reply off, `text_heard_approx` estimates the words they heard. The
+  estimate counts only the reply's own audio, not a filler that played before it, and uses the
+  call's speaking rate, measured on each reply that plays to its end. It is cut at the end of a
+  word, and is empty when the cut came before any of the reply's own audio.
+
+  Not sent for a reply that made no sound, on a voice that plays through a blocking, non-streamed
+  path (Amazon Polly, for example), or on `calling.amazon_bedrock`. When the agent sets
+  `event_webhook_url`, the event is also posted there with `event_type` `ai.response_heard`.
+  """)
+model AiResponseHeardEventData {
   ...CallEventAddress;
-  ...Record<unknown>;
+
+  @doc("""
+    `true` when the reply's audio was cut off: by the caller barging in, by a flush, by a
+    text-to-speech failure, or by the call ending while it played.
+    """)
+  @example(true)
+  barged: boolean;
+
+  @doc("""
+    How long the reply played, to the cut or to its end, in milliseconds. Counted from the turn's
+    first sound, including a filler that played before the reply. With `approximate: true`, counted
+    from those words' own first audio.
+    """)
+  @example(2140)
+  played_ms: int64;
+
+  @doc("""
+    What the caller heard: the whole reply when it played to its end, otherwise an estimate of the
+    words heard. Masked when the app has `redact_prompt` set, as in the call log.
+    """)
+  @example("Your order shipped on Tuesday and")
+  text_heard_approx: string;
+
+  @doc("""
+    The reply as spoken, without language directives or `speech_markup` markup. Masked when the app
+    has `redact_prompt` set, as in the call log.
+    """)
+  @example("Your order shipped on Tuesday and should arrive by Friday. Is there anything else I can help with?")
+  text_spoken_total: string;
+
+  @doc("""
+    Present and `true` only for words the model spoke before calling a function that doesn't wait
+    for them to play.
+    """)
+  @example(true)
+  approximate?: boolean;
 }
 
-const callingAiPostPrompt = "calling.ai.post_prompt";
-@summary(callingAiPostPrompt)
-@extension("x-fern-display-name", callingAiPostPrompt)
-model AiPostPromptEvent
-  is SignalwireEvent<typeof callingAiPostPrompt, AiPostPromptEventData>;
+const callingAiResponseHeard = "calling.ai.response_heard";
+@summary(callingAiResponseHeard)
+@extension("x-fern-display-name", callingAiResponseHeard)
+model AiResponseHeardEvent
+  is SignalwireEvent<typeof callingAiResponseHeard, AiResponseHeardEventData>;
+
+@summary("AI manual say event")
+@doc("""
+  Reports text the platform speaks itself, outside the model's replies, such as a SWAIG `say`
+  action, a function's filler, or an error line. It fires once per item, when the item's first
+  audio plays. These words are not in `calling.ai.response_utterance` or
+  `calling.ai.response_heard`.
+
+  Not sent with a realtime speech-to-speech model, or on a voice that plays through a blocking,
+  non-streamed path (Amazon Polly, for example). When the agent sets `event_webhook_url`, the event
+  is also posted there with `event_type` `ai.manual_say`.
+  """)
+model AiManualSayEventData {
+  ...CallEventAddress;
+
+  @doc("""
+    What was said. Masked when the app has `redact_prompt` set; markup removed when
+    `speech_markup` is on.
+    """)
+  @example("Bear with me, I need to rethink that.")
+  text: string;
+
+  @doc("""
+    Where the text came from:
+
+    - `say`: a SWAIG `say` action, or the agent's "Going to sleep." line.
+    - `error`: an error line, such as "Bear with me, I need to rethink that."
+    - `filler`: a function's or a semantic gate's filler, or anything else the platform queues to
+      speak.
+    """)
+  @example("error")
+  source: "say" | "error" | "filler";
+
+  @doc("""
+    Why the error line was spoken, for example `invalid_function`. The same reason the call
+    timeline's `manual_say` entry records. Present only when `source` is `error`.
+    """)
+  @example("invalid_function")
+  error_reason?: string;
+}
+
+const callingAiManualSay = "calling.ai.manual_say";
+@summary(callingAiManualSay)
+@extension("x-fern-display-name", callingAiManualSay)
+model AiManualSayEvent
+  is SignalwireEvent<typeof callingAiManualSay, AiManualSayEventData>;
 
 @summary("AI SWAIG event")
 @doc("Log of a SWAIG (SignalWire AI Gateway) function call. Beyond the call address, the body is caller-defined with no fixed schema.")

@@ -22,10 +22,19 @@ using SignalWire.EmitFilter;
 @summary("SWML Variable Reference")
 scalar SWMLVar extends string;
 
+// The models on the platform's supported list. `| string` keeps `model@provider` names
+// (`gpt-6-luna@azure-openai`) valid; a name not on the list runs as `gpt-4o-mini`.
 alias SupportedAIModels =
   | "gpt-4o-mini"
   | "gpt-4.1-mini"
-  | "gpt-4.1-nano"
+  | "gpt-5-mini"
+  | "gpt-5-nano"
+  | "gpt-5.4-mini"
+  | "gpt-5.4-nano"
+  | "gpt-5.6-luna"
+  | "gpt-6-luna"
+  | "gpt-oss-120b"
+  | "gpt-oss-20b"
   | string;
 
 @doc("Speech recognition engine options.")

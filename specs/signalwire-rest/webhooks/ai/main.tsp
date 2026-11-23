@@ -30,9 +30,10 @@ namespace SignalWireAPI.Webhooks.AI;
   a valid reply and a handler that only steers the call can return `action` alone:
   
   - `response` — the result the agent reads next, written to the AI rather than spoken to the
-    caller. A plain string becomes the tool message as-is; the object form
-    `{tool_result, tool_prompt}` splits the data half from the steering half. Omit it and the agent
-    reads a default result.
+    caller. A plain string becomes the tool message as-is, followed by an instruction to answer the
+    caller from it; the object form `{tool_result, tool_prompt}` splits the data half from the
+    steering half, and `tool_prompt` takes that instruction's place. Omit it and the agent reads a
+    default result.
   - `action` — a single action object or an array of them, executed on the live call.
   - `post_process` — hold the actions until after the agent has spoken. **Default:** `false`.
   """)
@@ -77,8 +78,9 @@ op swaigSignatureRequest(
   Sent to your [`ai.post_prompt_url`](/docs/swml/reference/calling/ai) when the AI session ends. It
   carries the agent's answer to your [`post_prompt`](/docs/swml/reference/calling/ai)
   alongside the full record of the call: the conversation, the tool calls, the timings, and the
-  token counts. This is the one report you get per call, so store the body verbatim and extract only
-  the fields you query. Nothing you return in the response is read.
+  token counts. This is the one report you get per call, and no Relay event or event webhook carries
+  it, so store the body verbatim and extract only the fields you query. Nothing you return in the
+  response is read.
   
   Read `action` first. It is `post_conversation` on the end-of-call report described here. The same
   URL also receives `fetch_conversation` when the agent starts with a stored conversation

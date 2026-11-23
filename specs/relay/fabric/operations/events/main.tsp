@@ -235,11 +235,17 @@ op aiTransparentBarge(): FabricAiTransparentBargeEvent;
 @extension("x-fern-display-name", fabricAiStop)
 op aiStop(): FabricAiStopEvent;
 
-@doc("Receive-only. Fires on a Call Fabric call leg when the end-of-call summary is produced. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
-@channel(fabricAiPostPrompt)
-@summary("Receive ai.post_prompt events")
-@extension("x-fern-display-name", fabricAiPostPrompt)
-op aiPostPrompt(): FabricAiPostPromptEvent;
+@doc("Receive-only. Fires on a Call Fabric call leg as one of the agent's replies stops playing, reporting whether the caller heard all of it and, if they cut it off, an estimate of what they heard. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
+@channel(fabricAiResponseHeard)
+@summary("Receive ai.response_heard events")
+@extension("x-fern-display-name", fabricAiResponseHeard)
+op aiResponseHeard(): FabricAiResponseHeardEvent;
+
+@doc("Receive-only. Fires on a Call Fabric call leg when text the platform speaks itself, outside the model's replies, starts to play. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
+@channel(fabricAiManualSay)
+@summary("Receive ai.manual_say events")
+@extension("x-fern-display-name", fabricAiManualSay)
+op aiManualSay(): FabricAiManualSayEvent;
 
 @doc("Receive-only. Fires on a Call Fabric call leg when a SWAIG function is called. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
 @channel(fabricAiSwaig)

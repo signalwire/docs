@@ -13,11 +13,31 @@ model AIPromptBase {
   @doc("""
     The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.
     On `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.
-    If the model you name isn't available, a default model is used instead; if no default model is
-    available either, the agent doesn't start.
+    Name a model on the supported list, optionally with its provider as `model@provider`, where the provider
+    is `openai` or `azure-openai` (`gpt-6-luna@azure-openai`). Any other name runs as `gpt-4o-mini`, and the
+    call gets a non-fatal `calling.error` whose `error` is `model_substituted` (`post_model_substituted` for
+    `post_prompt`). If no model is available at all, the agent doesn't start.
     """)
-  @example("gpt-4.1-mini")
-  `model`?: string;
+  @example("gpt-6-luna")
+  `model`?: SupportedAIModels;
+
+  @doc("""
+    How much the model reasons before it replies. Applies to `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`,
+    `gpt-5.4-nano`, `gpt-5.6-luna`, and `gpt-6-luna`, and is ignored on other models.
+    `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.6-luna`, and `gpt-6-luna` accept `none`, `low`, `medium`, `high`,
+    and `xhigh`, and default to `none`. `gpt-5-mini` and `gpt-5-nano` accept `minimal`, `low`, `medium`,
+    and `high`, and default to `minimal`. A value the model doesn't accept is refused by the model provider.
+    """)
+  @example("low")
+  reasoning_effort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh";
+
+  @doc("""
+    How long the model's replies are. Applies to `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`, `gpt-5.4-nano`,
+    `gpt-5.6-luna`, and `gpt-6-luna`, and is ignored on other models. Any other value uses the default.
+    **Default:** `low`.
+    """)
+  @example("medium")
+  verbosity?: "low" | "medium" | "high" = "low";
 
   @doc("Limits the amount of tokens that the AI agent may generate when creating its response")
   @minValue(0)
@@ -25,13 +45,21 @@ model AIPromptBase {
   @example(256)
   max_tokens?: int32 = 256;
 
-  @doc("Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random. **Default:** `1.0`.")
+  @doc("""
+    Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random.
+    On a model that takes `reasoning_effort`, it applies only when `reasoning_effort` is `none`, and
+    `gpt-5.6-luna` and `gpt-6-luna` default to `0.3`. **Default:** `1.0`.
+    """)
   @minValue(0.0)
   @maxValue(1.5)
   @example(0.7)
   temperature?: float | SWMLVar = 1.0;
 
-  @doc("Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make the output less random. **Default:** `1.0`.")
+  @doc("""
+    Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make
+    the output less random. On a model that takes `reasoning_effort`, it applies only when `reasoning_effort`
+    is `none`, and `gpt-5.6-luna` and `gpt-6-luna` default to `0.9`. **Default:** `1.0`.
+    """)
   @minValue(0.0)
   @maxValue(1.0)
   @example(0.9)
@@ -43,13 +71,13 @@ model AIPromptBase {
   @maxValue(1.0)
   confidence?: float | SWMLVar;
 
-  @doc("Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. **Default:** `0`.")
+  @doc("Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. Not used on `gpt-6-luna`. **Default:** `0`.")
   @minValue(-2.0)
   @maxValue(2.0)
   @example(0.0)
   presence_penalty?: float | SWMLVar = 0;
 
-  @doc("Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. **Default:** `0`.")
+  @doc("Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. Not used on `gpt-6-luna`. **Default:** `0`.")
   @minValue(-2.0)
   @maxValue(2.0)
   @example(0.0)

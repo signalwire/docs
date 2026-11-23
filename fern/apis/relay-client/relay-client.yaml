@@ -925,16 +925,28 @@ channels:
     x-fern-display-name: ai.stop
     bindings:
       ws: {}
-  ai.post_prompt:
+  ai.response_heard:
     address: /
-    title: ai.post_prompt
-    description: Receive ai.post_prompt events
+    title: ai.response_heard
+    description: Receive ai.response_heard events
     servers:
       - $ref: "#/servers/production"
     messages:
-      fabricAiPostPromptEvent:
-        $ref: "#/components/messages/fabricAiPostPromptEvent"
-    x-fern-display-name: ai.post_prompt
+      fabricAiResponseHeardEvent:
+        $ref: "#/components/messages/fabricAiResponseHeardEvent"
+    x-fern-display-name: ai.response_heard
+    bindings:
+      ws: {}
+  ai.manual_say:
+    address: /
+    title: ai.manual_say
+    description: Receive ai.manual_say events
+    servers:
+      - $ref: "#/servers/production"
+    messages:
+      fabricAiManualSayEvent:
+        $ref: "#/components/messages/fabricAiManualSayEvent"
+    x-fern-display-name: ai.manual_say
     bindings:
       ws: {}
   ai.swaig:
@@ -2250,14 +2262,22 @@ operations:
     messages:
       - $ref: "#/channels/ai.stop/messages/fabricAiStopEvent"
     x-fern-display-name: ai.stop
-  onAiPostPromptFabricAiPostPromptEvent:
+  onAiResponseHeardFabricAiResponseHeardEvent:
     action: receive
     channel:
-      $ref: "#/channels/ai.post_prompt"
-    title: ai.post_prompt
+      $ref: "#/channels/ai.response_heard"
+    title: ai.response_heard
     messages:
-      - $ref: "#/channels/ai.post_prompt/messages/fabricAiPostPromptEvent"
-    x-fern-display-name: ai.post_prompt
+      - $ref: "#/channels/ai.response_heard/messages/fabricAiResponseHeardEvent"
+    x-fern-display-name: ai.response_heard
+  onAiManualSayFabricAiManualSayEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/ai.manual_say"
+    title: ai.manual_say
+    messages:
+      - $ref: "#/channels/ai.manual_say/messages/fabricAiManualSayEvent"
+    x-fern-display-name: ai.manual_say
   onAiSwaigFabricAiSwaigEvent:
     action: receive
     channel:
@@ -10680,12 +10700,58 @@ components:
           type: string
           description: The caller's final recognized transcript for the turn. Not sent when the app has `redact_prompt` set, except with a realtime speech-to-speech model or on `calling.amazon_bedrock`.
           examples:
-            - I'd like to order a large pepperoni pizza for delivery.
+            - My code is F as in Frank 2 9.
+        words:
+          type: array
+          items:
+            $ref: "#/components/schemas/Calling.AiSpeechDetectWord"
+          description: |-
+            The recognizer's own words for the final transcript, in order, each in its punctuated form when
+            the recognizer gives one. These are the words as heard, so they need not match `text` word for
+            word: hearing hints, transcript formatting, and merged turns change `text` but not `words`.
+            Absent when the recognizer gives no words, and with a realtime speech-to-speech model.
+          examples:
+            - - word: My
+                confidence: 0.99
+              - word: code
+                confidence: 0.98
+              - word: is
+                confidence: 0.99
+              - word: F
+                confidence: 0.76
+              - word: as
+                confidence: 0.97
+              - word: in
+                confidence: 0.98
+              - word: Frank
+                confidence: 0.95
+              - word: "2"
+                confidence: 0.93
+              - word: "9."
+                confidence: 0.94
       required:
         - call_id
         - node_id
         - room_session_id
         - text
+    Calling.AiSpeechDetectWord:
+      type: object
+      properties:
+        word:
+          type: string
+          description: The word, punctuated when the recognizer gives that form.
+          examples:
+            - Frank
+        confidence:
+          type: number
+          format: double
+          description: The recognizer's confidence in the word.
+          examples:
+            - 0.95
+      required:
+        - word
+        - confidence
+      description: One word of the caller's final transcript, as the speech recognizer heard it.
     Fabric.FabricAiPartialResultEvent:
       type: object
       properties:
@@ -10781,12 +10847,15 @@ components:
             - my-tag-1
         text:
           type: string
-          description: The caller's interim (partial) speech-recognition transcript. Absent when you use `calling.amazon_bedrock`, where this event fires with an empty body.
+          description: The caller's interim (partial) speech-recognition transcript. Absent when the app has `redact_prompt` set, and when you use `calling.amazon_bedrock`, where this event fires with an empty body.
           examples:
             - I'd like to order a large
         barged:
           type: boolean
-          description: Present and `true` only when this partial transcript triggered a barge-in of the assistant's speech.
+          description: |-
+            Present and `true` only when this partial transcript cut off the assistant's reply, or
+            cancelled the model request for the turn before any of its reply played. Still sent when the
+            app has `redact_prompt` set.
           examples:
             - true
       required:
@@ -11111,16 +11180,16 @@ components:
         combined_text:
           type: string
           description: |-
-            The caller's merged turn text after a transparent barge — when the caller interrupts but the
-            assistant keeps listening and merges the interruption into the same turn. Present only when
-            non-empty.
+            The caller's merged statement, each part as said. Present when the agent's turn was discarded
+            and the caller's two statements were merged into one.
           examples:
-            - Actually, make that two large pepperoni pizzas.
+            - I want to change my order. The one from Tuesday.
         context_rewritten:
           type: boolean
           description: |-
-            Present and `false` when the barge did not rewrite the conversation — for
-            example, because the assistant's answer had already been delivered.
+            Present and `false` when the agent's turn was kept and the caller's new words became a turn of
+            their own: the new statement began at or past the `transparent_barge_max_time` window, or the
+            turn ran a function while `barge_functions` was off.
           examples:
             - false
       required:
@@ -11229,7 +11298,7 @@ components:
         end_time:
           type: integer
           format: int64
-          description: When the AI session ended, as a Unix timestamp in microseconds.
+          description: When the AI session ended, as a Unix timestamp in microseconds. Subtract `start_time` for the session's duration.
           examples:
             - 1718000123000000
         wallet_paused_sec:
@@ -11248,7 +11317,7 @@ components:
         - room_session_id
         - start_time
         - end_time
-    Fabric.FabricAiPostPromptEvent:
+    Fabric.FabricAiResponseHeardEvent:
       type: object
       properties:
         jsonrpc:
@@ -11272,7 +11341,7 @@ components:
             event_type:
               type: string
               enum:
-                - ai.post_prompt
+                - ai.response_heard
               description: The event type — identifies which event this is.
             event_channel:
               type: string
@@ -11298,38 +11367,9 @@ components:
               examples:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: Unique identifier of the call this event is about. Always present on Fabric events.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                node_id:
-                  type: string
-                  description: The node the call leg lives on.
-                  examples:
-                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                room_session_id:
-                  type: string
-                  description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
-                  examples:
-                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-                segment_id:
-                  type: string
-                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
-                  examples:
-                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-                tag:
-                  type: string
-                  description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
-                  examples:
-                    - my-tag-1
-              required:
-                - call_id
-                - node_id
-                - room_session_id
               description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiResponseHeardParams"
           required:
             - event_type
             - event_channel
@@ -11341,7 +11381,208 @@ components:
         - id
         - method
         - params
-      description: Fires on a Call Fabric call leg when the end-of-call summary is produced. Same fields as the Calling API's `calling.ai.post_prompt` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.
+      description: Fires on a Call Fabric call leg as one of the agent's replies stops playing, reporting whether the caller heard all of it and, if they cut it off, an estimate of what they heard. Same fields as the Calling API's `calling.ai.response_heard` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.
+    Fabric.FabricAiResponseHeardParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        barged:
+          type: boolean
+          description: |-
+            `true` when the reply's audio was cut off: by the caller barging in, by a flush, by a
+            text-to-speech failure, or by the call ending while it played.
+          examples:
+            - true
+        played_ms:
+          type: integer
+          format: int64
+          description: |-
+            How long the reply played, to the cut or to its end, in milliseconds. Counted from the turn's
+            first sound, including a filler that played before the reply. With `approximate: true`, counted
+            from those words' own first audio.
+          examples:
+            - 2140
+        text_heard_approx:
+          type: string
+          description: |-
+            What the caller heard: the whole reply when it played to its end, otherwise an estimate of the
+            words heard. Masked when the app has `redact_prompt` set, as in the call log.
+          examples:
+            - Your order shipped on Tuesday and
+        text_spoken_total:
+          type: string
+          description: |-
+            The reply as spoken, without language directives or `speech_markup` markup. Masked when the app
+            has `redact_prompt` set, as in the call log.
+          examples:
+            - Your order shipped on Tuesday and should arrive by Friday. Is there anything else I can help with?
+        approximate:
+          type: boolean
+          description: |-
+            Present and `true` only for words the model spoke before calling a function that doesn't wait
+            for them to play.
+          examples:
+            - true
+      required:
+        - call_id
+        - node_id
+        - room_session_id
+        - barged
+        - played_ms
+        - text_heard_approx
+        - text_spoken_total
+    Fabric.FabricAiManualSayEvent:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: "Event id — a unique UUID generated for each event. Events are notifications: you do not reply to them."
+          examples:
+            - 7d1e2f3a-4b5c-4d6e-8f9a-0b1c2d3e4f5a
+        method:
+          type: string
+          enum:
+            - signalwire.event
+          description: Always `signalwire.event`.
+        params:
+          type: object
+          properties:
+            event_type:
+              type: string
+              enum:
+                - ai.manual_say
+              description: The event type — identifies which event this is.
+            event_channel:
+              type: string
+              description: |-
+                The channel the event was delivered on — for Calling events, the `protocol`
+                string your connection received from `signalwire.connect`.
+              examples:
+                - signalwire_c1d2e3f4a5b6
+            timestamp:
+              type: number
+              format: double
+              description: When the event was emitted, as a Unix timestamp in seconds. Always present.
+              examples:
+                - 1712345678.842
+            project_id:
+              type: string
+              description: Your project ID. Present on Calling events and most Call Fabric events; absent on `call.joined`, `call.left`, `member.joined`, and `member.left`.
+              examples:
+                - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
+            space_id:
+              type: string
+              description: Your space ID. Present on Calling events and most Call Fabric events; absent on `call.joined`, `call.left`, `member.joined`, and `member.left`.
+              examples:
+                - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
+            params:
+              description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Fabric.FabricAiManualSayParams"
+          required:
+            - event_type
+            - event_channel
+            - timestamp
+            - params
+          description: The event envelope.
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      description: Fires on a Call Fabric call leg when text the platform speaks itself, outside the model's replies, starts to play. Same fields as the Calling API's `calling.ai.manual_say` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.
+    Fabric.FabricAiManualSayParams:
+      type: object
+      properties:
+        call_id:
+          type: string
+          description: Unique identifier of the call this event is about. Always present on Fabric events.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        node_id:
+          type: string
+          description: The node the call leg lives on.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        room_session_id:
+          type: string
+          description: The room session this call leg belongs to. In a 1:1 call this equals the `call_id`.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` the leg was dialed with, when a server-side application set one on the dial. Absent otherwise.
+          examples:
+            - my-tag-1
+        text:
+          type: string
+          description: |-
+            What was said. Masked when the app has `redact_prompt` set; markup removed when
+            `speech_markup` is on.
+          examples:
+            - Bear with me, I need to rethink that.
+        source:
+          type: string
+          enum:
+            - say
+            - error
+            - filler
+          description: |-
+            Where the text came from:
+
+            - `say`: a SWAIG `say` action, or the agent's "Going to sleep." line.
+            - `error`: an error line, such as "Bear with me, I need to rethink that."
+            - `filler`: a function's or a semantic gate's filler, or anything else the platform queues to
+              speak.
+          examples:
+            - error
+        error_reason:
+          type: string
+          description: |-
+            Why the error line was spoken, for example `invalid_function`. The same reason the call
+            timeline's `manual_say` entry records. Present only when `source` is `error`.
+          examples:
+            - invalid_function
+      required:
+        - call_id
+        - node_id
+        - room_session_id
+        - text
+        - source
     Fabric.FabricAiSwaigEvent:
       type: object
       properties:
@@ -15326,12 +15567,18 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/Fabric.FabricAiStopEvent"
-    fabricAiPostPromptEvent:
-      name: FabricAiPostPromptEvent
-      title: ai.post_prompt
+    fabricAiResponseHeardEvent:
+      name: FabricAiResponseHeardEvent
+      title: ai.response_heard
       contentType: application/json
       payload:
-        $ref: "#/components/schemas/Fabric.FabricAiPostPromptEvent"
+        $ref: "#/components/schemas/Fabric.FabricAiResponseHeardEvent"
+    fabricAiManualSayEvent:
+      name: FabricAiManualSayEvent
+      title: ai.manual_say
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/Fabric.FabricAiManualSayEvent"
     fabricAiSwaigEvent:
       name: FabricAiSwaigEvent
       title: ai.swaig

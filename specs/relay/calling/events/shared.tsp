@@ -242,8 +242,32 @@ model CallReceiveEvent
 @doc("""
   Payload of the `calling.error` event. Its shape is not fixed: beyond the call address
   and the fields below, additional fields vary by the error source (for example
-  `webhook_url`, `httpErrorCode`, `function`, `tool`, `schema_errors`, `engine`,
-  `voice`, or `fallback_*` fields describing a model or voice fallback).
+  `httpErrorCode`, `tool`, or `schema_errors`). The fields below are present only on the
+  error shapes that use them. The AI agent sends these shapes, among others:
+
+  - **Voice replaced.** When a voice fails and the next voice of its succession takes over,
+    `error_reason` is `voice_config_error` (the voice failed to open at startup, or failed
+    while reading or ending an utterance), `voice_runtime_error` (the engine failed while
+    being sent text), or `tts_stream_stall` (the voice went silent mid-utterance). `error` is
+    `"ai: Invalid speech options\\n"` at startup and `"ai: Speech error\\n"` during the call;
+    match on `error_reason`, not `error`. `engine`, `language_code`, `voice`, and `model`
+    describe the voice that failed, and the `fallback_*` fields describe the voice that took
+    over. A stall adds `stall_ms`, `expected_ms`, and `transport`, and on a streaming voice
+    `recovery`.
+  - **No usable voice.** When the call ends for lack of a voice, `fatal` is `true` and
+    `error_reason` is `voice_open_failed` (no voice of the succession would open) or
+    `voice_unrecoverable` (voices kept being replaced without producing audio). `engine` and
+    `voice` name the voice that failed, and `fallback_engine` and `fallback_voice` the last
+    voice tried. There is no `fallback_index` or `fallback_source`.
+  - **Model substituted.** A model that isn't on the supported list runs as the platform
+    default, with a non-fatal error: `error` is `model_substituted` with `requested_model`,
+    `substitute_model`, and `reason`, or `post_model_substituted` with
+    `requested_post_model`, `substitute_post_model`, and `reason` for the post-prompt model.
+  - **Invalid semantic gate.** A function whose gates break the rules is not registered;
+    `error_reason` is `invalid_semantic_gate`, with `function` and `reason`.
+  - **Event webhook posts dropped.** Posts to the agent's `event_webhook_url` that are still
+    queued 20 seconds after the AI session ends are given up, and reported once with
+    `error_type` `webhook_drain_timeout`, `dropped`, `waited_ms`, and `webhook_url`.
   """)
 @summary("Call error event payload")
 model CallErrorParams {
@@ -258,17 +282,129 @@ model CallErrorParams {
   @example("SWAIG function call failed")
   error?: string | Record<unknown>;
 
-  @doc("A short category for the error, when the source sets one — for example `webhook_fail` or `event_webhook_fail`.")
+  @doc("A short category for the error, when the source sets one — for example `webhook_fail`, `event_webhook_fail`, or `webhook_drain_timeout`.")
   @example("webhook_fail")
   error_type?: string;
 
-  @doc("A machine-readable reason for the error, when the source sets one.")
+  @doc("""
+    A machine-readable reason for the error, when the source sets one — for example
+    `voice_config_error`, `voice_runtime_error`, `tts_stream_stall`, `voice_open_failed`,
+    `voice_unrecoverable`, or `invalid_semantic_gate`.
+    """)
   @example("voice_config_error")
   error_reason?: string;
 
   @doc("Whether the error was fatal to the operation in progress — for example, one that ended the AI session. Absent when not reported.")
   @example(true)
   fatal?: boolean;
+
+  @doc("The engine of the voice that failed. At startup, the configured voice; during the call, the voice that was speaking.")
+  @example("elevenlabs")
+  engine?: string;
+
+  @doc("The language the failed voice spoke.")
+  @example("en-US")
+  language_code?: string;
+
+  @doc("The voice that failed.")
+  @example("rachel")
+  voice?: string;
+
+  @doc("The failed voice's model. An empty string when none was named.")
+  @example("eleven_flash_v2_5")
+  `model`?: string;
+
+  @doc("The engine of the voice that took over.")
+  @example("cartesia")
+  fallback_engine?: string;
+
+  @doc("The language the voice that took over speaks.")
+  @example("en-US")
+  fallback_language_code?: string;
+
+  @doc("The voice that took over.")
+  @example("efa653e5-314d-46ca-9f90-70ac7d6ca71e")
+  fallback_voice?: string;
+
+  @doc("The model of the voice that took over. An empty string when none.")
+  @example("")
+  fallback_model?: string;
+
+  @doc("""
+    The position of the voice that took over in the voice succession. The speaking voice is
+    `0`, so a replacement is `1` or more.
+    """)
+  @example(1)
+  fallback_index?: int32;
+
+  @doc("""
+    Where the voice that took over came from: `voice` (the language's own voice array, or the
+    top-level voice array), `fallback_voice`, or `platform` (the platform's last-resort voice).
+    """)
+  @example("voice")
+  fallback_source?: "voice" | "fallback_voice" | "platform";
+
+  @doc("How long the voice was silent, in milliseconds. `tts_stream_stall` only.")
+  @example(1580)
+  stall_ms?: int64;
+
+  @doc("How much speech was expected, in milliseconds. `tts_stream_stall` only.")
+  @example(3100)
+  expected_ms?: int64;
+
+  @doc("How the stalled voice was connected: `websocket-stream` or `rest`. `tts_stream_stall` only.")
+  @example("websocket-stream")
+  transport?: "websocket-stream" | "rest";
+
+  @doc("""
+    How a stalled streaming voice was recovered: `streaming_disabled` (the same voice, reopened
+    without streaming, with no `fallback_*` fields) or `voice_fallback` (the next voice of the
+    succession). `tts_stream_stall` on a streaming voice only.
+    """)
+  @example("voice_fallback")
+  recovery?: "streaming_disabled" | "voice_fallback";
+
+  @doc("The model the agent asked for. On `model_substituted` errors.")
+  @example("gpt-4.1-nano")
+  requested_model?: string;
+
+  @doc("The model the agent runs instead. On `model_substituted` errors.")
+  @example("gpt-4o-mini")
+  substitute_model?: string;
+
+  @doc("The post-prompt model the agent asked for. On `post_model_substituted` errors.")
+  @example("gpt-4.1-nano")
+  requested_post_model?: string;
+
+  @doc("The post-prompt model the agent runs instead. On `post_model_substituted` errors.")
+  @example("gpt-4o-mini")
+  substitute_post_model?: string;
+
+  @doc("""
+    Why the error happened, in words. For example `requested model not in allowed list` on a
+    model substitution, or the rule a semantic gate broke on `invalid_semantic_gate`.
+    """)
+  @example("requested model not in allowed list")
+  reason?: string;
+
+  @doc("The SWAIG function the error concerns, such as the function an invalid semantic gate removed.")
+  @example("confirm_change")
+  function?: string;
+
+  @doc("How many event webhook posts were given up. On `webhook_drain_timeout` errors.")
+  @example(3)
+  dropped?: int32;
+
+  @doc("How long the platform waited for queued event webhook posts, in milliseconds. On `webhook_drain_timeout` errors.")
+  @example(20000)
+  waited_ms?: int64;
+
+  @doc("""
+    The webhook URL the error concerns. On `webhook_drain_timeout`, the URL of the first post
+    that was not sent, with any credentials removed.
+    """)
+  @example("https://example.com/ai-events")
+  webhook_url?: string;
 }
 
 const callingError = "calling.error";

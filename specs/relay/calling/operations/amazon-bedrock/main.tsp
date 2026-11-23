@@ -37,7 +37,7 @@ model AmazonBedrockRequest is JsonRpcRequest<typeof callingAmazonBedrock, Amazon
 // The Bedrock engine fires a narrower event set than the `ai` method: no `calling.call.ai`
 // lifecycle event (that fires only in the `ai` method's completion path), no SWAIG
 // (`swaig`, `swaig_action`) events, and none of `response`, `warning`, `transparent_barge`,
-// or `post_prompt`. Only the events below are reachable on the Bedrock path.
+// or `response_heard`. Only the events below are reachable on the Bedrock path.
 op amazonBedrock(...AmazonBedrockRequest):
   | AmazonBedrockReply
   | AiCompletionEvent

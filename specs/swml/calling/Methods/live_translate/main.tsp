@@ -63,22 +63,38 @@ model StartAction {
     to_lang: string;
 
     @doc("""
-      The TTS voice that speaks translations into `from_lang` (the first direction in `direction`).
+      The TTS voice that speaks translations into `from_lang` (the first direction in `direction`),
+      as `<engine>.<voice>` or `<engine>.<voice>:<model>`.
       Defaults to `azure.en-US-RyanMultilingualNeural`.
       A voice that doesn't start with a lowercase engine prefix live translation supports, such as `polly.`, `gcloud.`,
       `azure.` or `elevenlabs.`, is replaced by the default. For example, `rachel`, `amazon.Joanna` and `Polly.Joanna` are all spoken as `azure.en-US-RyanMultilingualNeural`.
+      Supply an array of up to 8 voices to give it backups: the first speaks, and when it fails, at the start or
+      during the call, the next voice that opens takes over and speaks the same text again. After the array, the
+      platform's last-resort voice, `cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e`, is tried.
       """)
     @example("polly.Joanna")
-    from_voice?: string;
+    @maxItems(8)
+    from_voice?: string | string[];
 
     @doc("""
-      The TTS voice that speaks translations into `to_lang` (a second direction in `direction`).
+      The TTS voice that speaks translations into `to_lang` (a second direction in `direction`),
+      as `<engine>.<voice>` or `<engine>.<voice>:<model>`.
       Defaults to `azure.en-US-RyanMultilingualNeural`.
       A voice that doesn't start with a lowercase engine prefix live translation supports, such as `polly.`, `gcloud.`,
       `azure.` or `elevenlabs.`, is replaced by the default. For example, `rachel`, `amazon.Joanna` and `Polly.Joanna` are all spoken as `azure.en-US-RyanMultilingualNeural`.
+      Supply an array of up to 8 voices to give it backups, the same way as `from_voice`.
       """)
     @example("polly.Lucia")
-    to_voice?: string;
+    @maxItems(8)
+    to_voice?: string | string[];
+
+    @doc("""
+      The model that translates each utterance and writes the AI summaries.
+      A name containing `gpt-6-luna`, `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-oss-120b`, or `gpt-oss-20b`,
+      in any case, selects that model. Any other value uses the default.
+      """)
+    @example("gpt-6-luna")
+    translation_model?: string = "gpt-6-luna";
 
     @doc("""
       Translation filter for translations into `to_lang` (a second direction in `direction`).
@@ -100,16 +116,22 @@ model StartAction {
     @example(true)
     ai_summary?: boolean | SWMLVar = false;
 
-    @doc("The timeout for speech recognition in milliseconds.")
+    @doc("""
+      The timeout for speech recognition in milliseconds.
+      Also accepts a duration string with units, such as `30s`; see [duration values](/docs/swml/reference/calling/ai/params#duration-values).
+      Any other string is read by its leading integer.
+      """)
     @example(30000)
-    speech_timeout?: integer | SWMLVar = 60000;
+    speech_timeout?: integer | string = 60000;
 
     @doc("""
       Voice activity detection silence time in milliseconds. Default depends on the speech engine: `700` for Deepgram, `500` for Google.
       Omitting the value or setting it to `0` uses the engine default.
+      Also accepts a duration string with units, such as `700ms`; see [duration values](/docs/swml/reference/calling/ai/params#duration-values).
+      Any other string is read by its leading integer.
       """)
     @example(500)
-    vad_silence_ms?: integer | SWMLVar = 700;
+    vad_silence_ms?: integer | string = 700;
 
     @doc("Voice activity detection threshold (0-1800).")
     @example(400)

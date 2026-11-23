@@ -237,13 +237,13 @@ model LiveTranscribeStartAction {
     @example(SpeechEngine.deepgram)
     speech_engine?: SpeechEngine = SpeechEngine.deepgram;
 
-    @doc("Speech timeout in milliseconds.")
+    @doc("Speech timeout in milliseconds. Also accepts a duration string with units, such as `30s`; any other string is read by its leading integer.")
     @example(60000)
-    speech_timeout?: int32 = 60000;
+    speech_timeout?: int32 | string = 60000;
 
-    @doc("Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google.")
+    @doc("Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google. Also accepts a duration string with units, such as `700ms`; any other string is read by its leading integer.")
     @example(300)
-    vad_silence_ms?: int32;
+    vad_silence_ms?: int32 | string;
 
     @doc("Voice activity detection threshold (0-1800).")
     @example(400)
@@ -327,13 +327,22 @@ model LiveTranslateStartAction {
     ])
     direction: TranscribeDirection[];
 
-    @doc("The TTS voice for the source language.")
+    @doc("""
+      The TTS voice for the source language, as `<engine>.<voice>` or `<engine>.<voice>:<model>`.
+      Supply an array of up to 8 voices to give it backups: the first speaks, and when it fails, the next voice
+      that opens takes over and speaks the same text again, then the platform's last-resort voice.
+      """)
     @example("elevenlabs.josh")
-    from_voice?: string;
+    @maxItems(8)
+    from_voice?: string | string[];
 
-    @doc("The TTS voice for the target language.")
+    @doc("""
+      The TTS voice for the target language, as `<engine>.<voice>` or `<engine>.<voice>:<model>`.
+      Accepts an array of up to 8 voices, the same way as `from_voice`.
+      """)
     @example("elevenlabs.josh")
-    to_voice?: string;
+    @maxItems(8)
+    to_voice?: string | string[];
 
     @doc("Translation filter for the source language direction.")
     @example("professional")
@@ -363,13 +372,13 @@ model LiveTranslateStartAction {
     @example(SpeechEngine.deepgram)
     speech_engine?: SpeechEngine = SpeechEngine.deepgram;
 
-    @doc("Speech timeout in milliseconds.")
+    @doc("Speech timeout in milliseconds. Also accepts a duration string with units, such as `30s`; any other string is read by its leading integer.")
     @example(60000)
-    speech_timeout?: int32 = 60000;
+    speech_timeout?: int32 | string = 60000;
 
-    @doc("Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google.")
+    @doc("Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google. Also accepts a duration string with units, such as `700ms`; any other string is read by its leading integer.")
     @example(300)
-    vad_silence_ms?: int32;
+    vad_silence_ms?: int32 | string;
 
     @doc("Voice activity detection threshold (0-1800).")
     @example(400)

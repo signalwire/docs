@@ -26,6 +26,9 @@ model AiReply is JsonRpcResponse<AiResult>;
   start, and control returns when the session ends. Events continue to flow while
   the session is active.
 
+  The end-of-call post-prompt report is not sent as an event. It goes only to the agent's
+  `post_prompt_url`.
+
   A `project_id` key anywhere in the params (for example inside `global_data` or a
   SWAIG function definition) is refused with a JSON-RPC error `-32602`, and the
   request is not processed.
@@ -39,13 +42,14 @@ op ai(...AiRequest):
   | AiCompletionEvent
   | AiResponseEvent
   | AiResponseUtteranceEvent
+  | AiResponseHeardEvent
+  | AiManualSayEvent
   | AiSpeechDetectEvent
   | AiPartialResultEvent
   | AiBeginSpeakingEvent
   | AiWarningEvent
   | AiTransparentBargeEvent
   | AiStopEvent
-  | AiPostPromptEvent
   | AiSwaigEvent
   | AiSwaigActionEvent;
 

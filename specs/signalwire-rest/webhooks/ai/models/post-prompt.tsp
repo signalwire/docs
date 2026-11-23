@@ -152,9 +152,19 @@ model AiPostPromptCallbackPayload {
   @example(1694541297950440)
   ai_start_date?: int64;
 
-  @doc("Who or what ended the call. Included when the session recorded it.")
+  @doc("""
+    Who or what ended the call: the first end the session recorded, the same value as `ended_by`
+    on the call timeline's `session_end` entry.
+
+    - `caller`: the call was already down when the session ended, or when the platform decided to
+      end it.
+    - `assistant`: with the call still up, the model ended it (its hangup, or an approved end call),
+      or a function did (a `hangup`, `transfer`, or `stop` action, or a SWML transfer).
+    - `system`: the platform ended the session: the last turn of a `hard_stop_time`, a fatal
+      error, the `inactivity_timeout`, or a caller who never spoke while `wait_for_user` was set.
+    """)
   @example("assistant")
-  call_ended_by?: string;
+  call_ended_by?: "caller" | "assistant" | "system";
 
   @doc("""
     When the AI session ended, as a Unix timestamp in microseconds. Omitted when the session was

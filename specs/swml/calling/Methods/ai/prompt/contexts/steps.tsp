@@ -35,13 +35,55 @@ model StepReset {
   full_reset?: boolean = false;
 }
 
+@summary("Expected answer: digit count")
+model ExpectedAnswerDigits {
+  @doc("The exact number of digits in the answer, from `1` to `64`.")
+  @minValue(1)
+  @maxValue(64)
+  @example(8)
+  digits: int32;
+}
+
+@summary("Expected answer: digit range")
+model ExpectedAnswerDigitRange {
+  @doc("The fewest digits the answer can have, from `1` to `64`, and no greater than `max_digits`.")
+  @minValue(1)
+  @maxValue(64)
+  @example(10)
+  min_digits: int32;
+
+  @doc("The most digits the answer can have, from `1` to `64`.")
+  @minValue(1)
+  @maxValue(64)
+  @example(11)
+  max_digits: int32;
+}
+
+// Any other shape, such as `digits` together with `min_digits`, is ignored.
+@summary("Expected answer")
+union ExpectedAnswer {
+  ExpectedAnswerDigits,
+  ExpectedAnswerDigitRange,
+}
+
+const expectedAnswerDescription: string = """
+  How many digits the answer has, so speech recognition can stop waiting once the caller has said that many.
+  Set `digits` for an exact count, or `min_digits` and `max_digits` for a range; any other shape is ignored.
+  It stays in effect until a step or question with a different `expected_answer`, or none, replaces it.
+  Takes effect with Deepgram speech recognition.
+  """;
+
 @summary("Gather question")
 model GatherQuestion {
   @doc("The key the answer is stored under in `global_data`, or under `output_key` when it is set.")
   @example("full_name")
   key: string;
 
-  @doc("The question the AI asks the caller.")
+  @doc("""
+    The question to ask the caller. The AI asks it in its own words, or, when the question is said by the
+    platform (`say`), the platform speaks this text as written, with variables such as
+    `\${global_data.name}` expanded.
+    """)
   @example("What is your full name?")
   question: string;
 
@@ -67,20 +109,40 @@ model GatherQuestion {
     """)
   @example(true)
   isolated?: boolean;
+
+  @doc("""
+    If `true`, the platform speaks `question` word for word as the agent's turn; if `false`, the AI asks it.
+    **Default:** the `say_questions` value of `gather_info`.
+    """)
+  @example(false)
+  say?: boolean;
+
+  @doc("""
+    ${expectedAnswerDescription}
+    While this question is asked, it overrides the step's `expected_answer`. **Default:** the step's `expected_answer`.
+    """)
+  expected_answer?: ExpectedAnswer;
 }
 
 @summary("Gather info")
-@doc("Asks the caller a list of questions, one at a time, and stores the answers in `global_data`.")
+@doc("""
+  Asks the caller a list of questions, one at a time, and stores the answers in `global_data`.
+  The AI submits each answer with the `gather_submit` function, which is refused until the caller has
+  said something since the question was asked.
+  """)
 model GatherInfo {
   @doc("The questions to ask, in order. At least one is required.")
   @minItems(1)
   questions: GatherQuestion[];
 
-  @doc("Instructions added before the first question.")
+  @doc("""
+    Instructions sent with each question, after the context's prompt. With `history: keep`, they're sent with
+    the first question only. A gather without `prompt` or `pom` asks its questions without the context's prompt.
+    """)
   @example("I need to collect a few details before I can book your ride.")
   prompt?: string;
 
-  @doc("Instructions added before the first question, as a Prompt Object Model (POM). Used when `prompt` is not set.")
+  @doc("The same instructions as `prompt`, as a Prompt Object Model (POM). Used when `prompt` is not set.")
   @minItems(1)
   pom?: POM[];
 
@@ -104,6 +166,14 @@ model GatherInfo {
     """)
   @example(false)
   isolated?: boolean = false;
+
+  @doc("""
+    If `true`, the platform speaks each question's `question` text word for word as the agent's turn, instead of
+    having the AI ask it. The AI can't skip, reword, or merge a question said this way, and it still collects
+    and submits the answer. A question's own `say` overrides this. **Default:** `false`.
+    """)
+  @example(true)
+  say_questions?: boolean = false;
 }
 
 @summary("Base context step with common properties")
@@ -129,7 +199,12 @@ model ContextStepsBase {
   @example(#["Take Order", "Confirm Order", "Confirm Address"])
   functions?: string[];
 
-  @doc("An array of context names that the AI can transition to from this step. This must be a valid `contexts.name` that is present in your `contexts` object.")
+  @doc("""
+    An array of context names the AI can switch to from this step with `change_context`, matched
+    case-insensitively. Each must be a context in your `contexts` object. When the key is omitted or the
+    array is empty, the AI isn't offered `change_context` during this step. A request for a context that
+    isn't listed is refused. A `change_context` action returned by a SWAIG function can still switch to any context.
+    """)
   @example(#["Place Order", "Confirm Order"])
   valid_contexts?: string[];
 
@@ -147,19 +222,35 @@ model ContextStepsBase {
   @example(true)
   skip_to_next_step?: boolean = false;
 
-  @doc("A boolean value that determines if the step is the last in the context. If `true`, the context ends after this step. Cannot be used along with the `valid_steps` parameter. **Default:** `false`.")
+  @doc("""
+    A boolean value that determines if the step is the last in the context. If `true`, the context ends after this step.
+    Cannot be used along with the `valid_steps` parameter. When the step follows a gather, the gather's last question and
+    its instructions leave the AI's view, unless `history` is `keep`. **Default:** `false`.
+    """)
   @example(true)
   end?: boolean = false;
 
   @doc("""
-    An array of step names the AI can move to from this step. Include `next` to allow the following step.
-    When the key is omitted, the AI can move to the next step in the context.
-    An empty array means that, once the AI's available functions are refreshed for this step (for example,
-    when the step sets `functions`), it is no longer offered a move to another step. A `change_step` action
-    returned by a SWAIG function still works.
+    An array of step names the AI can move to from this step with `next_step`, matched case-insensitively.
+    Include `next` to allow the following step. When the key is omitted, the AI can move to the next step in
+    the context. An empty array removes `next_step` while this step is current. The AI also isn't offered
+    `next_step` on a context's last step when `next` is the only choice, or while a gather question is asked.
+    A request for a step that isn't listed is refused. A `change_step` action returned by a SWAIG function, and
+    a gather's `completion_action`, can still move to any step.
     """)
   @example(#["get order", "confirm order"])
   valid_steps?: string[];
+
+  @doc("""
+    How much of the earlier conversation the AI sees when this step begins: `keep`, `default`, `hide`,
+    `isolate`, or `spoken`, matched case-insensitively. Any other value is read as `default`.
+    **Default:** the context's `history`.
+    """)
+  @example("isolate")
+  history?: ContextHistoryMode;
+
+  @doc(expectedAnswerDescription)
+  expected_answer?: ExpectedAnswer;
 
   @doc("""
     Resets the conversation with new instructions when this step becomes active, and makes this the last
@@ -178,13 +269,20 @@ model ContextStepsBase {
 
 @summary("Context step with POM (Prompt Object Model)")
 model ContextPOMSteps is ContextStepsBase {
-  @doc("The instructions for this step, as a Prompt Object Model (POM).")
+  @doc("""
+    The instructions for this step, as a Prompt Object Model (POM). Variables are expanded again before each
+    AI request when they change during the step.
+    """)
   pom: POM[];
 }
 
 @summary("Context step with text prompt")
 model ContextTextSteps is ContextStepsBase {
-  @doc("The prompt or instructions given to the AI at this step.")
+  @doc("""
+    The prompt or instructions given to the AI at this step. Variables such as `\${global_data.order_id}` are
+    expanded again before each AI request when they change during the step, so a value a function sets later
+    in the step is the one the AI reads.
+    """)
   @example("Your name is Franklin and you are taking orders for Franklin's Pizza.")
   text: string;
 }

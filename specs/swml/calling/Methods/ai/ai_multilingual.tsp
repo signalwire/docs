@@ -28,22 +28,27 @@ model MultilingualLanguage {
   @example("es")
   language: string;
 
-  // `voice` is required on `languages[]` but not here. Only the base entry — the `default`
-  // entry when one is given, otherwise the first language listed — has to carry a voice; an
-  // entry without one is answered in the base voice. OptionalProperties relaxes just that,
-  // and keeps the descriptions in LanguagesBase rather than restating them here.
+  // Only the base entry — the `default` entry when one is given, otherwise the first language
+  // listed — has to carry a voice; an entry without one is answered in the base voice. The
+  // `default_voice` SWML variable can supply any entry's voice. OptionalProperties keeps the
+  // descriptions in LanguagesBase rather than restating them here.
   ...OptionalProperties<PickProperties<LanguagesBase, PickedMultilingualLanguage>>;
 }
 
 @summary("multilingual")
 model Multilingual {
+  // Optional only because the `default_voice` SWML variable can build the entries.
   @doc("""
     An array of voices, one per language the agent speaks.
     At least one entry must supply a `voice`, either an entry with `language` set to
     `default` or the first language listed. Without one, multilingual mode does not
     start and the agent falls back to a single English voice.
+    An entry with no `voice` takes one from the `default_voice` SWML variable when it is set.
+    Leave the array out only when `default_voice` is set: its language keys then become the entries,
+    with its `default` key as the catch-all, and a single voice or array becomes one catch-all entry.
+    The keys must be language codes the speech recognizer accepts.
     """)
-  languages: MultilingualLanguage[];
+  languages?: MultilingualLanguage[];
 
   @doc("""
     Restricts the agent to this set of language codes. The speech recognition engine still
@@ -52,6 +57,9 @@ model Multilingual {
     prompt, which languages are in play. Every code must be supported by the ASR engine and
     model in use, or multilingual mode does not start.
     Omit to let the agent follow the caller into any language the ASR engine detects.
+    On Deepgram's `nova-3` model, these codes are also sent to the recognizer as language hints,
+    which bias detection toward them without ruling out other languages. Without `allowed`, the
+    hints are the `language` values of the `languages` entries (not `default`), or `en` when there are none.
     """)
   @example(#["en", "es", "fr"])
   allowed?: string[];

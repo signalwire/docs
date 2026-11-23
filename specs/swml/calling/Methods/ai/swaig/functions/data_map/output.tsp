@@ -54,8 +54,10 @@ model SwaigToolResult {
   """)
 model Output {
   @doc("""
-    The result the agent reads next. A plain string becomes the tool message as-is; the object form
-    splits the data half from the steering half. Omit it to let the agent use a default result.
+    The result the agent reads next. A plain string becomes the tool message as-is, followed by a
+    separate instruction to answer the caller from it in the language of the conversation. The
+    object form splits the data half from the steering half, and its `tool_prompt` takes that
+    instruction's place. Omit it to let the agent use a default result.
     """)
   @example("Order placed")
   response?: string | SwaigToolResult;

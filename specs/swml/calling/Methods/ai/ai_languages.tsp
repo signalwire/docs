@@ -49,16 +49,23 @@ model LanguagesBase {
   //   For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
   //   Always name the engine: a bare voice id resolves against a default engine that can change.
   //   """)
+  // Optional since the `default_voice` SWML variable can fill it. A `languages[]` entry with
+  // neither is skipped; a `multilingual.languages[]` entry with neither uses the catch-all voice.
   @doc("""
     Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
     `:<model id>` suffix for engines that offer a choice of model.
     Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
-    `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, or `fish`.
+    `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `heygen`.
     For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
     Always name the engine: a bare voice id resolves against a default engine that can change.
+    Supply an array of up to 8 voice strings to give this language backup voices: the first voice speaks,
+    and when it fails, the agent goes on with the next voice that opens, then `ai.fallback_voice`.
+    See [voice fallback](/docs/swml/reference/calling/ai#voice-fallback).
+    An entry with no voice takes one from the `default_voice` SWML variable when it is set.
     """)
   @example("gcloud.fr-FR-Neural2-B")
-  voice: string;
+  @maxItems(8)
+  voice?: string | string[];
 
   @doc("""
     The model to use for the specified TTS engine. For example, `coda`.
@@ -137,6 +144,17 @@ model LanguageParams {
   @minValue(0.0)
   @maxValue(2.0)
   temperature?: float | SWMLVar = 1.0;
+
+  // HeyGen's own default (1) applies when this is unset or invalid, so no default here.
+  @doc("""
+    How expressive the voice is, from `0` to `1`. HeyGen suggests `0.5` to keep a voice's character.
+    A string that holds only a number is also accepted. A value out of range or not a number isn't sent,
+    and HeyGen's default applies. IMPORTANT: Only works with the HeyGen TTS engine.
+    """)
+  @minValue(0.0)
+  @maxValue(1.0)
+  @example(0.5)
+  expressiveness_boost?: float | string;
 
   // hidden 2026-10-05
   // @doc("How quickly the voice speaks. Values below `1.0` slow the voice down; values above `1.0` speed it up. IMPORTANT: Only works with the MiniMax TTS engine.")
