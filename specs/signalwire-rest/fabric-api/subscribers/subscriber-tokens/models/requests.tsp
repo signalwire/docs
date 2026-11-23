@@ -1,7 +1,11 @@
 import "../../../../types";
 
 model SubscriberTokenRequest {
-  @doc("A string that uniquely identifies the subscriber. Often it's an email, but can be any other string.")
+  @doc("""
+    The Subscriber's email address. SignalWire matches it, ignoring case, against the email of an existing Subscriber in the project. Neither of the Subscriber's IDs (the resource `id` or the inner `subscriber.id`) matches, so pass the email.
+
+    If no Subscriber in the project has this email, SignalWire creates a new Subscriber with `reference` as its email and returns a token for that Subscriber. Any string is accepted, so a typo or a wrong value creates an extra Subscriber rather than returning an error.
+    """)
   @example("john.doe@example.com")
   reference: string;
 
