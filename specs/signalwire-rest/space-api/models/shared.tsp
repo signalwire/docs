@@ -31,7 +31,7 @@ model SpacePaginationLinks {
 
 @doc("Cursor pagination query parameters shared by the space list endpoints.")
 model SpacePaginationQuery {
-  @doc("The number of results per page.")
+  @doc("The number of results per page. The default is `50` and the maximum is `1000`.")
   @query
   @minValue(1)
   @maxValue(1000)

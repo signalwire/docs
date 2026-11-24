@@ -38,6 +38,11 @@ model BillingStatementPdfRedirect {
 @doc("A page of balance adjustments.")
 model PaymentHistoryListResponse {
   @doc("Pagination links for the list. The `created_after` and `created_before` filters are preserved in each link.")
+  @example(#{
+    self: "/api/space/payment_history?created_after=2026-07-01&page_number=0&page_size=50",
+    first: "/api/space/payment_history?created_after=2026-07-01&page_size=50",
+    next: "/api/space/payment_history?created_after=2026-07-01&page_number=1&page_size=50&page_token=PA6f708192-a3b4-4c5d-9e6f-708192a3b4c5",
+  })
   links: SpacePaginationLinks;
 
   @doc("The balance adjustments on this page.")

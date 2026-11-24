@@ -22,6 +22,8 @@ namespace SignalWireAPI.Fax.Logs {
     @doc("""
       Lists historical fax activity in the project for delivery review, usage reporting, and troubleshooting. The Fax Logs API is read-only; send or manage faxes through the Compatibility API's [Faxes](/docs/compatibility-api/rest/faxes/send-fax) operations instead.
       
+      ${logListBehavior}
+
       ${tokenPermissions<"_Fax_">}
       """)
     list(...LogListRequest):

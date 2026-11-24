@@ -187,7 +187,7 @@ model CallStateParams {
   @doc("SIP addressing/header detail. Present only for SIP calls (`device.type == \"sip\"`).")
   sip_data?: CallSipData;
 
-  @doc("Inbound-audio Mean Opinion Score (voice quality, ~1.0-5.0). Present when media (RTP) quality stats are available.")
+  @doc("Inbound-audio Mean Opinion Score (voice quality, from about 1 to 4.5, where 4.5 is the best score). Present when media (RTP) quality stats are available.")
   @example(4.4)
   audio_in_mos?: float64;
 
