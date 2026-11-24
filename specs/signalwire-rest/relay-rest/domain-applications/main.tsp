@@ -3,6 +3,7 @@ import "@typespec/openapi";
 import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
+import "./models/errors.tsp";
 import "../../types";
 import "../tags.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
@@ -43,7 +44,7 @@ namespace SignalWireAPI.RelayRest.DomainApplications {
           @body domain_application: DomainApplicationResponse;
         }
       | StatusCode401
-      | ValidationError
+      | DomainApplicationStatusCode422
       | StatusCode500;
 
     @operationId("retrieve_domain_application")
@@ -75,7 +76,7 @@ namespace SignalWireAPI.RelayRest.DomainApplications {
       | DomainApplicationResponse
       | StatusCode401
       | StatusCode404
-      | ValidationError
+      | DomainApplicationStatusCode422
       | StatusCode500;
 
     @operationId("delete_domain_application")

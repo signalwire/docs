@@ -53,7 +53,7 @@ model DomainApplication {
   type: string;
 
   @doc("The unique domain for this application, combining your space subdomain and identifier.")
-  @example("your-space-test_id")
+  @example("your-space-test-id")
   domain: string;
 
   @doc("A string representing the friendly name for this domain application.")

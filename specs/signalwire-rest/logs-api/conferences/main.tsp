@@ -23,6 +23,8 @@ namespace SignalWireAPI.Logs.Conferences {
     @doc("""
       Lists historical voice conferences and Video Room or Conference sessions across the project. Use it for usage reporting and auditing across conference types, not for live control. Use Compatibility [Conferences](/docs/compatibility-api/rest/conferences/list-all-conferences) to inspect or control live voice conferences, or [Video Conferences](/docs/apis/rest/video/video-conferences/list-video-conferences) to manage hosted video conference configurations.
       
+      ${logListBehavior}
+
       ${anyTokenPermissions<"_Voice_ or _Video_">}
       """)
     list(...ConferenceLogListRequest):

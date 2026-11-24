@@ -3,7 +3,7 @@ import "@typespec/openapi";
 import "../../types/status-codes/main.tsp";
 import "../tags.tsp";
 import "./models/core.tsp";
-import "./models/requests.tsp";
+import "../../_globally_shared/log-list-query.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "./models/examples.tsp";
@@ -56,9 +56,11 @@ namespace SignalWireAPI.Voice.Logs {
     @doc("""
       Lists historical voice activity in the project across supported call types. It includes calls handled by cXML, by SWML, and through the Calling API; SWML and Calling API calls aren't in the [Compatibility Calls list](/docs/compatibility-api/rest/calls/list-all-calls). Use it for usage reporting, billing review, and troubleshooting, not live call control. Place or control calls through [Send call commands](/docs/apis/rest/calls/call-commands) or the Compatibility Calls API instead.
       
+      ${logListBehavior}
+
       ${tokenPermissions<"_Voice_">}
       """)
-    list(...LogListRequest):
+    list(...LogListQuery):
       | LogListResponse
       | StatusCode400
       | StatusCode401

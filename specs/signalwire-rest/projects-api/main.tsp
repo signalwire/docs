@@ -145,10 +145,11 @@ namespace SignalWireAPI.Projects {
     @doc("""
       Rotates the project's signing key and returns the project with the new `signing_key`.
       
-      The new key takes about 1–2 minutes to become active, and until then requests can still arrive
-      signed with the previous key. During that window, accept a request whose signature verifies with
-      either key, then stop accepting the previous key. As with create, the `signing_key` is only
-      returned on this response and cannot be retrieved afterward.
+      The new key takes about a minute to become active, and until then requests can still arrive
+      signed with the previous key. Calls already in progress keep signing with the previous key until
+      they end. Accept a request whose signature verifies with either key until the new key is active
+      and those calls have finished, then stop accepting the previous key. As with create, the
+      `signing_key` is only returned on this response and cannot be retrieved afterward.
 
       The new key is the project's next signing key, the same key the Dashboard's **Reset** dialog shows.
       A project created before the `swpsk_` format can therefore receive a `PSK_` key from its first rotation.

@@ -6,6 +6,8 @@ max-toc-depth: 3
 ---
 
 [render-swml]: /docs/server-sdks/reference/typescript/agents/agent-base/render-swml
+[register-routing-callback]: /docs/server-sdks/reference/typescript/agents/swml-service/register-routing-callback
+[webhook-payload]: /docs/swml/reference/calling#webhook-payload
 
 Lifecycle hook called on every incoming SWML request before the SWML document is
 rendered. The default implementation is a no-op. Override this method in a
@@ -16,14 +18,28 @@ prompts based on request metadata, or logging request details.
 
 ## **Parameters**
 
-<ParamField path="rawData" type={"Record<string, unknown>"} required={true} toc={true}>
-  The parsed request body. Contains call metadata such as `call_id`,
-  `caller_id_number`, `caller_id_name`, and any custom SIP headers.
+<ParamField path="rawData" type="SwmlRequestData" required={true} toc={true}>
+  The parsed request body, in the shape of the
+  [Calling SWML webhook payload][webhook-payload]. Call details sit under
+  `call`, and SWML variables set earlier in the call sit under `vars`.
 </ParamField>
 
+<Indent>
+
+<ParamField path="rawData.call" type="SwmlRequestCall" toc={true}>
+  The call the request is for. Includes `call_id`, `direction`, `type` (the
+  device type, such as `phone` or `sip`), `from` (the caller's address), `to`,
+  `project_id`, and `space_id`. Phone calls also carry `from_number` and
+  `to_number`. Phone and SIP calls carry `headers`, an array of
+  `name`/`value` pairs.
+</ParamField>
+
+</Indent>
+
 <ParamField path="callbackPath" type="string" toc={true}>
-  Optional callback path from the request body (`callback_path` field), when
-  the request was triggered via a callback URL.
+  The routing-callback path the request URL matched, when the request reached
+  a path registered with
+  [`registerRoutingCallback()`][register-routing-callback].
 </ParamField>
 
 <ParamField path="context" type="any" toc={true}>
@@ -35,8 +51,8 @@ prompts based on request metadata, or logging request details.
 
 `Record<string, unknown> | void | Promise<Record<string, unknown> | void>` --
 Return a modifications object to merge into the AI verb config before
-rendering. `global_data` is deep-merged; all other keys override AI config
-fields directly. Return `void` / `undefined` to render without
+rendering. `global_data` keys are merged into the agent's global data;
+all other keys override AI config fields directly. Return `void` / `undefined` to render without
 modifications.
 
 <Tip>
@@ -48,8 +64,8 @@ and an ephemeral agent copy.
 
 ## **Example**
 
-```typescript {9}
-import { AgentBase } from '@signalwire/sdk';
+```typescript {12}
+import { AgentBase, type SwmlRequestData } from '@signalwire/sdk';
 
 class PersonalizedAgent extends AgentBase {
   constructor() {
@@ -58,11 +74,11 @@ class PersonalizedAgent extends AgentBase {
   }
 
   override async onSwmlRequest(
-    rawData: Record<string, unknown>,
-  ): Promise<void> {
-    const callerId = (rawData.caller_id_number as string) ?? 'unknown';
+    rawData: SwmlRequestData,
+  ): Promise<Record<string, unknown>> {
+    const callerId = rawData.call?.from ?? 'unknown';
     console.log(`Incoming call from ${callerId}`);
-    this.updateGlobalData({ caller_number: callerId });
+    return { global_data: { caller_number: callerId } };
   }
 }
 

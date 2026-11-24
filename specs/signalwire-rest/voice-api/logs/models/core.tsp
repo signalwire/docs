@@ -100,9 +100,9 @@ model RelayVoiceLog {
   qos_metrics: SignalWireAPI.Calling.CallQosMetrics | null;
 }
 
-@doc("Audio quality statistics for a Compatibility API call. Each field is null when the call has no measurement for it, such as a call that never carried audio.")
+@doc("Audio quality statistics for a Compatibility API call. Each field is null when the call has no measurement for it, such as a call that ended before an audio stream was set up.")
 model CallQualityMetrics {
-  @doc("The estimated Mean Opinion Score (MOS) for inbound audio quality, based on the share of incoming audio packets that arrived without loss or delay. It ranges from about 1 to 4.5, the score for a call with no lost or late packets. Returned as a decimal string.")
+  @doc("The estimated Mean Opinion Score (MOS) for inbound audio quality, based on the share of incoming audio packets that arrived without loss or delay. It ranges from about 1 to 4.5, where 4.5 is the best score. A call whose audio stream received no inbound packets also reports 4.5, so check `audio_in_media_packet_count` to tell that case from a clean call. Returned as a decimal string.")
   @example("4.5")
   audio_in_mos: string | null;
 

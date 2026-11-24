@@ -90,7 +90,12 @@ These parameters control the fundamental behavior and capabilities of the AI age
 
 
 <ParamField path="params.double_turns" type="boolean" default="false" toc={true}>
-  Before each reply, a smaller planning model reviews the conversation and the available functions, then gives the agent a short directive on how to respond. This can improve function use and coherence. The reply waits for the plan, which adds latency to every turn. The planning model is [`utility_model`](#paramsutility_model) if set, otherwise `ai_model`. Billed separately from the agent's per-minute rate. To cover the wait, set [`double_turn_fillers`](/docs/swml/reference/calling/ai/languages#languagesdouble_turn_fillers) on each entry in `languages`.
+  Before each reply, a smaller planning model reviews the conversation and the available functions, then gives the agent a short directive on how to respond. This can improve function use and coherence. The reply waits for the plan, which adds latency to every turn. The planning model is [`double_turn_model`](#paramsdouble_turn_model) if set, otherwise [`utility_model`](#paramsutility_model) if set, otherwise `ai_model`. Billed separately from the agent's per-minute rate. To cover the wait, set [`double_turn_fillers`](/docs/swml/reference/calling/ai/languages#languagesdouble_turn_fillers) on each entry in `languages`.
+</ParamField>
+
+
+<ParamField path="params.double_turn_model" type="string" toc={true}>
+  The model that plans each reply when [`double_turns`](#paramsdouble_turns) is enabled. It takes priority over [`utility_model`](#paramsutility_model) for planning, so you can plan with one model and run background tasks with another. If the model isn't recognized, the planning step is skipped and the agent replies without a plan. Has no effect unless `double_turns` is `true`.
 </ParamField>
 
 
@@ -270,7 +275,7 @@ Customize the AI agent's voice output, including volume control, voice character
 
 
 <ParamField path="params.tts_number_format" type="string" default="e164" toc={true}>
-  The format of the number the AI will reference the phone number. Valid values: `e164` (e.g. +12345678901), `international` (e.g. +1 234-567-8901), or `national` (e.g. (234) 567-8901).
+  How the agent formats phone numbers when it speaks them. Valid values: `e164` (e.g. +12345678901), `international` (e.g. +1 234-567-8901), `national` (e.g. (234) 567-8901), or `generic` (e.g. 234 567 8901). An unrecognized value is ignored and `e164` is used.
 </ParamField>
 
 <ParamField path="params.video_blank_image" type="string" toc={true}>
@@ -321,11 +326,13 @@ Manage how the AI agent handles interruptions when users speak over it, includin
 
 <ParamField path="params.barge_match_string" type="string" toc={true}>
   Takes a string, including a regular expression, defining barge behavior. For example, this param can direct the AI to stop when the word "hippopotamus" is input.
+
+  Setting this param turns off [`transparent_barge`](#paramstransparent_barge), even when `transparent_barge` is set to `true`. When [`barge_min_words`](#paramsbarge_min_words) is also set, either condition is enough: the caller interrupts the agent by saying at least that many words or by saying something that matches this string.
 </ParamField>
 
 
-<ParamField path="params.barge_min_words" type="integer" toc={true}>
-  Defines the number of words that must be input before triggering barge behavior. Allowed values from `1`-`99`.
+<ParamField path="params.barge_min_words" type="integer" default="0" toc={true}>
+  Defines the number of words that must be input before triggering barge behavior. Allowed values: `0` to turn the word count off, or `1`-`99`. Any other value is ignored. When [`barge_match_string`](#paramsbarge_match_string) is also set, either condition is enough to interrupt the agent.
 </ParamField>
 
 
@@ -336,6 +343,8 @@ Manage how the AI agent handles interruptions when users speak over it, includin
 
 <ParamField path="params.interrupt_on_noise" type="boolean" default="false" toc={true}>
   When enabled, barges agent upon any sound interruption longer than 1 second. The 1-second threshold can't be changed.
+
+  The sound doesn't need to be recognized as words, so sustained sound, such as background conversation or music, can interrupt the agent. This interruption ignores [`enable_barge`](#paramsenable_barge), [`barge_min_words`](#paramsbarge_min_words), and [`barge_match_string`](#paramsbarge_match_string), and it interrupts a static greeting even when [`static_greeting_no_barge`](#paramsstatic_greeting_no_barge) is `true`.
 </ParamField>
 
 
@@ -348,6 +357,8 @@ Manage how the AI agent handles interruptions when users speak over it, includin
 
 <ParamField path="params.transparent_barge" type="boolean" default="true" toc={true}>
   When enabled, the AI will not respond to the user's input when the user is speaking over the agent. The agent will wait for the user to finish speaking before responding. Additionally, any attempt the LLM makes to barge will be ignored and scraped from the conversation logs.
+
+  Setting [`barge_match_string`](#paramsbarge_match_string) turns this param off, even when it is set to `true`.
 </ParamField>
 
 
@@ -361,7 +372,7 @@ Manage how the AI agent handles interruptions when users speak over it, includin
 Set various timing parameters that control wait times, response delays, and session limits to optimize the conversation flow and prevent dead air.
 
 <ParamField path="params.attention_timeout" type="integer" default="5000" toc={true}>
-  Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `1,000`-`600,000`.
+  Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `1,000`-`600,000`. A nonzero value lower than [`end_of_speech_timeout`](#paramsend_of_speech_timeout) is raised to `end_of_speech_timeout` plus 1,000 ms.
 </ParamField>
 
 
@@ -451,6 +462,10 @@ Control background audio, hold music, and greeting messages to enhance the calle
 
 <ParamField path="params.static_greeting_no_barge" type="boolean" default="false" toc={true}>
   If `true`, the static greeting will not be interrupted by the user if they speak over the greeting. If `false`, the static greeting can be interrupted by the user if they speak over the greeting.
+
+  With `true`, what the caller says during the greeting is kept and answered after the greeting finishes. A DTMF key press still interrupts the greeting, and so does [`interrupt_on_noise`](#paramsinterrupt_on_noise).
+
+  With `false`, the greeting stops once the caller finishes speaking over it. This interruption ignores [`barge_min_words`](#paramsbarge_min_words), [`barge_match_string`](#paramsbarge_match_string), and [`enable_barge`](#paramsenable_barge), which apply only after the greeting.
 </ParamField>
 
 
