@@ -7,6 +7,7 @@ max-toc-depth: 3
 
 [render-swml]: /docs/server-sdks/reference/typescript/agents/agent-base/render-swml
 [register-routing-callback]: /docs/server-sdks/reference/typescript/agents/swml-service/register-routing-callback
+[webhook-payload]: /docs/swml/reference/calling#webhook-payload
 
 Lifecycle hook called on every incoming SWML request before the SWML document is
 rendered. The default implementation is a no-op. Override this method in a
@@ -18,8 +19,9 @@ prompts based on request metadata, or logging request details.
 ## **Parameters**
 
 <ParamField path="rawData" type="SwmlRequestData" required={true} toc={true}>
-  The parsed request body. Call details sit under `call`, not at the top
-  level. SWML variables set earlier in the call sit under `vars`.
+  The parsed request body, in the shape of the
+  [Calling SWML webhook payload][webhook-payload]. Call details sit under
+  `call`, and SWML variables set earlier in the call sit under `vars`.
 </ParamField>
 
 <Indent>
@@ -28,7 +30,8 @@ prompts based on request metadata, or logging request details.
   The call the request is for. Includes `call_id`, `direction`, `type` (the
   device type, such as `phone` or `sip`), `from` (the caller's address), `to`,
   `project_id`, and `space_id`. Phone calls also carry `from_number` and
-  `to_number`, and `headers` holds any custom headers the call carries.
+  `to_number`. Phone and SIP calls carry `headers`, an array of
+  `name`/`value` pairs.
 </ParamField>
 
 </Indent>
@@ -72,10 +75,10 @@ class PersonalizedAgent extends AgentBase {
 
   override async onSwmlRequest(
     rawData: SwmlRequestData,
-  ): Promise<void> {
+  ): Promise<Record<string, unknown>> {
     const callerId = rawData.call?.from ?? 'unknown';
     console.log(`Incoming call from ${callerId}`);
-    this.updateGlobalData({ caller_number: callerId });
+    return { global_data: { caller_number: callerId } };
   }
 }
 
