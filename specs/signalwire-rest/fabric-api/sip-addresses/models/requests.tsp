@@ -15,7 +15,11 @@ model SipAddressCreateRequest {
   @pattern("^\\S+$")
   user?: string = "*";
 
-  @doc("ID of the Domain this address should be grouped under. Must exist in your project. Defaults to your project's default Domain.")
+  @doc("""
+    ID of the Domain this address should be grouped under. Must exist in your project. Defaults to your project's default Domain.
+
+    The address's SIP domain is your Space name, a hyphen (two hyphens in some Spaces), and the Domain's name, or `public` or `private` for the built-in Domains. The address's SIP domain can be at most 63 characters, the longest a single part of a hostname can be. A Domain whose name makes the address's SIP domain longer returns a `422` with code `domain_too_long`, unless your Space already uses that SIP domain. If another Space already uses the address's SIP domain, the request returns a `422` with code `domain_not_available`.
+    """)
   @example("9c8b7a6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d")
   context_id?: uuid;
 
@@ -69,7 +73,11 @@ model SipAddressUpdateRequest {
   @pattern("^\\S+$")
   user?: string;
 
-  @doc("ID of the Domain this address should be grouped under. Must exist in your project. Defaults to the address's current Domain when omitted.")
+  @doc("""
+    ID of the Domain this address should be grouped under. Must exist in your project. Defaults to the address's current Domain when omitted.
+
+    The address's SIP domain is your Space name, a hyphen (two hyphens in some Spaces), and the Domain's name, or `public` or `private` for the built-in Domains. The address's SIP domain can be at most 63 characters, the longest a single part of a hostname can be. A Domain whose name makes the address's SIP domain longer returns a `422` with code `domain_too_long`, unless your Space already uses that SIP domain. If another Space already uses the address's SIP domain, the request returns a `422` with code `domain_not_available`.
+    """)
   @example("9c8b7a6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d")
   context_id?: uuid;
 
