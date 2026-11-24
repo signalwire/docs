@@ -37,7 +37,7 @@ namespace SignalWireAPI.Fabric.SipAddresses {
     @doc("""
       Lists the standalone SIP Addresses in your SignalWire project. A SIP Address gives an external device or system a dedicated SIP URI for registration or inbound calling. Resource addresses are generic callable handles, [SIP Credentials](/docs/apis/rest/sip-credentials/list-sip-credentials) represent registering devices managed as Fabric resources, and [E911 addresses](/docs/apis/rest/e-911-addresses/list-addresses) represent physical emergency-service locations.
 
-      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...SipAddressListQuery):
       | SipAddressListResponse
@@ -51,7 +51,7 @@ namespace SignalWireAPI.Fabric.SipAddresses {
     @doc("""
       Retrieves one standalone SIP Address from your SignalWire project. Use [List SIP addresses](/docs/apis/rest/sip-addresses/list-sip-addresses) to find addresses. Generic resource addresses and physical E911 addresses use different operations.
 
-      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     read(...SipAddressPathID):
       | {
@@ -67,7 +67,7 @@ namespace SignalWireAPI.Fabric.SipAddresses {
     @doc("""
       Creates a standalone SIP Address with a SIP URI, registration password, media and IP-authentication settings, and a resource that handles inbound calls. Use it when an external SIP device or system must register to or dial a dedicated URI. Use [Create SIP credential](/docs/apis/rest/sip-credentials/create-sip-credential) for a device credential managed as a Fabric resource, or [Create E911 address](/docs/apis/rest/e-911-addresses/create-address) for a physical emergency-service location.
 
-      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post
     create(@body request: SipAddressCreateRequest):
@@ -84,7 +84,7 @@ namespace SignalWireAPI.Fabric.SipAddresses {
     @doc("""
       Partially updates a standalone SIP Address by ID; omitted fields retain their current values. Use it to change the URI name, Domain, registration password, media, encryption, or IP-authentication settings. `calling_handler_resource_id` cannot be changed through this operation. SIP Credentials and generic resource addresses have separate management endpoints.
 
-      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @patch
     update(...SipAddressPathID, @body request: SipAddressUpdateRequest):
@@ -103,7 +103,7 @@ namespace SignalWireAPI.Fabric.SipAddresses {
     @doc("""
       Deletes a standalone SIP Address and its SIP configuration by ID. Use it when calls and registrations to that URI must stop immediately. This does not delete a [SIP Credential](/docs/apis/rest/sip-credentials/delete-sip-credential), a generic resource address, or an E911 address.
 
-      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @delete
     delete(...SipAddressPathID):

@@ -46,7 +46,7 @@ namespace SignalWireAPI.Fabric.PhoneNumberAddresses {
       This API is in beta and may change.
       </Warning>
 
-      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...PhoneNumberAddressListQuery):
       | PhoneNumberAddressListResponse
@@ -63,7 +63,7 @@ namespace SignalWireAPI.Fabric.PhoneNumberAddresses {
       This API is in beta and may change.
       </Warning>
 
-      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     read(...PhoneNumberAddressPathID):
       | {
@@ -91,7 +91,7 @@ namespace SignalWireAPI.Fabric.PhoneNumberAddresses {
       This API is in beta and may change.
       </Warning>
 
-      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @opExample(
       #{
@@ -149,7 +149,7 @@ namespace SignalWireAPI.Fabric.PhoneNumberAddresses {
       This API is in beta and may change.
       </Warning>
 
-      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @patch
     update(...PhoneNumberAddressPathID, @body request: PhoneNumberAddressUpdateRequest):
@@ -172,7 +172,7 @@ namespace SignalWireAPI.Fabric.PhoneNumberAddresses {
       This API is in beta and may change.
       </Warning>
 
-      ${anyTokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @delete
     delete(...PhoneNumberAddressPathID):

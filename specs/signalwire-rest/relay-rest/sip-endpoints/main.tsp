@@ -21,7 +21,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @doc("""
       Returns the legacy SIP endpoints in the project. Use it only to inventory an existing integration while migrating to the current SIP Credential resource.
 
-      <Warning>
+      <Warning title="Deprecated">
       This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.
       </Warning>
 
@@ -38,7 +38,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @doc("""
       Creates a legacy SIP endpoint for a registering device. Use the current SIP Credential resource for new integrations.
 
-      <Warning>
+      <Warning title="Deprecated">
       This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.
       </Warning>
 
@@ -56,7 +56,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @doc("""
       Retrieves one legacy SIP endpoint by ID. Use it only for an existing integration while migrating the device to a current SIP Credential.
 
-      <Warning>
+      <Warning title="Deprecated">
       This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.
       </Warning>
 
@@ -74,7 +74,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @doc("""
       Changes how a legacy SIP endpoint registers or places calls. Use it only to maintain an existing integration while migrating to the current SIP Credential resource.
 
-      <Warning>
+      <Warning title="Deprecated">
       This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.
       </Warning>
 
@@ -93,7 +93,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @doc("""
       Permanently deletes a legacy SIP endpoint by ID. Use [Delete SIP credential](/docs/apis/rest/sip-credentials/delete-sip-credential) for a device already migrated to the current resource.
 
-      <Warning>
+      <Warning title="Deprecated">
       This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.
       </Warning>
 

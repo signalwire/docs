@@ -64,3 +64,14 @@ alias patPermissions = """
   
   Authenticate with a [Personal access token](/docs/apis/authorization#personal-access-tokens) whose holder is an owner or admin of the space. A project API token is not accepted on this endpoint, and a Personal access token has no scopes: the holder's role in the space is the whole authorization decision.
   """;
+
+/**
+ * Permissions block for operations a subscriber client calls with a Subscriber
+ * Access Token. These endpoints do not accept a project API token, so API token
+ * scopes do not apply.
+ */
+alias satPermissions = """
+  #### Permissions
+
+  Authenticate with a Subscriber Access Token (SAT), sent as a [Bearer token](/docs/apis/authorization#bearer-authentication). A project API token is not accepted on this endpoint, so API token scopes don't apply.
+  """;
