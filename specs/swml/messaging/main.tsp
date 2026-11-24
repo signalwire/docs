@@ -11,7 +11,7 @@ model Section is SWML.Shared.Section<SWMLMethod>;
 @jsonSchema
 @summary("Messaging SWML Document")
 @doc("""
-  A SWML document for handling inbound SMS or MMS messages. The document has a top-level
+  A SWML document for handling inbound SMS, MMS, WhatsApp, or RCS messages. The document has a top-level
   `sections` map; execution starts at `sections.main`, and each section is an ordered array of
   methods. Additional sections can be invoked via `execute`, `transfer`, or `goto`.
 
