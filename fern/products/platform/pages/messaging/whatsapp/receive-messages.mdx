@@ -2,23 +2,414 @@
 title: Receive WhatsApp messages
 slug: messaging/whatsapp/receive-messages
 sidebar-title: Receive messages
-description: View inbound WhatsApp messages and track delivery status through the SignalWire Messaging API.
+description: Connect a WhatsApp number to a SWML Script or Relay Application to handle inbound messages, reply over WhatsApp, and track delivery in your message logs.
 max-toc-depth: 3
 ---
 
-Inbound messages sent to your WhatsApp business number are automatically received and logged by
-SignalWire. You can view them in your Dashboard or retrieve them through the Messaging API, alongside
-the delivery status of the messages you send.
+[onboarding]: /docs/platform/messaging/whatsapp/onboarding
+[send-whatsapp]: /docs/platform/messaging/whatsapp/send-messages
+[messaging-rules]: /docs/platform/messaging/whatsapp/send-messages#messaging-rules
+[templates]: /docs/platform/messaging/whatsapp/message-templates
+[send-receive]: /docs/platform/messaging/send-and-receive-messages
+[reply-swml]: /docs/platform/messaging/send-and-receive-messages#reply-to-incoming-messages-via-swml
+[receive-relay]: /docs/platform/messaging/send-and-receive-messages#receive-and-reply-to-messages-via-websocket-relay
+[run-relay]: /docs/platform/messaging/send-and-receive-messages#run-the-relay-message-handler
+[whatsapp-addresses]: /docs/platform/addresses#whatsapp-numbers
+[relay-application]: /docs/platform/glossary#relay-application
+[api-credentials]: /docs/platform/your-signalwire-api-space
+[server-sdks]: /docs/server-sdks
+[swml-reply]: /docs/swml/reference/messaging/reply
+[swml-overview]: /docs/swml/reference/messaging#webhook-payload
+[list-numbers]: /docs/apis/rest/whatsapp/list-whatsapp-numbers
+[list-resources]: /docs/apis/rest/resources/list-resources
+[assign-ref]: /docs/apis/rest/whatsapp-routes/assign-resource-whatsapp-number
+[create-message]: /docs/apis/rest/messages/create-message
+[message-logs]: /docs/apis/rest/message-logs/list-message-logs
+[status-callback]: /docs/apis/rest/webhooks/message-status-callback
 
-## Message logs
+Once your WhatsApp number is connected to a handler, each message a customer sends to it reaches
+your application as it arrives, the same way a text to a phone number does. Build the handler
+with [Send and receive messages][send-receive], either [via SWML][reply-swml] or
+[via WebSocket (Relay)][receive-relay], with the differences on this page:
+
+- Only a messaging SWML Script or a Relay Application can handle WhatsApp messages.
+- You connect the WhatsApp number to the handler from the Resource, not from **Phone Numbers**.
+- A message can be text, a tapped button, media, a location, or contacts, and SWML gets fields that
+  say which.
+- A SWML `reply` goes out over WhatsApp and can send any WhatsApp message type. A Relay client
+  replies through the REST API.
+
+## Before you start
+
+You need a WhatsApp business number that shows **Registered** in your Space, from
+[Connect a WhatsApp business number][onboarding]. To test, you also need a phone with WhatsApp
+installed that can message the business number.
+
+To connect the number in code, you also need your Space URL, the number's SignalWire `id` from
+[List WhatsApp numbers][list-numbers], and a Project ID and API token from the Dashboard's
+[API credentials][api-credentials] page with the **Messaging** permission, plus **Numbers** to list
+your WhatsApp numbers.
+
+## Choose a handler
+
+Two kinds of Resource can handle inbound WhatsApp messages:
+
+- A **SWML Script** with **Used For** set to **Messaging**, hosted in SignalWire or served from your
+  server. SignalWire runs its document for each message. A SWML Script used for calling can't handle
+  messages. In the REST API, this is a SWML Script created with `script_type: "messaging"`, or a
+  SWML Webhook with `used_for: "messaging"`.
+- A [Relay Application][relay-application]. SignalWire delivers each message to the Relay client
+  subscribed to the application's topic.
+
+No other Resource type can handle WhatsApp messages, including cXML Scripts, cXML Applications,
+cXML Webhooks, AI Agents, and Call Flows.
+
+Build the handler in Send and receive messages up to its assign step, then come back here. That
+guide's **Assign the script to your phone number** and **Assign the topic to your phone number**
+steps, including their code samples, connect a phone number and don't apply to a WhatsApp number.
+The **Assign the topic to your phone number** step also creates the Relay Application: follow its
+Dashboard steps to create it, then skip the phone number assignment.
+
+## Connect the WhatsApp number to the handler
+
+A WhatsApp number holds one Address at a time, for either calls or messages, as
+[WhatsApp numbers][whatsapp-addresses] in the Addresses page explains. Connecting a messaging
+handler removes the number's calling Address, unless both go to the same Relay Application from the
+Dashboard.
+
+### Connect the WhatsApp number via the Dashboard
+
+In your [SignalWire Dashboard](https://my.signalwire.com/resources), open the Resource that should
+handle the messages and select its **Addresses & Phone Numbers** tab. Select **+ Add**, then
+**Assign a WhatsApp Phone Number**, and select **Add** beside the number.
+
+A SWML Script used for messaging becomes the number's message handler. A Relay Application becomes
+both its message handler and its call handler.
+
+The picker lists **Registered** WhatsApp numbers that don't already have an Address in your Space,
+whether that Address is for calling or for messaging. To point a number at a different Resource,
+delete its existing Address first.
+
+### Connect the WhatsApp number via the REST API
+
+The Server SDKs don't cover this endpoint yet, so call it directly. Put the Resource's `id` in the
+path; find it with [List Resources][list-resources]. In the body, pass the WhatsApp number's `id` as
+`whatsapp_number_id` with `messaging` as the handler:
+
+```bash title="cURL — Fabric API"
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/resources/<YOUR_RESOURCE_ID>/whatsapp_numbers" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "whatsapp_number_id": "<YOUR_WHATSAPP_NUMBER_ID>",
+    "handler": "messaging"
+  }'
+```
+
+The response is the Address SignalWire created for the number on that Resource. A Resource that
+can't handle WhatsApp messages returns `422` with the code `invalid_resource_for_handler`.
+
+Unlike the Dashboard picker, the API accepts a number that already has a messaging Address and
+re-points it at the new Resource. Through the API, a Relay Application becomes the message handler
+only, and any calling Address the number had is removed. The
+[Assign Resource to WhatsApp number][assign-ref] reference lists every field and error.
+
+## Message the number from WhatsApp
+
+Open a chat with your business in WhatsApp and send a text. With the handler from Send and receive
+messages, you get its reply, such as "Thanks for texting Bayview Taxi! We got your message:"
+followed by your text. A Relay handler only replies once you
+[change how it sends](#reply-from-a-relay-client).
+
+If no reply arrives, check the symptom:
+
+- **Your message doesn't appear under Logs, then Messaging in the Dashboard.** It never reached
+  your Space. Check that you messaged the business number connected to your Space.
+- **Your message is logged as `failed`.** SignalWire couldn't handle it. The log's `error_message`
+  says why: for example, your balance couldn't cover the inbound message, or your SWML `reply`
+  failed with one of the [reply errors](#reply-errors).
+- **Your message is logged as `received`, but nothing runs.** The number has no message handler.
+  [List WhatsApp numbers][list-numbers] and check `messaging_handler_resource_id` on yours. Null
+  means the handler never attached, or its Address was deleted since: connect the number again.
+- **The handler runs, but no reply arrives.** For a SWML Script served from your server, check the
+  server and its URL with the troubleshooting in Send and receive messages. For a Relay
+  Application, check that your client's `contexts` matches the Resource's topic.
+
+## What your handler receives
+
+An inbound WhatsApp message has `kind: whatsapp` in your message logs. Its `to` is your business
+number with a `whatsapp:` prefix, such as `whatsapp:+15557654321`. Its `from` is the customer's
+phone number as WhatsApp reports it, which can lack the leading `+`.
+
+SignalWire delivers these kinds of content. Anything else the customer sends isn't delivered to your
+handler and doesn't appear in your message logs.
+
+| Customer sends | `message_type` | `body` |
+|---|---|---|
+| Text | none | The text |
+| Taps a reply button | `whatsapp_interactive_button` | The `id` of the button |
+| Picks a list row | `whatsapp_interactive_list` | The `id` of the row |
+| Image, video, or audio | `whatsapp_image`, `whatsapp_video`, `whatsapp_audio` | Empty |
+| Document | `whatsapp_document` | Empty |
+| Sticker | `whatsapp_sticker` | Empty |
+| Location | `whatsapp_location` | Empty |
+| Contacts | `whatsapp_contacts` | Empty |
+
+The inbound `message_type` values differ from the ones you send with, such as
+`whatsapp_media_image` and `whatsapp_interactive_reply_button`.
+
+SignalWire doesn't store files the customer sends, so `media` is always empty. A SWML handler gets
+a description of each file in `whatsapp_context`, described below. A Relay client gets only `body`,
+so it can read text and the `id` of a tapped button or list row, but sees nothing else of other
+content.
+
+### Read the message in SWML
+
+In a SWML document, `%{message.type}` is `whatsapp`, and the inbound message carries three more
+fields. A SWML Script served from your server gets the same fields under `message` in the request
+body, alongside the ones in the [webhook payload][swml-overview]:
+
+| Field | Value |
+|---|---|
+| `message.message_type` | The type from the table above. Empty for text |
+| `message.tag` | The title of the button or list row the customer tapped. Empty otherwise |
+| `message.whatsapp_context` | Details that depend on the type. See the next table |
+
+For a tapped button or list row, `whatsapp_context` is WhatsApp's ID for the message that held the
+button or list. For text, it's the string `default`. For every other type, it's an object whose
+`type` field repeats the content type, with these fields:
+
+| `type` | Other fields |
+|---|---|
+| `image`, `video`, `audio` | `mime_type`, `sha256`, `media_id`, `url` |
+| `document` | `filename`, `mime_type`, `sha256`, `media_id`, `url` |
+| `sticker` | `media_id`, `mime_type`, `sha256`, `animated`, `url` |
+| `location` | `latitude`, `longitude`, `name`, `address`, `context_id`, `context_from` |
+| `contacts` | `contacts`, a list with each contact's `name_information` and `phones_information` |
+
+A field is left out when WhatsApp doesn't send it. Read nested values with dot notation, such as
+`%{message.whatsapp_context.latitude}`.
+
+## Reply with SWML
+
+When the number's handler is a SWML Script, its [`reply`][swml-reply] method answers over WhatsApp.
+By default, the reply goes to the customer who sent the message, from the WhatsApp number that
+received it. The reply in Send and receive messages works unchanged: a `body` with no
+`message_type` is sent as a WhatsApp text.
+
+You can send a free-form reply only within 24 hours of the customer's last message. Outside that
+window, reply with a template, as [Messaging rules][messaging-rules] explains.
+
+`reply` accepts the same shapes as for SMS (a string, an object, or an inline `switch`), with these
+differences:
+
+- Set `message_type` to any type in [Send WhatsApp messages][send-whatsapp], and put that type's
+  content in `body`, in the shape that page shows for it. Without `message_type`, `body` is sent as
+  text.
+- To send a [template][templates], set `template_id` and its `header_template_parameters`,
+  `body_template_parameters`, or `button_template_parameters`, the same as the Messaging API.
+  Leave `body` out. The template must belong to the WhatsApp Business Account of the number that
+  sends it.
+- `media` is ignored. Send media with a media `message_type` and its object in `body`.
+- `from` is optional. Set it to another `whatsapp:`-prefixed number in the same Project to reply from
+  that number.
+- `to` is optional. Set it to a phone number in E.164 format to send to someone else.
+
+This reply asks the customer to choose with reply buttons. When they tap one, the button's `id`
+arrives as the next message's body, so a `switch` on `message.body` can answer each choice:
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - switch:
+        variable: message.body
+        case:
+          book:
+            - reply: "Reply with your pickup address and we'll send a car."
+          status:
+            - reply: "Reply with your booking number and we'll look it up."
+        default:
+          - reply:
+              message_type: whatsapp_interactive_reply_button
+              body:
+                type: button
+                body:
+                  text: "Thanks for messaging Bayview Taxi! How can we help?"
+                action:
+                  buttons:
+                    - type: reply
+                      reply:
+                        id: book
+                        title: "Book a ride"
+                    - type: reply
+                      reply:
+                        id: status
+                        title: "Check a booking"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "switch": {
+          "variable": "message.body",
+          "case": {
+            "book": [
+              { "reply": "Reply with your pickup address and we'll send a car." }
+            ],
+            "status": [
+              { "reply": "Reply with your booking number and we'll look it up." }
+            ]
+          },
+          "default": [
+            {
+              "reply": {
+                "message_type": "whatsapp_interactive_reply_button",
+                "body": {
+                  "type": "button",
+                  "body": {
+                    "text": "Thanks for messaging Bayview Taxi! How can we help?"
+                  },
+                  "action": {
+                    "buttons": [
+                      { "type": "reply", "reply": { "id": "book", "title": "Book a ride" } },
+                      { "type": "reply", "reply": { "id": "status", "title": "Check a booking" } }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Reply errors
+
+When a reply can't be queued, the script stops and the inbound message is marked `failed`, with the
+reason in its `error_code` and `error_message`. Find it in your [message logs](#track-delivery).
+The reply fails with one of these codes:
+
+| Code | Cause |
+|---|---|
+| `swml_reply_invalid_from_number` | `from` isn't a WhatsApp number in this Project. |
+| `swml_whatsapp_reply_number_not_registered` | The WhatsApp number that sends the reply isn't **Registered**. |
+| `swml_reply_invalid_to_number` | `to` isn't a valid phone number. |
+| `swml_whatsapp_reply_to_number_not_allowed` | You set `to`, your account can send only to verified numbers, and `to` isn't one of them. |
+| `swml_whatsapp_reply_invalid_message_type` | `message_type` isn't a WhatsApp message type. |
+| `swml_reply_body_or_media_required` | The reply has neither `body` nor `template_id`. |
+| `swml_whatsapp_reply_invalid_body` | `body` doesn't match its `message_type`. The error says what's wrong. |
+| `swml_whatsapp_reply_body_not_allowed_with_template` | The reply has both `template_id` and `body`. |
+| `swml_whatsapp_reply_invalid_template` | The template doesn't exist, belongs to another WhatsApp Business Account, or its parameters don't match. The error says which. |
+| `swml_reply_character_limit_exceeded` | `body` is longer than the character limit. The error states the limit. |
+| `swml_reply_failed` | The reply couldn't be created. |
+
+A reply that is queued can still fail on its way to the customer, for example when it's sent outside
+the 24-hour window. That outcome reaches the reply's `status_url` and your message logs, not the
+script.
+
+## Reply from a Relay client
+
+The Relay handler in Send and receive messages receives WhatsApp messages unchanged, but it can't
+reply over WhatsApp: a WhatsApp send needs a `message_type`, which the Relay client's send method
+doesn't take. Reply with the Messages API through the REST client in the [Server SDKs][server-sdks]
+instead. This version of the handler from [Run the message handler][run-relay] does that:
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python {4,12-16,21-30}
+# Install: python -m pip install signalwire-sdk
+# Save as whatsapp_message_relay.py and run: python whatsapp_message_relay.py
+from signalwire.relay import RelayClient
+from signalwire.rest import RestClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["inbound-messaging"],
+)
+
+rest = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+@client.on_message
+async def handle_message(message):
+    print(f"From {message.from_number}: {message.body}")
+    # WhatsApp can report the sender without a leading +, which the Messages API requires.
+    customer = message.from_number
+    if not customer.startswith("+"):
+        customer = f"+{customer}"
+    rest.messages.create(
+        from_=message.to_number,
+        to=customer,
+        body=f"Thanks for messaging Bayview Taxi! We got your message: {message.body or 'an attachment'}",
+        extras={"message_type": "whatsapp_media_text"},
+    )
+
+client.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript {4,12-16,20-27}
+// Install: npm install @signalwire/sdk
+// This sample also runs as JavaScript: save as whatsapp-message-relay.mjs,
+// then run: node whatsapp-message-relay.mjs
+import { RelayClient, RestClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["inbound-messaging"],
+});
+
+const rest = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+client.onMessage(async (message) => {
+  console.log(`From ${message.fromNumber}: ${message.body}`);
+  // WhatsApp can report the sender without a leading +, which the Messages API requires.
+  const customer = message.fromNumber.startsWith("+")
+    ? message.fromNumber
+    : `+${message.fromNumber}`;
+  await rest.messages.create(customer, message.toNumber, {
+    body: `Thanks for messaging Bayview Taxi! We got your message: ${message.body || "an attachment"}`,
+    extras: { message_type: "whatsapp_media_text" },
+  });
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
+
+`message.to_number` (`message.toNumber` in TypeScript) is your `whatsapp:`-prefixed business number,
+so the reply goes out from the number that received the message. To send other message types, set
+`message_type` and pass that type's content in `body`, as [Send WhatsApp messages][send-whatsapp]
+shows; [Send a message][create-message] lists every field.
+
+## Track delivery
 
 Inbound messages and the delivery status of the messages you send are available through the message
-logs endpoint, [`GET /api/messaging/logs`](/docs/apis/rest/message-logs/list-message-logs), which
-returns history for both inbound and outbound messages. WhatsApp messages are identified by
-`kind: whatsapp`. See the [Message Logs](/docs/apis/rest/message-logs/list-message-logs) reference for
-the full response schema.
-
-## Delivery status
+logs endpoint, [`GET /api/messaging/logs`][message-logs], which returns history for both inbound and
+outbound messages. WhatsApp messages are identified by `kind: whatsapp`. See the
+[Message Logs][message-logs] reference for the full response schema.
 
 The `status` field updates as an outbound message progresses:
 
@@ -32,7 +423,7 @@ You can also view message history graphically in your
 [SignalWire Dashboard](https://my.signalwire.com) under **Logs → Messaging**.
 
 To be notified of each status change as it happens, set `status_callback` when
-[sending a message](/docs/platform/messaging/whatsapp/send-messages). SignalWire then POSTs a
+[sending a message][send-whatsapp], or `status_url` on a SWML `reply`. SignalWire then POSTs a
 message-status payload to your URL at each state change.
 
 <llms-ignore>
@@ -43,16 +434,9 @@ message-status payload to your URL at each state change.
 
 <llms-only>
 
-See the [Message status callback reference](/docs/apis/rest/webhooks/message-status-callback) for every field and status value.
+See the [Message status callback reference][status-callback] for every field and status value.
 
 </llms-only>
-
-## Replying to inbound messages
-
-When a customer messages you first, you can reply with any message type for **24 hours** from their
-last inbound message. Outside that window, you must use an approved
-[template](/docs/platform/messaging/whatsapp/message-templates). See
-[Messaging rules](/docs/platform/messaging/whatsapp/send-messages#messaging-rules) for details.
 
 ## Next steps
 
@@ -62,5 +446,8 @@ last inbound message. Outside that window, you must use an approved
 </Card>
 <Card title="Message templates" href="/docs/platform/messaging/whatsapp/message-templates">
   Create and manage Meta-approved templates.
+</Card>
+<Card title="Send and receive messages" href="/docs/platform/messaging/send-and-receive-messages">
+  Build the SWML or Relay handler that answers your WhatsApp number.
 </Card>
 </CardGroup>
