@@ -32,8 +32,9 @@ model EnterQueueObject {
   @example("https://example.com/queue-music.mp3")
   wait_url?: url | SWMLVar;
 
-  @doc("Maximum time in seconds to wait in the queue before timeout. Default `180`")
+  @doc("Maximum time in seconds to wait in the queue before timeout, from `1` to `65535`. Default `180`")
   @minValue(1)
+  @maxValue(65535)
   @example(1800)
   wait_time?: integer | SWMLVar = 180;
 

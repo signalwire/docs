@@ -11,6 +11,14 @@ namespace SWML.Calling;
 @pattern("^https://")
 scalar ConnectStreamStatusUrl extends url;
 
+// A connect destination, as the platform accepts it: a `+` phone number of 4 to 18 digits, a
+// `sip:`/`sips:` URI (any case), a Resource Address (leading `/`), a `queue:`, `call:`, or
+// `stream:wss://` target, or one of the short codes 911, 933, 988, and +988, which are dialed as
+// written. The platform skips this check for a value containing a SWML variable, so any value
+// with a `${...}` or `%{...}` expression passes here.
+@pattern("^(?:\\+[0-9]{4,18}$|[sS][iI][pP][sS]?:|/|queue:|call:|stream:[wW][sS][sS]://|(?:911|933|988|\\+988)$)|[$%]\\{.*\\}")
+scalar ConnectTo extends string;
+
 // The restriction applies at every depth, so `cond` and `switch` here use confirm-specific
 // branch models (ConfirmCond, ConfirmSwitch) instead of the shared Cond/Switch, whose
 // branches accept any method.
@@ -338,7 +346,7 @@ model ConnectDestination {
     The `queue:`, `call:`, and `stream:` prefixes are case-sensitive and must be lowercase.
     """)
   @example("+15559876543")
-  to: string;
+  to: ConnectTo;
 
   @doc("The caller ID to use when dialing this destination. Overrides the top-level `from` and accepts the same formats.")
   @example("+15551234567")
