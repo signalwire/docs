@@ -183,8 +183,8 @@ interface Billing {
   @doc("""
     Lists the balance adjustments recorded for the space: top-ups, auto top-ups, and
     credits or debits applied by SignalWire. Narrow the range with `created_after` and
-    `created_before`. Results are paged; follow the `links.next` URL for the next page,
-    which carries the filters and the `page_token` for you.
+    `created_before`. Results are sorted newest first and paged; follow the `links.next` URL
+    for the next page, which carries the filters and the `page_token` for you.
 
     ${patPermissions}
     """)

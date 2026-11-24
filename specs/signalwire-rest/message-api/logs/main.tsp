@@ -3,7 +3,7 @@ import "@typespec/openapi";
 import "../../types/status-codes/main.tsp";
 import "../tags.tsp";
 import "./models/core.tsp";
-import "./models/requests.tsp";
+import "../../_globally_shared/log-list-query.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
@@ -22,9 +22,11 @@ namespace SignalWireAPI.Message.Logs {
     @doc("""
       Lists historical messaging activity in the project for delivery review, auditing, and troubleshooting. This collection is read-only; send or redact messages through the [Messages API](/docs/apis/rest/messages/create-message) instead.
 
+      ${logListBehavior}
+
       ${tokenPermissions<"_Messaging_">}
       """)
-    list(...LogListRequest):
+    list(...LogListQuery):
       | LogListResponse
       | StatusCode400
       | StatusCode401
