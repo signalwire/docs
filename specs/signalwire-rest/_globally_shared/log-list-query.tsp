@@ -7,7 +7,7 @@ namespace SignalWireAPI;
 /**
  * Date filters and cursor paging shared by the five log lists: voice, message, fax, video,
  * and conference logs. All five read the same contract, so they share one model. Fax, video,
- * and conference logs also honour `include_deleted` and declare it on their own request
+ * and conference logs also honor `include_deleted` and declare it on their own request
  * models; voice and message logs ignore it, so it does not belong here.
  */
 @doc("Date filters and paging for the log list endpoints.")
@@ -47,11 +47,11 @@ model LogListQuery {
 }
 
 /**
- * Ordering, link, and history-window behaviour shared by the log list operations.
+ * Ordering, link, and history-window behavior shared by the log list operations.
  * Use in the operation's @doc, before the permissions block.
  */
 alias logListBehavior = """
   Results are sorted newest first. Each `links.next` URL carries your filters along with the `page_token` for the next page, so follow it as given.
 
-  Lists return at most one year of history: logs created before the start of the UTC day one year ago are never returned, and a `created_before`, `created_on`, or `created_after` value earlier than that returns `422` with the code `exceeds_history_logs_limit`.
+  Lists return at most one year of history. Logs created before the start of the UTC day one year ago are never returned. A `created_before`, `created_on`, or `created_after` value earlier than that returns `422` with the code [`exceeds_history_logs_limit`](/docs/apis/error-codes#exceeds_history_logs_limit).
   """;

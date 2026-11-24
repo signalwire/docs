@@ -189,7 +189,7 @@ model Call {
   @example(null)
   group_sid: string | null;
 
-  @doc("The estimated Mean Opinion Score (MOS) for inbound audio quality, based on the share of incoming audio packets that arrived without loss or delay. It ranges from about 1 to 4.5. 4.5 is the best score, and a call that received no audio packets also scores 4.5. Returned as a decimal string. Null if the call has no quality measurement.")
+  @doc("The estimated Mean Opinion Score (MOS) for inbound audio quality, based on the share of incoming audio packets that arrived without loss or delay. It ranges from about 1 to 4.5, where 4.5 is the best score. A call whose audio stream received no inbound packets also reports 4.5, so check `audio_in_media_packet_count` to tell that case from a clean call. Returned as a decimal string. Null if the call has no quality measurement, such as a call that ended before an audio stream was set up.")
   @example("4.5")
   audio_in_mos: string | null;
 
