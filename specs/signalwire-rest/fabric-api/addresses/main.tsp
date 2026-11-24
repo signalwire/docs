@@ -29,7 +29,7 @@ namespace SignalWireAPI.Fabric.FabricAddresses {
 
       This operation was previously served at `/api/fabric/addresses`. That path still answers SAT-authenticated requests with the same response body, including pagination links that keep the old path, and adds a `Deprecation: true` header and a `Link` header naming `/api/fabric/subscriber/addresses` as the successor. No removal date is set. Use `/api/fabric/subscriber/addresses` in new code.
 
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${satPermissions}
       """)
     list():
       | FabricAddressesResponse
@@ -46,7 +46,7 @@ namespace SignalWireAPI.Fabric.FabricAddresses {
 
       This operation was previously served at `/api/fabric/addresses/{id}`. That path still answers SAT-authenticated requests with the same response, and adds a `Deprecation: true` header and a `Link` header naming `/api/fabric/subscriber/addresses` as the successor. No removal date is set. Use `/api/fabric/subscriber/addresses/{id}` in new code.
 
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${satPermissions}
       """)
     read(...FabricAddressID):
       | {

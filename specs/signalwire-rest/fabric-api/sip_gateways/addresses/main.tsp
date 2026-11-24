@@ -20,7 +20,7 @@ namespace SignalWireAPI.Fabric.SipGateways.Addresses {
     @doc("""
       Returns the project-scoped resource addresses assigned to one SIP Gateway. Use these callable handles to see how calls can reach the gateway and continue to its external SIP destination; use [Get SIP gateway](/docs/apis/rest/sip-gateway/get-sip-gateway) for destination and media settings, or the SIP Credential address operation for a registering device.
       
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     readAddressesByResourceId(...SipGatewayAddressRequest):
       | SipGatewayAddressListResponse

@@ -19,7 +19,7 @@ namespace SignalWireAPI.RelayRest.Mfa {
     @doc("""
       Creates a multi-factor authentication request and sends its code to the destination by SMS. Use it when an application must verify possession of a text-capable phone number; save the returned request ID and submit the code to [Verify MFA token](/docs/apis/rest/multi-factor-authentication/verify-mfa-token). Use the voice-call operation when the recipient cannot receive SMS.
       
-      ${tokenPermissions<"_Management_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
       """)
     @route("/sms")
     @post
@@ -37,7 +37,7 @@ namespace SignalWireAPI.RelayRest.Mfa {
     @doc("""
       Creates a multi-factor authentication request and delivers its code in a voice call. Use it when the destination cannot receive SMS or voice delivery is preferred; save the returned request ID and submit the code to [Verify MFA token](/docs/apis/rest/multi-factor-authentication/verify-mfa-token). Use the SMS operation for text delivery.
       
-      ${tokenPermissions<"_Management_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
       """)
     @route("/call")
     @post
@@ -57,7 +57,7 @@ namespace SignalWireAPI.RelayRest.Mfa {
       
       A token that does not match returns `401` with the JSON body `{"success": false}`, while rejected API credentials return `401` with the plain text body `Unauthorized`. A request ID that is unknown, already verified, expired, or out of attempts returns `404`.
       
-      ${tokenPermissions<"_Management_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
       """)
     @route("/{mfa_request_id}/verify")
     @post

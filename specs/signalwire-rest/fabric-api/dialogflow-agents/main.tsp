@@ -24,7 +24,7 @@ namespace SignalWireAPI.Fabric.DialogflowAgents {
 
       The API has no operation to create a Dialogflow agent. To add one to your project, enable the SignalWire Telephony Integration from the Dialogflow Console, which imports the agent into your SignalWire project.
 
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
       | DialogflowAgentListResponse
@@ -37,7 +37,7 @@ namespace SignalWireAPI.Fabric.DialogflowAgents {
     @doc("""
       Retrieves one Dialogflow-backed AI Agent resource from your SignalWire project. Use [List Dialogflow agents](/docs/apis/rest/ai-agents/ai-agents-dialogflow/list-dialogflow-agents) to find these resources, or [Get AI agent](/docs/apis/rest/ai-agents/ai-agents-custom/get-ai-agent) for an agent configured directly in SignalWire.
       
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     read(...DialogflowAgentPathID):
       | {
@@ -53,7 +53,7 @@ namespace SignalWireAPI.Fabric.DialogflowAgents {
     @doc("""
       Updates how SignalWire connects to and presents a Dialogflow-backed AI Agent. This changes the linked resource in your SignalWire project, not the agent hosted in Dialogflow. Use [Update AI agent](/docs/apis/rest/ai-agents/ai-agents-custom/update-ai-agent) for an agent configured directly in SignalWire.
       
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @put
     update(
@@ -74,7 +74,7 @@ namespace SignalWireAPI.Fabric.DialogflowAgents {
     @doc("""
       Deletes the linked Dialogflow Agent resource from your SignalWire project so calls can no longer reach that integration through SignalWire. This does not delete the agent hosted in Dialogflow. A [custom AI Agent](/docs/apis/rest/ai-agents/ai-agents-custom/delete-ai-agent) has its own delete operation.
       
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @delete
     delete(...DialogflowAgentPathID):

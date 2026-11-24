@@ -21,7 +21,7 @@ namespace SignalWireAPI.Fabric.CallFlow.Versions {
     @doc("""
       Lists the saved revisions of one Call Flow. Use it to review the visual resource's history or select a version for deployment; use [Get call flow](/docs/apis/rest/call-flows/get-call-flow) for the current editable resource, or SWML Scripts when you do not need the Call Flow Builder deployment lifecycle.
       
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @opExample(
       #{
@@ -50,7 +50,7 @@ namespace SignalWireAPI.Fabric.CallFlow.Versions {
     @doc("""
       Makes one saved Call Flow version active, selected by document version or version ID. Use it after updating a visual flow when that revision is ready to handle calls; updating the Call Flow saves a revision but does not replace this deployment step. Directly authored [SWML Scripts](/docs/apis/rest/swml-scripts/create-swml-script) do not use Call Flow versions.
       
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @opExample(
       #{

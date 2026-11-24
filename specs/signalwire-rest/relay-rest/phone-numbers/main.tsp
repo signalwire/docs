@@ -312,11 +312,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumberLookup {
     @doc("""
       Returns validity and formatting information for any supplied E.164 phone number, with optional carrier and caller-name data. Use it to normalize or enrich a number before other workflows; it neither searches purchasable inventory nor returns numbers owned by the project. Use [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers) or [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) for those jobs.
       
-      #### Permissions
-      
-      No API token scope is required to make a successful request to this endpoint.
-      
-      [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{e164_number}")
     @get

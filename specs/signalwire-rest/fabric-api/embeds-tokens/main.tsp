@@ -5,7 +5,6 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../tags.tsp";
-import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -28,7 +27,9 @@ namespace SignalWireAPI.Fabric.EmbedsTokens {
 
       Use [Create Subscriber guest token](/docs/apis/rest/subscribers/tokens/create-subscriber-guest-token) when your server chooses the guest's allowed resource addresses, or [Create Subscriber token](/docs/apis/rest/subscribers/tokens/create-subscriber-token) for a known subscriber.
 
-      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      #### Permissions
+
+      This request needs no credentials beyond the public Click-to-Call token in the request body.
       """)
     @post
     create(@body body: EmbedsTokensRequest):
