@@ -1,0 +1,171 @@
+---
+title: execute_rpc
+slug: reference/calling/execute-rpc
+description: Send a call control command to another call in the same project, or start a new outbound call, from a SWML script.
+max-toc-depth: 3
+---
+
+[call-commands]: /docs/apis/rest/calls/call-commands
+[variables]: /docs/swml/reference/variables
+
+Send a call control command from the running script to another call in the same project, or start a new outbound
+call. The commands are the ones the REST Calling API's [Send call commands][call-commands] endpoint accepts, such as
+injecting a message into an AI agent's conversation or taking it off hold. Here they're named without the `calling.`
+prefix.
+
+The script continues with the next method whether or not the command succeeds. Read `last_api_code` to check the
+result. `execute_rpc` doesn't answer the call, so it can run before `answer`.
+
+## **Properties**
+
+<ParamField path="execute_rpc" type="object" required={true} toc={true}>
+  An object that accepts the following properties.
+</ParamField>
+
+<Indent>
+
+<ParamField path="execute_rpc.method" type="string" required={true} toc={true}>
+  The command to run, without the `calling.` prefix: for example `ai_message`, `ai_hold`, `ai_unhold`, `user_event`,
+  `transfer`, or `dial`. Most commands need `call_id`. `dial` starts a new call and doesn't take one.
+</ParamField>
+
+
+<ParamField path="execute_rpc.call_id" type="string" toc={true}>
+  ID of the call to send the command to. The call must belong to the same project as this script. Most commands need
+  it. Omit it for `dial`, which starts a new call and can't target an existing one.
+</ParamField>
+
+
+<ParamField path="execute_rpc.node_id" type="string" toc={true}>
+  ID of the node handling the target call, as reported in that call's events. Optional: SignalWire finds the call
+  from `call_id` when this is omitted.
+</ParamField>
+
+
+<ParamField path="execute_rpc.params" type="object" toc={true}>
+  The command's parameters. For every command except `dial`, these are the same as the `params` object of the
+  matching command in [Send call commands][call-commands]. For `dial`, pass `devices`, the new call's destination, and
+  optionally `dest_swml`, the SWML document or URL to run on the new call when it's answered.
+</ParamField>
+
+</Indent>
+
+[Variable][variables] references anywhere in `execute_rpc`, including inside `params`, are expanded before the command
+is sent.
+
+## **Variables**
+
+Set by the method:
+
+- **last_api_code:** (out) The command's result code as a string: `200` when the command was accepted, otherwise an
+  error code such as `400` (invalid command or parameters) or `404` (the call wasn't found).
+- **last_api_message:** (out) A short description of the result, such as `Call not found in registry`.
+
+## **Examples**
+
+### Send a message to an AI agent on another call
+
+This script tells the AI agent on another call that no one is available, then takes the agent off hold. Replace the
+`call_id` with the ID of the call running the agent.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - execute_rpc:
+        method: ai_message
+        call_id: 6a1f8c2e-4b7d-4e0a-9c3f-2d8e5b1a7c90
+        params:
+          role: system
+          message_text: No agent is available. Offer to take a message.
+    - execute_rpc:
+        method: ai_unhold
+        call_id: 6a1f8c2e-4b7d-4e0a-9c3f-2d8e5b1a7c90
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "execute_rpc": {
+          "method": "ai_message",
+          "call_id": "6a1f8c2e-4b7d-4e0a-9c3f-2d8e5b1a7c90",
+          "params": {
+            "role": "system",
+            "message_text": "No agent is available. Offer to take a message."
+          }
+        }
+      },
+      {
+        "execute_rpc": {
+          "method": "ai_unhold",
+          "call_id": "6a1f8c2e-4b7d-4e0a-9c3f-2d8e5b1a7c90"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Start a new outbound call
+
+This script plays a message to the caller, then places a separate call to an agent's phone. When the agent answers,
+that call runs the SWML at `dest_swml`. The new call is independent of the caller's call; to connect the caller
+directly, use [`connect`](/docs/swml/reference/calling/connect) instead.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - play:
+        url: 'say:Please hold while we find someone to help you.'
+    - execute_rpc:
+        method: dial
+        params:
+          devices:
+            type: phone
+            params:
+              to_number: '+15551234567'
+              from_number: '+15559876543'
+          dest_swml: 'https://example.com/agent-leg.yaml'
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      { "play": { "url": "say:Please hold while we find someone to help you." } },
+      {
+        "execute_rpc": {
+          "method": "dial",
+          "params": {
+            "devices": {
+              "type": "phone",
+              "params": {
+                "to_number": "+15551234567",
+                "from_number": "+15559876543"
+              }
+            },
+            "dest_swml": "https://example.com/agent-leg.yaml"
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>

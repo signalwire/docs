@@ -3,6 +3,7 @@ import "./denoise";
 import "./cond";
 import "./connect";
 import "./execute";
+import "./execute_rpc";
 import "./enter_queue";
 import "./switch";
 import "./goto";
@@ -55,6 +56,7 @@ union SWMLMethod {
   Denoise,
   EnterQueue,
   Execute,
+  ExecuteRpc,
   Goto,
   Label,
   LiveTranscribe,
