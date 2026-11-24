@@ -26399,16 +26399,20 @@ components:
                 - deepgram
               default: deepgram
             speech_timeout:
-              type: integer
-              format: int32
-              description: Speech timeout in milliseconds.
+              anyOf:
+                - type: integer
+                  format: int32
+                - type: string
+              description: Speech timeout in milliseconds. Also accepts a duration string with units, such as `30s`; any other string is read by its leading integer.
               examples:
                 - 60000
               default: 60000
             vad_silence_ms:
-              type: integer
-              format: int32
-              description: 'Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google.'
+              anyOf:
+                - type: integer
+                  format: int32
+                - type: string
+              description: 'Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google. Also accepts a duration string with units, such as `700ms`; any other string is read by its leading integer.'
               examples:
                 - 300
             vad_thresh:
@@ -26522,13 +26526,28 @@ components:
                 - - local-caller
                   - remote-caller
             from_voice:
-              type: string
-              description: The TTS voice for the source language.
+              anyOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              maxItems: 8
+              description: |-
+                The TTS voice for the source language, as `<engine>.<voice>` or `<engine>.<voice>:<model>`.
+                Supply an array of up to 8 voices to give it backups: the first speaks, and when it fails, the next voice
+                that opens takes over and speaks the same text again, then the platform's last-resort voice.
               examples:
                 - elevenlabs.josh
             to_voice:
-              type: string
-              description: The TTS voice for the target language.
+              anyOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              maxItems: 8
+              description: |-
+                The TTS voice for the target language, as `<engine>.<voice>` or `<engine>.<voice>:<model>`.
+                Accepts an array of up to 8 voices, the same way as `from_voice`.
               examples:
                 - elevenlabs.josh
             filter_from:
@@ -26573,16 +26592,20 @@ components:
                 - deepgram
               default: deepgram
             speech_timeout:
-              type: integer
-              format: int32
-              description: Speech timeout in milliseconds.
+              anyOf:
+                - type: integer
+                  format: int32
+                - type: string
+              description: Speech timeout in milliseconds. Also accepts a duration string with units, such as `30s`; any other string is read by its leading integer.
               examples:
                 - 60000
               default: 60000
             vad_silence_ms:
-              type: integer
-              format: int32
-              description: 'Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google.'
+              anyOf:
+                - type: integer
+                  format: int32
+                - type: string
+              description: 'Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google. Also accepts a duration string with units, such as `700ms`; any other string is read by its leading integer.'
               examples:
                 - 300
             vad_thresh:
@@ -39435,6 +39458,14 @@ components:
       unevaluatedProperties:
         not: {}
       title: AI agent reference
+    SWML.Calling.AIDuration:
+      type: string
+      pattern: ^[\s\d.:hHmMsS]+$
+      description: |-
+        A duration with units, such as `"1.5s"`, `"500ms"`, `"20m"` or `"1h30m"`, or in clock form, such as
+        `"1:30"` (90 seconds). Units are `h`, `m`, `s` and `ms`. See
+        [Duration values](/docs/swml/reference/calling/ai/params#duration-values).
+      title: Duration string
     SWML.Calling.AIObject:
       type: object
       required:
@@ -39527,14 +39558,40 @@ components:
             - $ref: '#/components/schemas/SWML.Calling.SWAIG'
           description: 'An object that configures the functions the agent can call during the dialogue: user-defined `functions`, shared `defaults`, `includes`, `native_functions`, `mcp_servers`, and `internal_fillers`.'
         voice:
-          type: string
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          maxItems: 8
           description: |-
             The voice the agent speaks with when neither `languages` nor `multilingual` is set.
             String format: `<engine id>.<voice id>`, with an optional `:<model id>` suffix for engines that offer a
-            choice of model, the same format as `languages[].voice`. When `languages` or `multilingual` is set, the
-            voices configured there are used instead.
+            choice of model, the same format as `languages[].voice`.
+            Supply an array of up to 8 voice strings to give the voice backups: the first voice speaks, and when it
+            fails, the agent goes on with the next voice that opens. See
+            [voice fallback](/docs/swml/reference/calling/ai#voice-fallback).
+            When `languages` or `multilingual` is set, the voices configured there are used instead; with `languages`,
+            only this voice's engine prefix is read, as the engine the entries inherit.
+            With no voice set anywhere, the agent uses the `default_voice` SWML variable when it is set, otherwise the
+            platform's default voice, `elevenlabs.mark`.
           examples:
             - elevenlabs.rachel
+        fallback_voice:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          maxItems: 8
+          description: |-
+            Backup voices shared by every language, tried in order once a language's own voices (or the `voice` array,
+            without `languages` or `multilingual`) have all failed. One voice string, or an array of up to 8.
+            After these, the platform's last-resort voice, Cartesia's Kurt (`cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e`),
+            is tried. See [voice fallback](/docs/swml/reference/calling/ai#voice-fallback).
+          examples:
+            - - openai.alloy
+              - gcloud.en-US-Neural2-C
       unevaluatedProperties:
         not: {}
       title: AI Object
@@ -39557,9 +39614,21 @@ components:
               enum:
                 - gpt-4o-mini
                 - gpt-4.1-mini
-                - gpt-4.1-nano
+                - gpt-5-mini
+                - gpt-5-nano
+                - gpt-5.4-mini
+                - gpt-5.4-nano
+                - gpt-5.6-luna
+                - gpt-6-luna
+                - gpt-oss-120b
+                - gpt-oss-20b
             - type: string
-          description: The model to use for the AI. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.
+          description: |-
+            The model for the conversation, used when `prompt.model` isn't set. Name a model on the supported list:
+            `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.6-luna`,
+            `gpt-6-luna`, `gpt-oss-120b`, or `gpt-oss-20b`, optionally as `model@provider` with the provider `openai`,
+            `azure-openai`, or `anthropic`. Any other name runs as `gpt-4o-mini`, and the call gets a non-fatal `calling.error`
+            whose `error` is `model_substituted`. **Default:** `gpt-4o-mini`.
           examples:
             - gpt-4o-mini
           default: gpt-4o-mini
@@ -39597,7 +39666,8 @@ components:
             - type: number
               enum:
                 - 0
-          description: 'Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `1,000` - `600,000`. **Default:** `5000` ms.'
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
+          description: 'Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `1,000` - `600,000`. Also accepts a duration string, such as `"10s"`. **Default:** `5000` ms.'
           examples:
             - 30000
         attention_timeout_prompt:
@@ -39619,7 +39689,8 @@ components:
           type: boolean
           description: |-
             If true, will force the AI Agent to only respond to the speaker who reesponds to the AI Agent first.
-            Any other speaker will be ignored.
+            Any other speaker will be ignored. With `redact_prompt` set, other speakers' words are exported as
+            `Speaker N said: ----`.
             **Default:** `false`
           examples:
             - true
@@ -39656,12 +39727,30 @@ components:
           examples:
             - -10
           default: 0
+        background_sounds:
+          type: boolean
+          description: |-
+            Tells the model about sounds in the background of the caller's turn: dog barking, phone ringing,
+            alarm going off, and siren. On a turn with words, the groups heard are added after the caller's
+            words, each once and in the order heard, as in `Yes. (background: dog barking, phone ringing)`, and
+            the note becomes part of the caller's turn text. Sounds heard with no words after them don't start
+            a turn or move any of the caller's timers; each adds a system-log entry with
+            `action: "background_sound"` to the call log.
+            **Default:** `false`.
+          examples:
+            - true
+          default: false
         enable_barge:
           anyOf:
             - type: string
             - type: boolean
           description: |-
             Controls the barge behavior. Allowed values are `"complete"`, `"partial"`, `"all"`, or boolean.
+            With partial transcripts enabled, a partial transcript that passes the barge checks while the model
+            request is still out, before any of its reply has played, cancels that request, and none of the reply
+            plays. `barge_min_words`, `barge_match_string`, and `barge_functions` apply as they do while the
+            agent speaks. Under `transparent_barge`, only a statement begun inside the window cancels the
+            request; one begun later is the caller's next turn, and the reply plays first.
             **Default:** `"complete,partial"`
           examples:
             - complete,partial
@@ -39738,7 +39827,16 @@ components:
             - 3
         barge_functions:
           type: boolean
-          description: If `true`, allows functions to be executed while the AI is being interrupted. **Default:** `false`.
+          description: |-
+            If `true`, allows functions to be executed while the AI is being interrupted.
+            With `false`, a function's filler holds back the caller's words while it is playing or queued, and
+            neither keypad input nor `interrupt_on_noise` cuts it. Once the calls have returned and no filler or
+            `say` is left, the reply after them can be barged. Under `transparent_barge`, a turn whose function
+            ran is kept rather than discarded. A function has run once its call was sent; a call that a semantic
+            gate blocked, or that names no available function, didn't run.
+            With `true`, a turn that transparent barge discards also loses its tool calls and results: actions
+            it queued with `post_process` don't run, and a call that hadn't run yet is dropped.
+            **Default:** `false`.
           examples:
             - true
           default: false
@@ -39748,6 +39846,19 @@ components:
           examples:
             - true
           default: false
+        cartesia_max_buffer_delay_ms:
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
+          minimum: 0
+          maximum: 5000
+          description: |-
+            The maximum buffer delay, in ms, for Cartesia voices. Allowed values from `0` to `5,000`. Also
+            accepts a duration string, such as `"0.5s"`. A value out of range, or one that's neither a whole
+            number nor a duration, keeps the default. **Default:** `500` ms.
+          examples:
+            - 500
+          default: 500
         conscience:
           type: string
           description: Sets the prompt which binds the agent to its purpose.
@@ -39766,7 +39877,7 @@ components:
             - Conversation ID
         conversation_sliding_window:
           type: integer
-          description: Sets the size of the sliding window for conversation history. This limits how much conversation history is sent to the AI model.
+          description: Sets the size of the sliding window for conversation history. This limits how much conversation history is sent to the AI model. The current step's instructions and the current gather question are never dropped from the window.
           examples:
             - 20
         debug_webhook_level:
@@ -39801,18 +39912,22 @@ components:
           examples:
             - '#'
         digit_timeout:
-          type: integer
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
           minimum: 1
           maximum: 29999
-          description: Time, in ms, at the end of digit input to detect end of input. Allowed values from `1` - `29,999`; any other value keeps the default. **Default:** `3000` ms.
+          description: Time, in ms, at the end of digit input to detect end of input. Allowed values from `1` - `29,999`; any other value keeps the default. Also accepts a duration string. **Default:** `3000` ms.
           examples:
             - 3000
           default: 3000
         end_of_speech_timeout:
-          type: integer
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
           minimum: 0
           maximum: 10000
-          description: Amount of silence, in ms, at the end of an utterance to detect end of speech. Allowed values from `0` - `10,000`. **Default:** `700` ms.
+          description: Amount of silence, in ms, at the end of an utterance to detect end of speech. Allowed values from `0` - `10,000`. Also accepts a duration string, such as `"0.8s"`. **Default:** `700` ms.
           examples:
             - 700
           default: 700
@@ -39821,6 +39936,19 @@ components:
           description: If `true`, enables usage accounting. The default is `false`.
           examples:
             - true
+        enable_end_call:
+          type: boolean
+          description: |-
+            Whether the model can end the call itself. Set it to `false` and the call ends only when the caller
+            hangs up, through a SWAIG action such as `hangup`, `transfer`, or `stop`, or through `hard_stop_time`
+            or `inactivity_timeout`. With it off, the model isn't taught how to hang up, an end-call marker it
+            writes anyway is removed from the spoken words, and a hangup tool call is refused.
+            `false`, `0`, and the strings `"false"`, `"no"`, `"off"`, `"f"`, `"disabled"`, `"inactive"`,
+            `"disallow"`, and `"0"` turn it off. Any other value, `1` included, leaves it on.
+            **Default:** `true`.
+          examples:
+            - false
+          default: true
         enable_thinking:
           type: boolean
           description: |-
@@ -39866,8 +39994,35 @@ components:
           description: |-
             A plain-language description of sensitive content to redact from everything the platform records or transmits about the call — logs, events, webhook payloads, the call timeline, and the post-conversation `call_log` and `raw_call_log`. For example: `"credit card numbers, social security numbers, and full names"`. Redacted content is replaced with `----`. Set this parameter to enable redaction; omit it to leave redaction off.
             The caller still hears the content in full, and the AI still receives the real text — redaction protects what is recorded and transmitted, not what the AI processes. Redaction can occasionally miss content, so treat it as a safeguard for your logs and integrations rather than an absolute guarantee.
+            With redaction on, a caller turn with no redacted form is exported as `----`, never as said: a turn whose redaction failed, a turn that doesn't wake the agent, and `user` entries given in `convo`. Recognizer details on caller entries show `----`, other speakers under `asr_speaker_affinity` are exported as `Speaker N said: ----`, `calling.ai.partial_result` is sent without its text, and `calling.ai.speech_detect` isn't sent.
           examples:
             - credit card numbers, social security numbers, and full names
+        rescue_model:
+          anyOf:
+            - type: string
+              enum:
+                - gpt-4o-mini
+                - gpt-4.1-mini
+                - gpt-5-mini
+                - gpt-5-nano
+                - gpt-5.4-mini
+                - gpt-5.4-nano
+                - gpt-5.6-luna
+                - gpt-6-luna
+                - gpt-oss-120b
+                - gpt-oss-20b
+            - type: string
+          description: |-
+            The model that answers a turn the agent's model couldn't: a model name, or `model@provider`. When
+            the agent's model gives unusable replies (degenerate output twice in one request, a tool call written
+            as text twice in one request, or provider refusals), the turn goes once to the rescue model, with the
+            same conversation, tools, and step. The next turn goes back to the agent's model. There is no rescue
+            when the agent's model is the rescue model, when the name isn't a configured model, or for HTTP
+            errors and timeouts. To turn rescue off, set this to the agent's own model.
+            **Default:** `gpt-6-luna`.
+          examples:
+            - gpt-4o-mini
+          default: gpt-6-luna
         enable_vision:
           type: boolean
           description: |-
@@ -39885,10 +40040,12 @@ components:
             - 52
           default: 52
         first_word_timeout:
-          type: integer
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
           minimum: 0
           maximum: 10000
-          description: Amount of time, in ms, to wait for the first word after speech is detected. Allowed values from `0` - `10,000`. **Default:** `1000` ms.
+          description: Amount of time, in ms, to wait for the first word after speech is detected. Allowed values from `0` - `10,000`. Also accepts a duration string. **Default:** `1000` ms.
           examples:
             - 1000
           default: 1000
@@ -39915,19 +40072,19 @@ components:
           default: Explain to the user in the current language that you have run out of time to continue the conversation and you will have someone contact them soon.
         hard_stop_time:
           type: string
-          pattern: ^\d+(?::\d+){0,2}$
           description: |-
             The maximum time the AI Agent stays active. Once it has passed, the next time the agent is waiting
             for the caller it receives `hard_stop_prompt` as a final instruction for its last reply. The
             conversation then ends and the next SWML instruction runs. The stop is not exact and does not cut
             off speech in progress.
 
-            **Time Format:** a string in `HH:MM:SS` or `MM:SS` form, or a whole number of seconds. For example,
-            `"30:00"` and `"1800"` are both 30 minutes. In the colon forms, minutes and seconds go up to `59`.
-            Unit suffixes such as `30m` or `1h` are not converted: the letters are ignored, so `30m` is read as
-            30 seconds.
+            The value is a duration in which a bare number is seconds, rounded to the second. For example,
+            `"30m"`, `"30:00"`, and `"1800"` are all 30 minutes, and `"1h30m"` is 90 minutes. A string the
+            duration rules refuse is read by its digits and colons with the letters `h`, `m`, and `s` dropped,
+            so `"30ss"` is 30 seconds. A value that reads neither way sets no stop. See
+            [Duration values](/docs/swml/reference/calling/ai/params#duration-values).
           examples:
-            - '30:00'
+            - 30m
         hold_music:
           type: string
           format: uri
@@ -39940,13 +40097,60 @@ components:
           examples:
             - true
           default: false
+        heygen_key:
+          type: string
+          description: |-
+            HeyGen API key used by HeyGen Voice (`heygen.<voice>` voices). Without it, the platform's key is
+            used. The key can contain only letters, digits, `-`, `_`, and `.`; a key with other characters
+            doesn't open. It needs HeyGen's `voices:write` scope.
+          examples:
+            - YOUR_HEYGEN_KEY
+        heygen_model:
+          anyOf:
+            - type: string
+              enum:
+                - heygen-voice-1-turbo
+                - heygen-voice-1
+            - type: string
+          description: |-
+            The HeyGen Voice model, used when the voice string doesn't name one (`heygen.<voice>:<model>`).
+            `heygen-voice-1-turbo` has lower latency; `heygen-voice-1` has higher latency, especially on short
+            phrases. Any other value uses the default. **Default:** `heygen-voice-1-turbo`.
+          examples:
+            - heygen-voice-1
+          default: heygen-voice-1-turbo
+        heygen_stream_first:
+          type: boolean
+          description: |-
+            Whether a HeyGen voice streams each reply's first sentence, so playback starts at its first audio
+            while the rest is generated in the background. Set it to `false` to turn that streaming off.
+            **Default:** `true`.
+          examples:
+            - false
+          default: true
+        ignore_backchannels:
+          type: boolean
+          description: |-
+            Ignores a bare acknowledgement that the caller says over the agent's speech, such as "mm-hmm",
+            "uh-huh", "yeah", "okay", "right", or "got it": it doesn't interrupt the agent and isn't treated as a
+            turn. "Yes", "no", "stop", and "wait" are never treated as acknowledgements, and an acknowledgement
+            said into silence is a turn as usual. During a reply that a `no_barge_next_response` action protects,
+            an acknowledgement is held until the reply has played, and then it's the caller's answer. Each
+            ignored acknowledgement adds a system-log entry with `action: "backchannel"` to the call log.
+            "Okay", "alright", and "right" also answer questions, so one said over the end of a question the
+            agent is still finishing is ignored. Set it to `false` to treat acknowledgements like any other
+            speech. **Default:** `true`.
+          examples:
+            - false
+          default: true
         inactivity_timeout:
           anyOf:
             - $ref: '#/components/schemas/SWML.Calling.InactivityTimeout'
             - type: number
               enum:
                 - 0
-          description: 'Amount of time, in ms, to wait before exiting the app due to inactivity. Allowed values: `0` (to disable) or `10,000` - `3,600,000`. **Default:** `600000` ms (10 minutes).'
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
+          description: 'Amount of time, in ms, to wait before exiting the app due to inactivity. Allowed values: `0` (to disable) or `10,000` - `3,600,000`. Also accepts a duration string, such as `"15m"`. **Default:** `600000` ms (10 minutes).'
           examples:
             - 600000
           default: 600000
@@ -39956,11 +40160,18 @@ components:
               enum:
                 - gpt-4o-mini
                 - gpt-4.1-mini
-                - gpt-4.1-nano
+                - gpt-5-mini
+                - gpt-5-nano
+                - gpt-5.4-mini
+                - gpt-5.4-nano
+                - gpt-5.6-luna
+                - gpt-6-luna
+                - gpt-oss-120b
+                - gpt-oss-20b
             - type: string
           description: Specifies the AI model to use for the inner dialog feature. Can be set to a different (often smaller/faster) model than the main conversation model. Only used when `enable_inner_dialog` is `true`.
           examples:
-            - gpt-4.1-nano
+            - gpt-4.1-mini
         inner_dialog_prompt:
           type: string
           description: |-
@@ -39974,28 +40185,65 @@ components:
           type: boolean
           description: Has no effect and can be omitted. Setting it does not change how the inner dialog runs.
         initial_sleep_ms:
-          type: integer
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
           minimum: 0
           maximum: 300000
-          description: Amount of time, in ms, to wait before starting the conversation. Allowed values from `0` - `300,000`.
+          description: |-
+            Amount of time, in ms, to wait before starting the conversation. Allowed values from `0` -
+            `300,000`. Also accepts a duration string. Speech recognition is already running during the wait,
+            and anything the caller says during it is taken once the wait ends. **Default:** `0`.
           examples:
             - 1000
           default: 0
+        min_utterance_ms:
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
+          description: 'Duration in milliseconds. Range: 0 to 10000. **Default:** `1500`.'
+          default: 1500
+        escalate_after_ms:
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
+          description: 'Duration in milliseconds. Range: 0 or greater. **Default:** `60000`.'
+          default: 60000
+        function_filler_sequence_gap_ms:
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
+          description: 'Duration in milliseconds. Range: Greater than 0. **Default:** `1200`.'
+          default: 1200
+        double_turn_wait_ms:
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
+          description: Duration in milliseconds. **Default:** `-1`.
+          default: -1
+        double_turn_filler_min_ms:
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
+          description: 'Duration in milliseconds. Range: Greater than 0, or 0 to disable. **Default:** `0`.'
+          default: 0
         input_poll_freq:
-          type: integer
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
           minimum: 1000
           maximum: 10000
           description: |-
             Check for input function with check_for_input.
             Example use case: Feeding an inbound SMS to AI on a voice call, eg., for collecting an email address or other complex information.
-            Allowed values from `1000` to `10000` ms.
+            Allowed values from `1000` to `10000` ms. Also accepts a duration string.
             **Default:** `2000` ms.
           examples:
             - 2000
           default: 2000
         interrupt_on_noise:
           type: boolean
-          description: When enabled, barges agent upon any sound interruption longer than 1 second. The 1-second threshold can't be changed. **Default:** `false`.
+          description: When enabled, barges agent upon any sound interruption longer than 1 second. The 1-second threshold can't be changed. With `barge_functions` off, it doesn't cut a function's filler. **Default:** `false`.
           examples:
             - true
         interrupt_prompt:
@@ -40030,7 +40278,27 @@ components:
           description: Has no effect and can be omitted. Setting it does not change the voice.
         max_response_tokens:
           type: integer
-          description: Has no effect and can be omitted. Setting it does not limit the length of the AI's responses.
+          description: |-
+            How many tokens to keep free for the reply when the platform summarizes a long conversation to fit
+            the model's context window. Summarizing starts early enough to leave this much room. Setting it does
+            not limit the length of the AI's responses.
+        noisy_line_ms:
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
+          minimum: 0
+          maximum: 600000
+          description: |-
+            How much loud audio with no recognized words, in ms, the caller's line can carry before the agent
+            says it seems very noisy on the caller's side and asks whether they can make it a little quieter, in
+            the language of the conversation. The notice also follows a turn that ended with no words over noise,
+            or with noise after its last words. Loud audio is never taken for speech. Each notice adds a
+            system-log entry with `action: "noisy_line"` to the call log. Allowed values from `0` to `600,000`,
+            where `0` turns the notice off. Also accepts a duration string, such as `"6s"`. The notice needs a
+            speech recognizer that reports line loudness. **Default:** `4000` ms.
+          examples:
+            - 6000
+          default: 4000
         openai_asr_engine:
           type: string
           description: The ASR (Automatic Speech Recognition) engine to use. Common values include `deepgram:nova-2` and `deepgram:nova-3`.
@@ -40038,10 +40306,15 @@ components:
             - deepgram:nova-3
           default: deepgram:nova-3
         outbound_attention_timeout:
-          type: integer
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
           minimum: 10000
           maximum: 600000
-          description: Sets a time duration for the outbound call recipient to respond to the AI agent before timeout, in a range from `10000` to `600000`. **Default:** `120000` ms (2 minutes).
+          description: |-
+            How long, in ms, the agent waits for the caller's first words. When it runs out and the caller has
+            never spoken, the call ends. Allowed values from `10000` to `600000`. Also accepts a duration string,
+            such as `"2m"`. **Default:** `120000` ms (2 minutes).
           examples:
             - 120000
           default: 120000
@@ -40069,8 +40342,10 @@ components:
             Send a summary of the conversation after the call ends.
             This requires `ai.post_prompt_url` and `conversation_id` to be set.
             This eliminates the need for a `post_prompt` in the ai parameters.
-            Separately from that end-of-call report, an agent that starts with a `conversation_id` asks
-            `ai.post_prompt_url` for the summary you stored for that ID, and resumes the conversation with it.
+            The platform stores nothing: the summary goes to `ai.post_prompt_url` as `conversation_summary`, and
+            keeping it is up to you. The next call that starts with the same `conversation_id` asks
+            `ai.post_prompt_url` for the summary you stored, and resumes the conversation with the
+            `conversation_summary` in your reply.
           examples:
             - true
         semantic_gates_enabled:
@@ -40083,11 +40358,15 @@ components:
             - false
           default: true
         semantic_gate_timeout_ms:
-          type: integer
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
           description: |-
-            How long one semantic gate check may take in total, in milliseconds. A check that runs
-            out of time blocks the function. Allowed values from `500` to `10,000`; a value outside the range
-            is clamped to it. **Default:** `2500` ms.
+            How long one semantic gate check may take in total, in milliseconds, retries included. A check that
+            runs out of time blocks the function. Allowed values from `500` to `10,000`; a value outside the
+            range is clamped to it. Also accepts a whole number in a string (`"3000"`) or a duration string
+            (`"3000ms"`, `"2.5s"`); a bare decimal string such as `"2.5"` keeps the default.
+            **Default:** `2500` ms.
           examples:
             - 3000
           default: 2500
@@ -40095,15 +40374,35 @@ components:
           type: integer
           description: |-
             How many recent conversation entries a semantic gate check reads. Allowed values from `0` to
-            `100`; a value outside the range is clamped to it. **Default:** `20`.
+            `100`; a value outside the range is clamped to it. A gate's own `history` replaces it for that gate.
+            **Default:** `20`.
           examples:
             - 30
           default: 20
+        semantic_gate_dialogue:
+          anyOf:
+            - type: string
+              enum:
+                - window
+                - proposal
+            - type: string
+          description: |-
+            Which part of the conversation a semantic gate check judges, unless a gate sets its own `dialogue`.
+            `window` sends the newest `semantic_gate_history` entries. `proposal` sends only what was said since
+            `semantic_state` last changed, from the agent's first turn after the change: the read-back and the
+            caller's reply. If the agent has said nothing since, the conversation is empty. With no
+            `semantic_state` set, `window` is used. Only the word `proposal`, in any case, selects it; any other
+            value is `window`. **Default:** `window`.
+          examples:
+            - proposal
+          default: window
         speech_event_timeout:
-          type: integer
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
           minimum: 0
           maximum: 10000
-          description: Amount of time, in ms, to wait for a speech event. Allowed values from `0` - `10,000`. `0`, or leaving it unset, lets speech recognition set this timing itself. **Default:** `0`.
+          description: Amount of time, in ms, to wait for a speech event. Allowed values from `0` - `10,000`. `0`, or leaving it unset, lets speech recognition set this timing itself. Also accepts a duration string. **Default:** `0`.
           examples:
             - 1400
           default: 0
@@ -40124,7 +40423,8 @@ components:
             When enabled, the AI agent remains silent until directly addressed by name (using `ai_name`).
             This creates a "push-to-talk" style interaction where the agent only responds when explicitly
             called upon, useful for scenarios where the agent should listen but not interrupt.
-            Cannot be used together with `enable_pause`.
+            Cannot be used together with `enable_pause`. With `redact_prompt` set, turns that don't wake the
+            agent are exported as `----`.
           examples:
             - true
           default: false
@@ -40153,7 +40453,7 @@ components:
           enum:
             - string
             - original
-          description: Defines the mode for summary generation. Allowed values are `"string"` and `"original"`.
+          description: Defines the mode for summary generation. Only `"string"` and `"original"` are accepted.
           examples:
             - string
         swaig_allow_settings:
@@ -40185,6 +40485,34 @@ components:
           examples:
             - true
           default: true
+        target_first_segment_ms:
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
+          minimum: 0
+          maximum: 5000
+          description: |-
+            How long, in ms, the model's first words can take before the agent plays a filler to cover the
+            wait. Allowed values from `0` to `5,000`. Also accepts a duration string. Under
+            `transparent_barge`, this filler doesn't hold back the caller's words.
+            Separately, when the model has sent nothing for 3 seconds after a request, the agent plays one of the
+            current language's thinking fillers (`speech_fillers`, or `multilingual.fillers`), and the filler
+            from this param then stays silent. That 3-second filler plays once per request and right after a
+            function call; its timing can't be changed. **Default:** `200` ms.
+          examples:
+            - 500
+          default: 200
+        text_normalization_show_heard:
+          type: boolean
+          description: |-
+            When the Deepgram recognizer formats the transcript, the model also reads the words as spoken after
+            each span the formatting changed, as in
+            `The order number is w7123456 (heard: w seven one two three four five six).` The annotation becomes
+            part of the caller's turn text. Recognizers that don't format the transcript themselves get no
+            annotation. **Default:** `false`.
+          examples:
+            - true
+          default: false
         swaig_post_swml_vars:
           anyOf:
             - type: boolean
@@ -40203,9 +40531,16 @@ components:
               enum:
                 - gpt-4o-mini
                 - gpt-4.1-mini
-                - gpt-4.1-nano
+                - gpt-5-mini
+                - gpt-5-nano
+                - gpt-5.4-mini
+                - gpt-5.4-nano
+                - gpt-5.6-luna
+                - gpt-6-luna
+                - gpt-oss-120b
+                - gpt-oss-20b
             - type: string
-          description: The model to use for the AI's thinking capabilities — for example `gpt-4o-mini`, `gpt-4.1-mini`, or `gpt-4.1-nano`. A value that is not a recognized model is ignored, and the agent's main model is used instead.
+          description: The model to use for the AI's thinking capabilities — for example `gpt-4o-mini` or `gpt-4.1-mini`. A value that is not a recognized model is ignored, and the agent's main model is used instead.
           examples:
             - gpt-4.1-mini
         utility_model:
@@ -40214,26 +40549,43 @@ components:
               enum:
                 - gpt-4o-mini
                 - gpt-4.1-mini
-                - gpt-4.1-nano
+                - gpt-5-mini
+                - gpt-5-nano
+                - gpt-5.4-mini
+                - gpt-5.4-nano
+                - gpt-5.6-luna
+                - gpt-6-luna
+                - gpt-oss-120b
+                - gpt-oss-20b
             - type: string
-          description: The AI model used for lightweight background tasks such as redaction (`redact_prompt`) and transcription cleanup (`auto_correct`). Choose a small, fast model, such as `gpt-4o-mini`, `gpt-4.1-mini`, or `gpt-4.1-nano` — these tasks run while the caller is waiting for a response. A value that is not a recognized model is ignored, and the agent's main model is used instead. **Default:** the value of the `ai_model` parameter.
+          description: The AI model used for lightweight background tasks such as redaction (`redact_prompt`) and transcription cleanup (`auto_correct`). Choose a small, fast model, such as `gpt-4o-mini` or `gpt-4.1-mini` — these tasks run while the caller is waiting for a response. A value that is not a recognized model is ignored, and the agent's main model is used instead. **Default:** the value of the `ai_model` parameter.
           examples:
             - gpt-4o-mini
         transparent_barge:
           type: boolean
           description: |-
-            When enabled, the AI will not respond to the user's input when the user is speaking over the agent.
-            The agent will wait for the user to finish speaking before responding.
-            Additionally, any attempt the LLM makes to barge will be ignored and scraped from the conversation logs.
+            Lets the caller correct or extend what they just said. When the caller's next statement begins within
+            `transparent_barge_max_time` of their previous one, the agent's turn in between is discarded, whether
+            or not any of it played, a request still in flight is cancelled, and the two statements go to the
+            model as one. At or past the window, the agent's turn stands and the new words are a turn of their
+            own. Speech the barge settings hold back never discards a turn on its own, and with `barge_functions`
+            off a turn whose function ran is kept. The greeting is never discarded. Off when
+            `barge_match_string` is set.
             **Default:** `true`.
           examples:
             - true
           default: true
         transparent_barge_max_time:
-          type: integer
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
           minimum: 0
           maximum: 60000
-          description: Maximum time, in ms, for transparent barge mode. Allowed values from `0` - `60,000`. **Default:** `3000` ms.
+          description: |-
+            The transparent barge window, in ms. It runs from when the caller's previous final transcript arrived
+            to when their next statement began: its first partial transcript with words, its final transcript if
+            no partial came first, or the first key for keypad input. Allowed values from `0` to `60,000`, where
+            `0` means no limit. Also accepts a duration string, such as `"2.5s"`. **Default:** `3000` ms.
           examples:
             - 3000
           default: 3000
@@ -40260,7 +40612,9 @@ components:
             - 4
           default: 0
         turn_detection_timeout:
-          type: integer
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
           minimum: 0
           maximum: 10000
           description: |-
@@ -40270,8 +40624,8 @@ components:
             caller who has finished usually commits well inside it. Lowering it therefore doesn't make the
             agent answer faster, and values below `500` degrade transcription accuracy on words the
             recognizer needs the extra audio to disambiguate.
-            Set to `0` to use the default. Has no effect when `enable_turn_detection` is `off` or
-            `acoustic_only`.
+            Set to `0` to use the default. Also accepts a duration string. Has no effect when
+            `enable_turn_detection` is `off` or `acoustic_only`.
             **Default:** the value of `end_of_speech_timeout`.
           examples:
             - 700
@@ -40293,7 +40647,7 @@ components:
             The default answers `spell` and `number` only, because those pauses are expected and cannot be
             shortened. A backchannel during `text` or `acoustic` usually talks over a caller who is still
             going, so give either its own delay with a `<token>:<ms>` suffix rather than listing it bare,
-            as in `spell,number,text:1200`.
+            as in `spell,number,text:1200`. The delay can also be a duration string, as in `veto:2s`.
 
             Tokens are matched whole and case-insensitively, and a space after a comma is fine. A token
             that is not one of the five above matches no wait, so nothing here is validated and a
@@ -40314,10 +40668,13 @@ components:
             - 2
           default: 1
         turn_filler_min_ms:
-          type: integer
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
           minimum: 0
           description: |-
-            How long a wait must already have run, in milliseconds, before a backchannel plays. Off by
+            How long a wait must already have run, in milliseconds, before a backchannel plays. Also accepts
+            a duration string. Off by
             default: waits open the moment the agent decides to hold, and `spell` and `number` are meant to
             be answered right then. A positive `<token>:<ms>` suffix in `turn_filler_sources` replaces this for
             that token, but `:0` does not clear it. To answer one source immediately while delaying others,
@@ -40325,15 +40682,31 @@ components:
           examples:
             - 800
           default: 0
+        turn_filler_volume:
+          type: number
+          maximum: 1
+          description: |-
+            How loud `languages[].turn_fillers` and `multilingual.turn_fillers` play, relative to the agent's
+            voice as the caller hears it. `1` is the agent's own level, `0.5` is half the amplitude (-6 dB), and
+            `0.25` is -12 dB. Allowed values above `0` and up to `1`; a numeric string is also read, and any
+            other value keeps the default. Levels are applied in whole dB, and a level at or below -50 dB is
+            silence. It applies to both text phrases and audio-file entries, and includes `ai_volume` on voices
+            that apply it. **Default:** `0.5`.
+          exclusiveMinimum: 0
+          examples:
+            - 0.7
+          default: 0.5
         tts_number_format:
           type: string
           enum:
             - 'e164'
+            - e.164
             - international
             - national
           description: |-
             The format for the AI agent to reference phone numbers.
-            Allowed values are `e164`, `international`, and `national`.
+            Allowed values are `e164`, `international`, and `national`; `e.164` is accepted as another
+            spelling of `e164`.
             **Default:** `e164`.
 
             **Example:**
@@ -40343,6 +40716,32 @@ components:
           examples:
             - national
           default: 'e164'
+        tts_pause_cap_ms:
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWML.Calling.AIDuration'
+          description: |-
+            The longest pause, in ms, that plays inside the agent's speech. A quiet stretch between two sounds
+            of a reply plays up to the cap, and the rest is dropped; quiet before a reply's first sound and after
+            its last isn't played. Allowed values from `0` to `2,000`, where `0` plays speech as the engine made
+            it; a value outside the range is clamped to it. Also accepts a whole number in a string or a
+            duration string, such as `"250ms"`; any other value keeps the default. The cap applies to the
+            platform's built-in TTS engines when they don't stream, not to a voice with `streaming: true` or
+            the `polly`, `gcloud`, and `amazon` engines. **Default:** `300` ms.
+          examples:
+            - 250
+          default: 300
+        unavailable_function_response:
+          type: string
+          description: |-
+            What the model is told when it calls a function that can't run right now: one that's switched off,
+            used up, or not in the current step's functions, or a name the agent doesn't have. Nothing runs
+            either way. `${function}` is the name the model called, `${tools}` the tools the request offered,
+            and `${steps}` the other steps in the current context that offer the function (empty for a name the
+            agent doesn't have); lists are comma-separated. Without it, the model is told that nothing ran,
+            which steps offer the function, and which tools are available now.
+          examples:
+            - '${function} cannot run right now. Available: ${tools}.'
         verbose_logs:
           type: boolean
           description: Has no effect and can be omitted.
@@ -40382,9 +40781,16 @@ components:
               enum:
                 - gpt-4o-mini
                 - gpt-4.1-mini
-                - gpt-4.1-nano
+                - gpt-5-mini
+                - gpt-5-nano
+                - gpt-5.4-mini
+                - gpt-5.4-nano
+                - gpt-5.6-luna
+                - gpt-6-luna
+                - gpt-oss-120b
+                - gpt-oss-20b
             - type: string
-          description: The model to use for the AI's vision capabilities. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.
+          description: The model to use for the AI's vision capabilities. Allowed values are `gpt-4o-mini` and `gpt-4.1-mini`.
           examples:
             - gpt-4o-mini
         visual_input:
@@ -40451,14 +40857,59 @@ components:
         - pom
       properties:
         model:
-          type: string
+          anyOf:
+            - type: string
+              enum:
+                - gpt-4o-mini
+                - gpt-4.1-mini
+                - gpt-5-mini
+                - gpt-5-nano
+                - gpt-5.4-mini
+                - gpt-5.4-nano
+                - gpt-5.6-luna
+                - gpt-6-luna
+                - gpt-oss-120b
+                - gpt-oss-20b
+            - type: string
           description: |-
             The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.
             On `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.
-            If the model you name isn't available, a default model is used instead; if no default model is
-            available either, the agent doesn't start.
+            Name a model on the supported list, optionally with its provider as `model@provider`, where the provider
+            is `openai`, `azure-openai`, or `anthropic` (`gpt-6-luna@azure-openai`). Any other name runs as `gpt-4o-mini`, and the
+            call gets a non-fatal `calling.error` whose `error` is `model_substituted` (`post_model_substituted` for
+            `post_prompt`). If no model is available at all, the agent doesn't start.
           examples:
-            - gpt-4.1-mini
+            - gpt-6-luna
+        reasoning_effort:
+          type: string
+          enum:
+            - none
+            - minimal
+            - low
+            - medium
+            - high
+            - xhigh
+          description: |-
+            How much the model reasons before it replies. Applies to `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`,
+            `gpt-5.4-nano`, `gpt-5.6-luna`, and `gpt-6-luna`, and is ignored on other models.
+            `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.6-luna`, and `gpt-6-luna` accept `none`, `low`, `medium`, `high`,
+            and `xhigh`, and default to `none`. `gpt-5-mini` and `gpt-5-nano` accept `minimal`, `low`, `medium`,
+            and `high`, and default to `minimal`. A value the model doesn't accept is refused by the model provider.
+          examples:
+            - low
+        verbosity:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+          description: |-
+            How long the model's replies are. Applies to `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`, `gpt-5.4-nano`,
+            `gpt-5.6-luna`, and `gpt-6-luna`, and is ignored on other models. Any other value uses the default.
+            **Default:** `low`.
+          examples:
+            - medium
+          default: low
         max_tokens:
           type: integer
           format: int32
@@ -40472,7 +40923,10 @@ components:
           type: number
           minimum: 0
           maximum: 1.5
-          description: Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random. **Default:** `1.0`.
+          description: |-
+            Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random.
+            On a model that takes `reasoning_effort`, it applies only when `reasoning_effort` is `none`, and
+            `gpt-5.6-luna` and `gpt-6-luna` default to `0.3`. **Default:** `1.0`.
           examples:
             - 0.7
           default: 1
@@ -40480,7 +40934,10 @@ components:
           type: number
           minimum: 0
           maximum: 1
-          description: Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make the output less random. **Default:** `1.0`.
+          description: |-
+            Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make
+            the output less random. On a model that takes `reasoning_effort`, it applies only when `reasoning_effort`
+            is `none`, and `gpt-5.6-luna` and `gpt-6-luna` default to `0.9`. **Default:** `1.0`.
           examples:
             - 0.9
           default: 1
@@ -40494,7 +40951,7 @@ components:
           type: number
           minimum: -2
           maximum: 2
-          description: Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. **Default:** `0`.
+          description: Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. Not used on `gpt-6-luna`. **Default:** `0`.
           examples:
             - 0
           default: 0
@@ -40502,7 +40959,7 @@ components:
           type: number
           minimum: -2
           maximum: 2
-          description: Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. **Default:** `0`.
+          description: Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. Not used on `gpt-6-luna`. **Default:** `0`.
           examples:
             - 0
           default: 0
@@ -40521,14 +40978,59 @@ components:
         - text
       properties:
         model:
-          type: string
+          anyOf:
+            - type: string
+              enum:
+                - gpt-4o-mini
+                - gpt-4.1-mini
+                - gpt-5-mini
+                - gpt-5-nano
+                - gpt-5.4-mini
+                - gpt-5.4-nano
+                - gpt-5.6-luna
+                - gpt-6-luna
+                - gpt-oss-120b
+                - gpt-oss-20b
+            - type: string
           description: |-
             The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.
             On `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.
-            If the model you name isn't available, a default model is used instead; if no default model is
-            available either, the agent doesn't start.
+            Name a model on the supported list, optionally with its provider as `model@provider`, where the provider
+            is `openai`, `azure-openai`, or `anthropic` (`gpt-6-luna@azure-openai`). Any other name runs as `gpt-4o-mini`, and the
+            call gets a non-fatal `calling.error` whose `error` is `model_substituted` (`post_model_substituted` for
+            `post_prompt`). If no model is available at all, the agent doesn't start.
           examples:
-            - gpt-4.1-mini
+            - gpt-6-luna
+        reasoning_effort:
+          type: string
+          enum:
+            - none
+            - minimal
+            - low
+            - medium
+            - high
+            - xhigh
+          description: |-
+            How much the model reasons before it replies. Applies to `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`,
+            `gpt-5.4-nano`, `gpt-5.6-luna`, and `gpt-6-luna`, and is ignored on other models.
+            `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.6-luna`, and `gpt-6-luna` accept `none`, `low`, `medium`, `high`,
+            and `xhigh`, and default to `none`. `gpt-5-mini` and `gpt-5-nano` accept `minimal`, `low`, `medium`,
+            and `high`, and default to `minimal`. A value the model doesn't accept is refused by the model provider.
+          examples:
+            - low
+        verbosity:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+          description: |-
+            How long the model's replies are. Applies to `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`, `gpt-5.4-nano`,
+            `gpt-5.6-luna`, and `gpt-6-luna`, and is ignored on other models. Any other value uses the default.
+            **Default:** `low`.
+          examples:
+            - medium
+          default: low
         max_tokens:
           type: integer
           format: int32
@@ -40542,7 +41044,10 @@ components:
           type: number
           minimum: 0
           maximum: 1.5
-          description: Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random. **Default:** `1.0`.
+          description: |-
+            Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random.
+            On a model that takes `reasoning_effort`, it applies only when `reasoning_effort` is `none`, and
+            `gpt-5.6-luna` and `gpt-6-luna` default to `0.3`. **Default:** `1.0`.
           examples:
             - 0.7
           default: 1
@@ -40550,7 +41055,10 @@ components:
           type: number
           minimum: 0
           maximum: 1
-          description: Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make the output less random. **Default:** `1.0`.
+          description: |-
+            Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make
+            the output less random. On a model that takes `reasoning_effort`, it applies only when `reasoning_effort`
+            is `none`, and `gpt-5.6-luna` and `gpt-6-luna` default to `0.9`. **Default:** `1.0`.
           examples:
             - 0.9
           default: 1
@@ -40564,7 +41072,7 @@ components:
           type: number
           minimum: -2
           maximum: 2
-          description: Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. **Default:** `0`.
+          description: Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. Not used on `gpt-6-luna`. **Default:** `0`.
           examples:
             - 0
           default: 0
@@ -40572,7 +41080,7 @@ components:
           type: number
           minimum: -2
           maximum: 2
-          description: Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. **Default:** `0`.
+          description: Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. Not used on `gpt-6-luna`. **Default:** `0`.
           examples:
             - 0
           default: 0
@@ -40594,14 +41102,59 @@ components:
         - pom
       properties:
         model:
-          type: string
+          anyOf:
+            - type: string
+              enum:
+                - gpt-4o-mini
+                - gpt-4.1-mini
+                - gpt-5-mini
+                - gpt-5-nano
+                - gpt-5.4-mini
+                - gpt-5.4-nano
+                - gpt-5.6-luna
+                - gpt-6-luna
+                - gpt-oss-120b
+                - gpt-oss-20b
+            - type: string
           description: |-
             The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.
             On `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.
-            If the model you name isn't available, a default model is used instead; if no default model is
-            available either, the agent doesn't start.
+            Name a model on the supported list, optionally with its provider as `model@provider`, where the provider
+            is `openai`, `azure-openai`, or `anthropic` (`gpt-6-luna@azure-openai`). Any other name runs as `gpt-4o-mini`, and the
+            call gets a non-fatal `calling.error` whose `error` is `model_substituted` (`post_model_substituted` for
+            `post_prompt`). If no model is available at all, the agent doesn't start.
           examples:
-            - gpt-4.1-mini
+            - gpt-6-luna
+        reasoning_effort:
+          type: string
+          enum:
+            - none
+            - minimal
+            - low
+            - medium
+            - high
+            - xhigh
+          description: |-
+            How much the model reasons before it replies. Applies to `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`,
+            `gpt-5.4-nano`, `gpt-5.6-luna`, and `gpt-6-luna`, and is ignored on other models.
+            `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.6-luna`, and `gpt-6-luna` accept `none`, `low`, `medium`, `high`,
+            and `xhigh`, and default to `none`. `gpt-5-mini` and `gpt-5-nano` accept `minimal`, `low`, `medium`,
+            and `high`, and default to `minimal`. A value the model doesn't accept is refused by the model provider.
+          examples:
+            - low
+        verbosity:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+          description: |-
+            How long the model's replies are. Applies to `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`, `gpt-5.4-nano`,
+            `gpt-5.6-luna`, and `gpt-6-luna`, and is ignored on other models. Any other value uses the default.
+            **Default:** `low`.
+          examples:
+            - medium
+          default: low
         max_tokens:
           type: integer
           format: int32
@@ -40615,7 +41168,10 @@ components:
           type: number
           minimum: 0
           maximum: 1.5
-          description: Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random. **Default:** `1.0`.
+          description: |-
+            Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random.
+            On a model that takes `reasoning_effort`, it applies only when `reasoning_effort` is `none`, and
+            `gpt-5.6-luna` and `gpt-6-luna` default to `0.3`. **Default:** `1.0`.
           examples:
             - 0.7
           default: 1
@@ -40623,7 +41179,10 @@ components:
           type: number
           minimum: 0
           maximum: 1
-          description: Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make the output less random. **Default:** `1.0`.
+          description: |-
+            Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make
+            the output less random. On a model that takes `reasoning_effort`, it applies only when `reasoning_effort`
+            is `none`, and `gpt-5.6-luna` and `gpt-6-luna` default to `0.9`. **Default:** `1.0`.
           examples:
             - 0.9
           default: 1
@@ -40637,7 +41196,7 @@ components:
           type: number
           minimum: -2
           maximum: 2
-          description: Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. **Default:** `0`.
+          description: Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. Not used on `gpt-6-luna`. **Default:** `0`.
           examples:
             - 0
           default: 0
@@ -40645,7 +41204,7 @@ components:
           type: number
           minimum: -2
           maximum: 2
-          description: Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. **Default:** `0`.
+          description: Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. Not used on `gpt-6-luna`. **Default:** `0`.
           examples:
             - 0
           default: 0
@@ -40682,14 +41241,59 @@ components:
         - text
       properties:
         model:
-          type: string
+          anyOf:
+            - type: string
+              enum:
+                - gpt-4o-mini
+                - gpt-4.1-mini
+                - gpt-5-mini
+                - gpt-5-nano
+                - gpt-5.4-mini
+                - gpt-5.4-nano
+                - gpt-5.6-luna
+                - gpt-6-luna
+                - gpt-oss-120b
+                - gpt-oss-20b
+            - type: string
           description: |-
             The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.
             On `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.
-            If the model you name isn't available, a default model is used instead; if no default model is
-            available either, the agent doesn't start.
+            Name a model on the supported list, optionally with its provider as `model@provider`, where the provider
+            is `openai`, `azure-openai`, or `anthropic` (`gpt-6-luna@azure-openai`). Any other name runs as `gpt-4o-mini`, and the
+            call gets a non-fatal `calling.error` whose `error` is `model_substituted` (`post_model_substituted` for
+            `post_prompt`). If no model is available at all, the agent doesn't start.
           examples:
-            - gpt-4.1-mini
+            - gpt-6-luna
+        reasoning_effort:
+          type: string
+          enum:
+            - none
+            - minimal
+            - low
+            - medium
+            - high
+            - xhigh
+          description: |-
+            How much the model reasons before it replies. Applies to `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`,
+            `gpt-5.4-nano`, `gpt-5.6-luna`, and `gpt-6-luna`, and is ignored on other models.
+            `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.6-luna`, and `gpt-6-luna` accept `none`, `low`, `medium`, `high`,
+            and `xhigh`, and default to `none`. `gpt-5-mini` and `gpt-5-nano` accept `minimal`, `low`, `medium`,
+            and `high`, and default to `minimal`. A value the model doesn't accept is refused by the model provider.
+          examples:
+            - low
+        verbosity:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+          description: |-
+            How long the model's replies are. Applies to `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`, `gpt-5.4-nano`,
+            `gpt-5.6-luna`, and `gpt-6-luna`, and is ignored on other models. Any other value uses the default.
+            **Default:** `low`.
+          examples:
+            - medium
+          default: low
         max_tokens:
           type: integer
           format: int32
@@ -40703,7 +41307,10 @@ components:
           type: number
           minimum: 0
           maximum: 1.5
-          description: Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random. **Default:** `1.0`.
+          description: |-
+            Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random.
+            On a model that takes `reasoning_effort`, it applies only when `reasoning_effort` is `none`, and
+            `gpt-5.6-luna` and `gpt-6-luna` default to `0.3`. **Default:** `1.0`.
           examples:
             - 0.7
           default: 1
@@ -40711,7 +41318,10 @@ components:
           type: number
           minimum: 0
           maximum: 1
-          description: Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make the output less random. **Default:** `1.0`.
+          description: |-
+            Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make
+            the output less random. On a model that takes `reasoning_effort`, it applies only when `reasoning_effort`
+            is `none`, and `gpt-5.6-luna` and `gpt-6-luna` default to `0.9`. **Default:** `1.0`.
           examples:
             - 0.9
           default: 1
@@ -40725,7 +41335,7 @@ components:
           type: number
           minimum: -2
           maximum: 2
-          description: Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. **Default:** `0`.
+          description: Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. Not used on `gpt-6-luna`. **Default:** `0`.
           examples:
             - 0
           default: 0
@@ -40733,7 +41343,7 @@ components:
           type: number
           minimum: -2
           maximum: 2
-          description: Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. **Default:** `0`.
+          description: Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. Not used on `gpt-6-luna`. **Default:** `0`.
           examples:
             - 0
           default: 0
@@ -40987,9 +41597,16 @@ components:
               enum:
                 - gpt-4o-mini
                 - gpt-4.1-mini
-                - gpt-4.1-nano
+                - gpt-5-mini
+                - gpt-5-nano
+                - gpt-5.4-mini
+                - gpt-5.4-nano
+                - gpt-5.6-luna
+                - gpt-6-luna
+                - gpt-oss-120b
+                - gpt-oss-20b
             - type: string
-          description: "The model used for the sidecar's advice and its end-of-call summaries. Suggested values: `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-4.1-nano`. **Default:** `gpt-4o-mini`."
+          description: "The model used for the sidecar's advice and its end-of-call summaries. Suggested values: `gpt-4o-mini`, `gpt-4.1-mini`. **Default:** `gpt-4o-mini`."
           examples:
             - gpt-4.1-mini
           default: gpt-4o-mini
@@ -41176,9 +41793,16 @@ components:
               enum:
                 - gpt-4o-mini
                 - gpt-4.1-mini
-                - gpt-4.1-nano
+                - gpt-5-mini
+                - gpt-5-nano
+                - gpt-5.4-mini
+                - gpt-5.4-nano
+                - gpt-5.6-luna
+                - gpt-6-luna
+                - gpt-oss-120b
+                - gpt-oss-20b
             - type: string
-          description: "The model used for the end-of-call conversation summary, distinct from `model` (the sidecar's own model). Suggested values: `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-4.1-nano`. **Default:** `gpt-4o-mini`."
+          description: "The model used for the end-of-call conversation summary, distinct from `model` (the sidecar's own model). Suggested values: `gpt-4o-mini`, `gpt-4.1-mini`. **Default:** `gpt-4o-mini`."
           examples:
             - gpt-4.1-mini
           default: gpt-4o-mini
@@ -41583,7 +42207,43 @@ components:
         - $ref: '#/components/schemas/SWML.Calling.TransferAction'
         - $ref: '#/components/schemas/SWML.Calling.SettingsAction'
         - $ref: '#/components/schemas/SWML.Calling.UserEventAction'
+        - $ref: '#/components/schemas/SWML.Calling.NoBargeNextResponseAction'
+        - $ref: '#/components/schemas/SWML.Calling.SemanticGateMarkAction'
+        - $ref: '#/components/schemas/SWML.Calling.BackToBackFunctionsAction'
+        - $ref: '#/components/schemas/SWML.Calling.ExtensiveDataAction'
+        - $ref: '#/components/schemas/SWML.Calling.ChangeVoiceAction'
+        - $ref: '#/components/schemas/SWML.Calling.AddDynamicHintsAction'
+        - $ref: '#/components/schemas/SWML.Calling.ClearDynamicHintsAction'
+        - $ref: '#/components/schemas/SWML.Calling.EndOfSpeechTimeoutAction'
+        - $ref: '#/components/schemas/SWML.Calling.SpeechEventTimeoutAction'
+        - $ref: '#/components/schemas/SWML.Calling.WaitForUserAction'
       title: Action union
+    SWML.Calling.AddDynamicHintsAction:
+      type: object
+      required:
+        - add_dynamic_hints
+      properties:
+        add_dynamic_hints:
+          type: array
+          items:
+            anyOf:
+              - type: string
+              - $ref: '#/components/schemas/SWML.Calling.Hint'
+          description: |-
+            Adds speech recognition hints during the call, in the same forms as the `ai` method's `hints`:
+            strings, or objects with `hint`, or `pattern` and `replace`. Where the speech recognizer accepts
+            hints during a call, the new list (the agent's hints, then the dynamic ones) is applied between
+            turns without restarting recognition. Otherwise recognition restarts with the new list. Not on
+            realtime models.
+          title: add_dynamic_hints
+          examples:
+            - - Cabby
+              - pattern: cab bee
+                replace: Cabby
+                ignore_case: true
+      unevaluatedProperties:
+        not: {}
+      title: add_dynamic_hints Action
     SWML.Calling.AllOfProperty:
       type: object
       required:
@@ -41752,6 +42412,33 @@ components:
       type: integer
       minimum: 1000
       maximum: 600000
+    SWML.Calling.BackToBackFunctionsAction:
+      type: object
+      required:
+        - back_to_back_functions
+      properties:
+        back_to_back_functions:
+          anyOf:
+            - type: boolean
+            - type: string
+              enum:
+                - forever
+          description: |-
+            Whether the model may call another function right after a function result, without answering
+            the caller in words first. The setting lasts for the rest of the call.
+
+            - `"forever"` (the default): the model may chain function calls freely.
+            - `false`: the model must answer in words after a function result.
+            - `true`: while chaining is off, allows one more chained call. It doesn't change `"forever"`.
+
+            Any other value is ignored. The post-prompt and a `summarize_conversation` summary always run
+            with `"forever"`. Not on realtime models.
+          title: back_to_back_functions
+          examples:
+            - false
+      unevaluatedProperties:
+        not: {}
+      title: back_to_back_functions Action
     SWML.Calling.BedrockAction:
       type: object
       properties:
@@ -42399,13 +43086,78 @@ components:
       properties:
         change_step:
           type: string
-          description: The name of the step to switch to. The step must be defined in the current context's steps array.
+          description: |-
+            The name of the step to switch to. The step must be defined in the current context's steps
+            array; it doesn't need to be in the current step's `valid_steps`. Naming the step the agent is
+            already in starts that step over: its text is rebuilt from the current variables (so a
+            `set_global_data` in the same result is reflected, whatever the order of the actions), its
+            `history` mode applies again, and its functions are set again.
           title: change_step
           examples:
             - confirm_order
       unevaluatedProperties:
         not: {}
       title: change_step Action
+    SWML.Calling.ChangeVoiceAction:
+      type: object
+      required:
+        - change_voice
+      properties:
+        change_voice:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+            - $ref: '#/components/schemas/SWML.Calling.ChangeVoiceObject'
+          description: |-
+            Changes the current language's voice for the rest of the call. Takes a voice string such as
+            `elevenlabs.adam`, an array of up to 8 voice strings, or an object with `voice` set to either.
+            In an array, the first voice speaks and the rest become its fallbacks, replacing the language's
+            own; with one voice, the language keeps its fallbacks. Either way, the fallbacks start over from
+            the first.
+          title: change_voice
+          examples:
+            - elevenlabs.adam
+      unevaluatedProperties:
+        not: {}
+      title: change_voice Action
+    SWML.Calling.ChangeVoiceObject:
+      type: object
+      required:
+        - voice
+      properties:
+        voice:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          description: The voice, or an array of up to 8 voices, in the same form as the `voice` string forms.
+          examples:
+            - - cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e
+              - elevenlabs.adam
+      unevaluatedProperties:
+        not: {}
+      title: change_voice object
+    SWML.Calling.ClearDynamicHintsAction:
+      type: object
+      required:
+        - clear_dynamic_hints
+      properties:
+        clear_dynamic_hints:
+          type: object
+          unevaluatedProperties:
+            not: {}
+          description: |-
+            Removes every hint added with `add_dynamic_hints`. Set it to an empty object. The new list is
+            applied the same way as for `add_dynamic_hints`. Not on realtime models.
+          title: clear_dynamic_hints
+          examples:
+            - {}
+      unevaluatedProperties:
+        not: {}
+      title: clear_dynamic_hints Action
     SWML.Calling.Cond:
       type: object
       required:
@@ -43937,7 +44689,11 @@ components:
           type: array
           items:
             type: string
-          description: An array of context names that the AI can transition to from this step. This must be a valid `contexts.name` that is present in your `contexts` object.
+          description: |-
+            An array of context names the AI can switch to from this step with `change_context`, matched
+            case-insensitively. Each must be a context in your `contexts` object. When the key is omitted or the
+            array is empty, the AI isn't offered `change_context` during this step. A request for a context that
+            isn't listed is refused. A `change_context` action returned by a SWAIG function can still switch to any context.
           examples:
             - - Place Order
               - Confirm Order
@@ -43959,7 +44715,10 @@ components:
           default: false
         end:
           type: boolean
-          description: A boolean value that determines if the step is the last in the context. If `true`, the context ends after this step. Cannot be used along with the `valid_steps` parameter. **Default:** `false`.
+          description: |-
+            A boolean value that determines if the step is the last in the context. If `true`, the context ends after this step.
+            Cannot be used along with the `valid_steps` parameter. When the step follows a gather, the gather's last question and
+            its instructions leave the AI's view, unless `history` is `keep`. **Default:** `false`.
           examples:
             - true
           default: false
@@ -43968,14 +44727,32 @@ components:
           items:
             type: string
           description: |-
-            An array of step names the AI can move to from this step. Include `next` to allow the following step.
-            When the key is omitted, the AI can move to the next step in the context.
-            An empty array means that, once the AI's available functions are refreshed for this step (for example,
-            when the step sets `functions`), it is no longer offered a move to another step. A `change_step` action
-            returned by a SWAIG function still works.
+            An array of step names the AI can move to from this step with `next_step`, matched case-insensitively.
+            Include `next` to allow the following step. When the key is omitted, the AI can move to the next step in
+            the context. An empty array removes `next_step` while this step is current. The AI also isn't offered
+            `next_step` on a context's last step when `next` is the only choice, or while a gather question is asked.
+            A request for a step that isn't listed is refused. A `change_step` action returned by a SWAIG function, and
+            a gather's `completion_action`, can still move to any step.
           examples:
             - - get order
               - confirm order
+        history:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.ContextHistoryMode'
+          description: |-
+            How much of the earlier conversation the AI sees when this step begins: `keep`, `default`, `hide`,
+            `isolate`, or `spoken`, matched case-insensitively. Any other value is read as `default`.
+            **Default:** the context's `history`.
+          examples:
+            - isolate
+        expected_answer:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.ExpectedAnswer'
+          description: |-
+            How many digits the answer has, so speech recognition can stop waiting once the caller has said that many.
+            Set `digits` for an exact count, or `min_digits` and `max_digits` for a range; any other shape is ignored.
+            It stays in effect until a step or question with a different `expected_answer`, or none, replaces it.
+            Takes effect with Deepgram speech recognition.
         reset:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.StepReset'
@@ -43999,6 +44776,8 @@ components:
         - default
         - keep
         - hide
+        - isolate
+        - spoken
       title: Context history mode
     SWML.Calling.ContextPOMSteps:
       type: object
@@ -44036,7 +44815,11 @@ components:
           type: array
           items:
             type: string
-          description: An array of context names that the AI can transition to from this step. This must be a valid `contexts.name` that is present in your `contexts` object.
+          description: |-
+            An array of context names the AI can switch to from this step with `change_context`, matched
+            case-insensitively. Each must be a context in your `contexts` object. When the key is omitted or the
+            array is empty, the AI isn't offered `change_context` during this step. A request for a context that
+            isn't listed is refused. A `change_context` action returned by a SWAIG function can still switch to any context.
           examples:
             - - Place Order
               - Confirm Order
@@ -44058,7 +44841,10 @@ components:
           default: false
         end:
           type: boolean
-          description: A boolean value that determines if the step is the last in the context. If `true`, the context ends after this step. Cannot be used along with the `valid_steps` parameter. **Default:** `false`.
+          description: |-
+            A boolean value that determines if the step is the last in the context. If `true`, the context ends after this step.
+            Cannot be used along with the `valid_steps` parameter. When the step follows a gather, the gather's last question and
+            its instructions leave the AI's view, unless `history` is `keep`. **Default:** `false`.
           examples:
             - true
           default: false
@@ -44067,14 +44853,32 @@ components:
           items:
             type: string
           description: |-
-            An array of step names the AI can move to from this step. Include `next` to allow the following step.
-            When the key is omitted, the AI can move to the next step in the context.
-            An empty array means that, once the AI's available functions are refreshed for this step (for example,
-            when the step sets `functions`), it is no longer offered a move to another step. A `change_step` action
-            returned by a SWAIG function still works.
+            An array of step names the AI can move to from this step with `next_step`, matched case-insensitively.
+            Include `next` to allow the following step. When the key is omitted, the AI can move to the next step in
+            the context. An empty array removes `next_step` while this step is current. The AI also isn't offered
+            `next_step` on a context's last step when `next` is the only choice, or while a gather question is asked.
+            A request for a step that isn't listed is refused. A `change_step` action returned by a SWAIG function, and
+            a gather's `completion_action`, can still move to any step.
           examples:
             - - get order
               - confirm order
+        history:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.ContextHistoryMode'
+          description: |-
+            How much of the earlier conversation the AI sees when this step begins: `keep`, `default`, `hide`,
+            `isolate`, or `spoken`, matched case-insensitively. Any other value is read as `default`.
+            **Default:** the context's `history`.
+          examples:
+            - isolate
+        expected_answer:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.ExpectedAnswer'
+          description: |-
+            How many digits the answer has, so speech recognition can stop waiting once the caller has said that many.
+            Set `digits` for an exact count, or `min_digits` and `max_digits` for a range; any other shape is ignored.
+            It stays in effect until a step or question with a different `expected_answer`, or none, replaces it.
+            Takes effect with Deepgram speech recognition.
         reset:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.StepReset'
@@ -44093,7 +44897,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.POM'
-          description: The instructions for this step, as a Prompt Object Model (POM).
+          description: |-
+            The instructions for this step, as a Prompt Object Model (POM). Variables are expanded again before each
+            AI request when they change during the step.
       unevaluatedProperties:
         not: {}
       title: Context step with POM (Prompt Object Model)
@@ -44106,6 +44912,36 @@ components:
       required:
         - pom
       properties:
+        reasoning_effort:
+          type: string
+          enum:
+            - none
+            - minimal
+            - low
+            - medium
+            - high
+            - xhigh
+          description: |-
+            How much the model reasons before it replies. Applies to `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`,
+            `gpt-5.4-nano`, `gpt-5.6-luna`, and `gpt-6-luna`, and is ignored on other models.
+            `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.6-luna`, and `gpt-6-luna` accept `none`, `low`, `medium`, `high`,
+            and `xhigh`, and default to `none`. `gpt-5-mini` and `gpt-5-nano` accept `minimal`, `low`, `medium`,
+            and `high`, and default to `minimal`. A value the model doesn't accept is refused by the model provider.
+          examples:
+            - low
+        verbosity:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+          description: |-
+            How long the model's replies are. Applies to `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`, `gpt-5.4-nano`,
+            `gpt-5.6-luna`, and `gpt-6-luna`, and is ignored on other models. Any other value uses the default.
+            **Default:** `low`.
+          examples:
+            - medium
+          default: low
         max_tokens:
           type: integer
           format: int32
@@ -44119,7 +44955,10 @@ components:
           type: number
           minimum: 0
           maximum: 1.5
-          description: Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random. **Default:** `1.0`.
+          description: |-
+            Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random.
+            On a model that takes `reasoning_effort`, it applies only when `reasoning_effort` is `none`, and
+            `gpt-5.6-luna` and `gpt-6-luna` default to `0.3`. **Default:** `1.0`.
           examples:
             - 0.7
           default: 1
@@ -44127,7 +44966,10 @@ components:
           type: number
           minimum: 0
           maximum: 1
-          description: Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make the output less random. **Default:** `1.0`.
+          description: |-
+            Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make
+            the output less random. On a model that takes `reasoning_effort`, it applies only when `reasoning_effort`
+            is `none`, and `gpt-5.6-luna` and `gpt-6-luna` default to `0.9`. **Default:** `1.0`.
           examples:
             - 0.9
           default: 1
@@ -44141,7 +44983,7 @@ components:
           type: number
           minimum: -2
           maximum: 2
-          description: Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. **Default:** `0`.
+          description: Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. Not used on `gpt-6-luna`. **Default:** `0`.
           examples:
             - 0
           default: 0
@@ -44149,7 +44991,7 @@ components:
           type: number
           minimum: -2
           maximum: 2
-          description: Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. **Default:** `0`.
+          description: Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. Not used on `gpt-6-luna`. **Default:** `0`.
           examples:
             - 0
           default: 0
@@ -44167,6 +45009,36 @@ components:
       required:
         - text
       properties:
+        reasoning_effort:
+          type: string
+          enum:
+            - none
+            - minimal
+            - low
+            - medium
+            - high
+            - xhigh
+          description: |-
+            How much the model reasons before it replies. Applies to `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`,
+            `gpt-5.4-nano`, `gpt-5.6-luna`, and `gpt-6-luna`, and is ignored on other models.
+            `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.6-luna`, and `gpt-6-luna` accept `none`, `low`, `medium`, `high`,
+            and `xhigh`, and default to `none`. `gpt-5-mini` and `gpt-5-nano` accept `minimal`, `low`, `medium`,
+            and `high`, and default to `minimal`. A value the model doesn't accept is refused by the model provider.
+          examples:
+            - low
+        verbosity:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+          description: |-
+            How long the model's replies are. Applies to `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`, `gpt-5.4-nano`,
+            `gpt-5.6-luna`, and `gpt-6-luna`, and is ignored on other models. Any other value uses the default.
+            **Default:** `low`.
+          examples:
+            - medium
+          default: low
         max_tokens:
           type: integer
           format: int32
@@ -44180,7 +45052,10 @@ components:
           type: number
           minimum: 0
           maximum: 1.5
-          description: Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random. **Default:** `1.0`.
+          description: |-
+            Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random.
+            On a model that takes `reasoning_effort`, it applies only when `reasoning_effort` is `none`, and
+            `gpt-5.6-luna` and `gpt-6-luna` default to `0.3`. **Default:** `1.0`.
           examples:
             - 0.7
           default: 1
@@ -44188,7 +45063,10 @@ components:
           type: number
           minimum: 0
           maximum: 1
-          description: Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make the output less random. **Default:** `1.0`.
+          description: |-
+            Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make
+            the output less random. On a model that takes `reasoning_effort`, it applies only when `reasoning_effort`
+            is `none`, and `gpt-5.6-luna` and `gpt-6-luna` default to `0.9`. **Default:** `1.0`.
           examples:
             - 0.9
           default: 1
@@ -44202,7 +45080,7 @@ components:
           type: number
           minimum: -2
           maximum: 2
-          description: Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. **Default:** `0`.
+          description: Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. Not used on `gpt-6-luna`. **Default:** `0`.
           examples:
             - 0
           default: 0
@@ -44210,7 +45088,7 @@ components:
           type: number
           minimum: -2
           maximum: 2
-          description: Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. **Default:** `0`.
+          description: Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. Not used on `gpt-6-luna`. **Default:** `0`.
           examples:
             - 0
           default: 0
@@ -44258,7 +45136,11 @@ components:
           type: array
           items:
             type: string
-          description: An array of context names that the AI can transition to from this step. This must be a valid `contexts.name` that is present in your `contexts` object.
+          description: |-
+            An array of context names the AI can switch to from this step with `change_context`, matched
+            case-insensitively. Each must be a context in your `contexts` object. When the key is omitted or the
+            array is empty, the AI isn't offered `change_context` during this step. A request for a context that
+            isn't listed is refused. A `change_context` action returned by a SWAIG function can still switch to any context.
           examples:
             - - Place Order
               - Confirm Order
@@ -44280,7 +45162,10 @@ components:
           default: false
         end:
           type: boolean
-          description: A boolean value that determines if the step is the last in the context. If `true`, the context ends after this step. Cannot be used along with the `valid_steps` parameter. **Default:** `false`.
+          description: |-
+            A boolean value that determines if the step is the last in the context. If `true`, the context ends after this step.
+            Cannot be used along with the `valid_steps` parameter. When the step follows a gather, the gather's last question and
+            its instructions leave the AI's view, unless `history` is `keep`. **Default:** `false`.
           examples:
             - true
           default: false
@@ -44289,14 +45174,32 @@ components:
           items:
             type: string
           description: |-
-            An array of step names the AI can move to from this step. Include `next` to allow the following step.
-            When the key is omitted, the AI can move to the next step in the context.
-            An empty array means that, once the AI's available functions are refreshed for this step (for example,
-            when the step sets `functions`), it is no longer offered a move to another step. A `change_step` action
-            returned by a SWAIG function still works.
+            An array of step names the AI can move to from this step with `next_step`, matched case-insensitively.
+            Include `next` to allow the following step. When the key is omitted, the AI can move to the next step in
+            the context. An empty array removes `next_step` while this step is current. The AI also isn't offered
+            `next_step` on a context's last step when `next` is the only choice, or while a gather question is asked.
+            A request for a step that isn't listed is refused. A `change_step` action returned by a SWAIG function, and
+            a gather's `completion_action`, can still move to any step.
           examples:
             - - get order
               - confirm order
+        history:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.ContextHistoryMode'
+          description: |-
+            How much of the earlier conversation the AI sees when this step begins: `keep`, `default`, `hide`,
+            `isolate`, or `spoken`, matched case-insensitively. Any other value is read as `default`.
+            **Default:** the context's `history`.
+          examples:
+            - isolate
+        expected_answer:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.ExpectedAnswer'
+          description: |-
+            How many digits the answer has, so speech recognition can stop waiting once the caller has said that many.
+            Set `digits` for an exact count, or `min_digits` and `max_digits` for a range; any other shape is ignored.
+            It stays in effect until a step or question with a different `expected_answer`, or none, replaces it.
+            Takes effect with Deepgram speech recognition.
         gather_info:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.GatherInfo'
@@ -44413,7 +45316,11 @@ components:
           type: array
           items:
             type: string
-          description: An array of context names that the AI can transition to from this step. This must be a valid `contexts.name` that is present in your `contexts` object.
+          description: |-
+            An array of context names the AI can switch to from this step with `change_context`, matched
+            case-insensitively. Each must be a context in your `contexts` object. When the key is omitted or the
+            array is empty, the AI isn't offered `change_context` during this step. A request for a context that
+            isn't listed is refused. A `change_context` action returned by a SWAIG function can still switch to any context.
           examples:
             - - Place Order
               - Confirm Order
@@ -44435,7 +45342,10 @@ components:
           default: false
         end:
           type: boolean
-          description: A boolean value that determines if the step is the last in the context. If `true`, the context ends after this step. Cannot be used along with the `valid_steps` parameter. **Default:** `false`.
+          description: |-
+            A boolean value that determines if the step is the last in the context. If `true`, the context ends after this step.
+            Cannot be used along with the `valid_steps` parameter. When the step follows a gather, the gather's last question and
+            its instructions leave the AI's view, unless `history` is `keep`. **Default:** `false`.
           examples:
             - true
           default: false
@@ -44444,14 +45354,32 @@ components:
           items:
             type: string
           description: |-
-            An array of step names the AI can move to from this step. Include `next` to allow the following step.
-            When the key is omitted, the AI can move to the next step in the context.
-            An empty array means that, once the AI's available functions are refreshed for this step (for example,
-            when the step sets `functions`), it is no longer offered a move to another step. A `change_step` action
-            returned by a SWAIG function still works.
+            An array of step names the AI can move to from this step with `next_step`, matched case-insensitively.
+            Include `next` to allow the following step. When the key is omitted, the AI can move to the next step in
+            the context. An empty array removes `next_step` while this step is current. The AI also isn't offered
+            `next_step` on a context's last step when `next` is the only choice, or while a gather question is asked.
+            A request for a step that isn't listed is refused. A `change_step` action returned by a SWAIG function, and
+            a gather's `completion_action`, can still move to any step.
           examples:
             - - get order
               - confirm order
+        history:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.ContextHistoryMode'
+          description: |-
+            How much of the earlier conversation the AI sees when this step begins: `keep`, `default`, `hide`,
+            `isolate`, or `spoken`, matched case-insensitively. Any other value is read as `default`.
+            **Default:** the context's `history`.
+          examples:
+            - isolate
+        expected_answer:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.ExpectedAnswer'
+          description: |-
+            How many digits the answer has, so speech recognition can stop waiting once the caller has said that many.
+            Set `digits` for an exact count, or `min_digits` and `max_digits` for a range; any other shape is ignored.
+            It stays in effect until a step or question with a different `expected_answer`, or none, replaces it.
+            Takes effect with Deepgram speech recognition.
         reset:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.StepReset'
@@ -44468,7 +45396,10 @@ components:
             need `text` or `pom`.
         text:
           type: string
-          description: The prompt or instructions given to the AI at this step.
+          description: |-
+            The prompt or instructions given to the AI at this step. Variables such as `${global_data.order_id}` are
+            expanded again before each AI request when they change during the step, so a value a function sets later
+            in the step is the one the AI reads.
           examples:
             - Your name is Franklin and you are taking orders for Franklin's Pizza.
       unevaluatedProperties:
@@ -44512,8 +45443,9 @@ components:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.ContextHistoryMode'
           description: |-
-            How much of the earlier conversation the AI sees when it moves from one step to the next in this context.
-            **Default:** `default`.
+            How much of the earlier conversation the AI sees when a step in this context begins: `keep`, `default`,
+            `hide`, `isolate`, or `spoken`, matched case-insensitively. A step's own `history` overrides it.
+            Any other value is read as `default`. **Default:** `default`.
           examples:
             - hide
         valid_steps:
@@ -44521,8 +45453,9 @@ components:
           items:
             type: string
           description: |-
-            Steps the AI can move to when it switches to this context, before the current step's own
-            `valid_steps` apply. Include `next` to allow the following step.
+            Steps the AI can move to when it switches to this context. It applies only until the context's first
+            step loads; from then on, the current step's own `valid_steps` apply. Include `next` to allow the
+            following step.
           examples:
             - - collect_details
               - next
@@ -44531,8 +45464,9 @@ components:
           items:
             type: string
           description: |-
-            Contexts the AI can switch to when it switches to this context, before the current step's own
-            `valid_contexts` apply.
+            Contexts the AI can switch to when it switches to this context. It applies only until the context's
+            first step loads; from then on, the current step's own `valid_contexts` apply, so set `valid_contexts`
+            on each step the AI may leave the context from.
           examples:
             - - support
         post_prompt:
@@ -44587,8 +45521,9 @@ components:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.ContextHistoryMode'
           description: |-
-            How much of the earlier conversation the AI sees when it moves from one step to the next in this context.
-            **Default:** `default`.
+            How much of the earlier conversation the AI sees when a step in this context begins: `keep`, `default`,
+            `hide`, `isolate`, or `spoken`, matched case-insensitively. A step's own `history` overrides it.
+            Any other value is read as `default`. **Default:** `default`.
           examples:
             - hide
         valid_steps:
@@ -44596,8 +45531,9 @@ components:
           items:
             type: string
           description: |-
-            Steps the AI can move to when it switches to this context, before the current step's own
-            `valid_steps` apply. Include `next` to allow the following step.
+            Steps the AI can move to when it switches to this context. It applies only until the context's first
+            step loads; from then on, the current step's own `valid_steps` apply. Include `next` to allow the
+            following step.
           examples:
             - - collect_details
               - next
@@ -44606,8 +45542,9 @@ components:
           items:
             type: string
           description: |-
-            Contexts the AI can switch to when it switches to this context, before the current step's own
-            `valid_contexts` apply.
+            Contexts the AI can switch to when it switches to this context. It applies only until the context's
+            first step loads; from then on, the current step's own `valid_contexts` apply, so set `valid_contexts`
+            on each step the AI may leave the context from.
           examples:
             - - support
         post_prompt:
@@ -44651,7 +45588,7 @@ components:
           description: The role of the message sender.
         content:
           type: string
-          description: The text content of the message.
+          description: The text content of the message. With `redact_prompt` set, `user` entries are exported as `----` in the call logs.
           examples:
             - Hello, how can I assist you today?
         lang:
@@ -44833,6 +45770,27 @@ components:
         - inbound
         - outbound
       title: Direction enum
+    SWML.Calling.EndOfSpeechTimeoutAction:
+      type: object
+      required:
+        - end_of_speech_timeout
+      properties:
+        end_of_speech_timeout:
+          anyOf:
+            - type: integer
+            - type: string
+          description: |-
+            Changes the agent's
+            [`end_of_speech_timeout`](/docs/swml/reference/calling/ai/params#paramsend_of_speech_timeout).
+            A number is milliseconds; a string can be a
+            [duration](/docs/swml/reference/calling/ai/params#duration-values) such as `"1.5s"`. The value
+            must be above `0`.
+          title: end_of_speech_timeout
+          examples:
+            - 1.5s
+      unevaluatedProperties:
+        not: {}
+      title: end_of_speech_timeout Action
     SWML.Calling.EnterQueue:
       type: object
       required:
@@ -45005,6 +45963,52 @@ components:
       unevaluatedProperties:
         not: {}
       title: ExecuteSwitch object
+    SWML.Calling.ExpectedAnswer:
+      anyOf:
+        - $ref: '#/components/schemas/SWML.Calling.ExpectedAnswerDigits'
+        - $ref: '#/components/schemas/SWML.Calling.ExpectedAnswerDigitRange'
+      title: Expected answer
+    SWML.Calling.ExpectedAnswerDigitRange:
+      type: object
+      required:
+        - min_digits
+        - max_digits
+      properties:
+        min_digits:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 64
+          description: The fewest digits the answer can have, from `1` to `64`, and no greater than `max_digits`.
+          examples:
+            - 10
+        max_digits:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 64
+          description: The most digits the answer can have, from `1` to `64`.
+          examples:
+            - 11
+      unevaluatedProperties:
+        not: {}
+      title: 'Expected answer: digit range'
+    SWML.Calling.ExpectedAnswerDigits:
+      type: object
+      required:
+        - digits
+      properties:
+        digits:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 64
+          description: The exact number of digits in the answer, from `1` to `64`.
+          examples:
+            - 8
+      unevaluatedProperties:
+        not: {}
+      title: 'Expected answer: digit count'
     SWML.Calling.ExprExpression:
       type: object
       required:
@@ -45036,6 +46040,29 @@ components:
       unevaluatedProperties:
         not: {}
       title: Expression with expr
+    SWML.Calling.ExtensiveDataAction:
+      type: object
+      required:
+        - extensive_data
+      properties:
+        extensive_data:
+          type: boolean
+          description: |-
+            How long the model keeps this function's result. Without this action, a result over 1024 bytes
+            is available to the model for the rest of its turn, including the tool calls and retries after
+            it. Once the caller speaks after a reply that played out, the model sees
+            `The appropriate answer was provided.` in its place. A smaller result stays for the whole call.
+
+            - `true`: the result is available for its turn only, whatever its size.
+            - `false`: the result stays for the whole call, whatever its size.
+
+            Also works from a `post_process` response. Not on realtime models.
+          title: extensive_data
+          examples:
+            - true
+      unevaluatedProperties:
+        not: {}
+      title: extensive_data Action
     SWML.Calling.FunctionFillers:
       type: object
       properties:
@@ -45549,7 +46576,9 @@ components:
           description: The questions to ask, in order. At least one is required.
         prompt:
           type: string
-          description: Instructions added before the first question.
+          description: |-
+            Instructions sent with each question, after the context's prompt. With `history: keep`, they're sent with
+            the first question only. A gather without `prompt` or `pom` asks its questions without the context's prompt.
           examples:
             - I need to collect a few details before I can book your ride.
         pom:
@@ -45557,7 +46586,7 @@ components:
           items:
             $ref: '#/components/schemas/SWML.Calling.POM'
           minItems: 1
-          description: Instructions added before the first question, as a Prompt Object Model (POM). Used when `prompt` is not set.
+          description: The same instructions as `prompt`, as a Prompt Object Model (POM). Used when `prompt` is not set.
         output_key:
           type: string
           description: |-
@@ -45580,9 +46609,21 @@ components:
           examples:
             - false
           default: false
+        say_questions:
+          type: boolean
+          description: |-
+            If `true`, the platform speaks each question's `question` text word for word as the agent's turn, instead of
+            having the AI ask it. The AI can't skip, reword, or merge a question said this way, and it still collects
+            and submits the answer. A question's own `say` overrides this. **Default:** `false`.
+          examples:
+            - true
+          default: false
       unevaluatedProperties:
         not: {}
-      description: Asks the caller a list of questions, one at a time, and stores the answers in `global_data`.
+      description: |-
+        Asks the caller a list of questions, one at a time, and stores the answers in `global_data`.
+        The AI submits each answer with the `gather_submit` function, which is refused until the caller has
+        said something since the question was asked.
       title: Gather info
     SWML.Calling.GatherQuestion:
       type: object
@@ -45597,7 +46638,10 @@ components:
             - full_name
         question:
           type: string
-          description: The question the AI asks the caller.
+          description: |-
+            The question to ask the caller. The AI asks it in its own words, or, when the question is said by the
+            platform (`say`), the platform speaks this text as written, with variables such as
+            `${global_data.name}` expanded.
           examples:
             - What is your full name?
         type:
@@ -45631,6 +46675,22 @@ components:
             so it must ask rather than work out the answer. **Default:** the `isolated` value of `gather_info`.
           examples:
             - true
+        say:
+          type: boolean
+          description: |-
+            If `true`, the platform speaks `question` word for word as the agent's turn; if `false`, the AI asks it.
+            **Default:** the `say_questions` value of `gather_info`.
+          examples:
+            - false
+        expected_answer:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.ExpectedAnswer'
+          description: |-
+            How many digits the answer has, so speech recognition can stop waiting once the caller has said that many.
+            Set `digits` for an exact count, or `min_digits` and `max_digits` for a range; any other shape is ignored.
+            It stays in effect until a step or question with a different `expected_answer`, or none, replaces it.
+            Takes effect with Deepgram speech recognition.
+            While this question is asked, it overrides the step's `expected_answer`. **Default:** the step's `expected_answer`.
       unevaluatedProperties:
         not: {}
       title: Gather question
@@ -45916,15 +46976,21 @@ components:
           anyOf:
             - type: integer
               format: int32
+            - type: string
             - type: object
               properties:
                 timeout:
-                  type: integer
-                  format: int32
+                  anyOf:
+                    - type: integer
+                      format: int32
+                    - type: string
                   maximum: 900
-                  description: The duration to hold the caller in seconds. Can be a number or an object with `timeout`, and optionally `step` and `timeout_step`.
+                  description: |-
+                    How long to hold the caller: a number of seconds, or a
+                    [duration](/docs/swml/reference/calling/ai/params#duration-values) string such as `"5m"`.
+                    A value outside `0` to `900` seconds falls back to `300`.
                   examples:
-                    - 300
+                    - 5m
                   default: 300
                 step:
                   type: string
@@ -45946,11 +47012,13 @@ components:
           description: |-
             Places the caller on hold while playing hold music (configured via params.hold_music).
             During hold, speech detection is paused and the AI agent will not respond to the caller.
-            The value specifies the hold timeout in seconds.
-            Can be a number or an object with `timeout`, and optionally `step` and `timeout_step`.
+            The value is the hold timeout: a number of seconds, or a
+            [duration](/docs/swml/reference/calling/ai/params#duration-values) string such as `"5m"`.
+            It can also be an object with `timeout`, and optionally `step` and `timeout_step`.
+            A timeout outside `0` to `900` seconds (15 minutes) falls back to `300` seconds.
           title: hold
           examples:
-            - 120
+            - 5m
       unevaluatedProperties:
         not: {}
       title: hold Action
@@ -46373,6 +47441,18 @@ components:
           maximum: 2
           description: 'Controls the randomness and expressiveness of the generated speech. Lower values produce a more consistent, predictable delivery; higher values introduce more variation. IMPORTANT: Only works with the Inworld TTS engine.'
           default: 1
+        expressiveness_boost:
+          anyOf:
+            - type: number
+            - type: string
+          minimum: 0
+          maximum: 1
+          description: |-
+            How expressive the voice is, from `0` to `1`. HeyGen suggests `0.5` to keep a voice's character.
+            A string that holds only a number is also accepted. A value out of range or not a number isn't sent,
+            and HeyGen's default applies. IMPORTANT: Only works with the HeyGen TTS engine.
+          examples:
+            - 0.5
       unevaluatedProperties:
         not: {}
       title: LanguageParams
@@ -46381,7 +47461,6 @@ components:
       required:
         - name
         - code
-        - voice
       properties:
         name:
           type: string
@@ -46425,14 +47504,23 @@ components:
           examples:
             - fr-FR
         voice:
-          type: string
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          maxItems: 8
           description: |-
             Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
             `:<model id>` suffix for engines that offer a choice of model.
             Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
-            `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, or `fish`.
+            `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `heygen`.
             For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
             Always name the engine: a bare voice id resolves against a default engine that can change.
+            Supply an array of up to 8 voice strings to give this language backup voices: the first voice speaks,
+            and when it fails, the agent goes on with the next voice that opens, then `ai.fallback_voice`.
+            See [voice fallback](/docs/swml/reference/calling/ai#voice-fallback).
+            An entry with no voice takes one from the `default_voice` SWML variable when it is set.
           examples:
             - gcloud.fr-FR-Neural2-B
         model:
@@ -46621,8 +47709,6 @@ components:
       title: MCP server object
     SWML.Calling.Multilingual:
       type: object
-      required:
-        - languages
       properties:
         languages:
           type: array
@@ -46633,6 +47719,10 @@ components:
             At least one entry must supply a `voice`, either an entry with `language` set to
             `default` or the first language listed. Without one, multilingual mode does not
             start and the agent falls back to a single English voice.
+            An entry with no `voice` takes one from the `default_voice` SWML variable when it is set.
+            Leave the array out only when `default_voice` is set: its language keys then become the entries,
+            with its `default` key as the catch-all, and a single voice or array becomes one catch-all entry.
+            The keys must be language codes the speech recognizer accepts.
         allowed:
           type: array
           items:
@@ -46644,6 +47734,9 @@ components:
             prompt, which languages are in play. Every code must be supported by the ASR engine and
             model in use, or multilingual mode does not start.
             Omit to let the agent follow the caller into any language the ASR engine detects.
+            On Deepgram's `nova-3` model, these codes are also sent to the recognizer as language hints,
+            which bias detection toward them without ruling out other languages. Without `allowed`, the
+            hints are the `language` values of the `languages` entries (not `default`), or `en` when there are none.
           examples:
             - - en
               - es
@@ -46756,14 +47849,23 @@ components:
           examples:
             - es
         voice:
-          type: string
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          maxItems: 8
           description: |-
             Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
             `:<model id>` suffix for engines that offer a choice of model.
             Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
-            `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, or `fish`.
+            `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `heygen`.
             For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
             Always name the engine: a bare voice id resolves against a default engine that can change.
+            Supply an array of up to 8 voice strings to give this language backup voices: the first voice speaks,
+            and when it fails, the agent goes on with the next voice that opens, then `ai.fallback_voice`.
+            See [voice fallback](/docs/swml/reference/calling/ai#voice-fallback).
+            An entry with no voice takes one from the `default_voice` SWML variable when it is set.
           examples:
             - gcloud.fr-FR-Neural2-B
         model:
@@ -46787,6 +47889,29 @@ components:
       unevaluatedProperties:
         not: {}
       title: MultilingualLanguage
+    SWML.Calling.NoBargeNextResponseAction:
+      type: object
+      required:
+        - no_barge_next_response
+      properties:
+        no_barge_next_response:
+          anyOf:
+            - type: boolean
+            - type: string
+          description: |-
+            Makes the agent's next spoken reply play in full, such as a read-back the caller should hear
+            completely before answering. Set it to `true` or a true string; a number such as `1` is ignored.
+            It holds from the start of the next model request until a reply that speaks has played: the
+            caller's words neither cut the reply nor cancel its request, and are delivered after it.
+            `interrupt_on_noise` doesn't cut the reply; DTMF still does. It holds for at most 30 seconds
+            while the agent isn't speaking, and a reply still playing then is held to its end. Not on
+            realtime models.
+          title: no_barge_next_response
+          examples:
+            - true
+      unevaluatedProperties:
+        not: {}
+      title: no_barge_next_response Action
     SWML.Calling.NullProperty:
       type: object
       required:
@@ -46913,8 +48038,10 @@ components:
             - type: string
             - $ref: '#/components/schemas/SWML.Calling.SwaigToolResult'
           description: |-
-            The result the agent reads next. A plain string becomes the tool message as-is; the object form
-            splits the data half from the steering half. Omit it to let the agent use a default result.
+            The result the agent reads next. A plain string becomes the tool message as-is, followed by a
+            separate instruction to answer the caller from it in the language of the conversation. The
+            object form splits the data half from the steering half, and its `tool_prompt` takes that
+            instruction's place. Omit it to let the agent use a default result.
           examples:
             - Order placed
         action:
@@ -48891,7 +50018,12 @@ components:
       properties:
         say:
           type: string
-          description: A message to be spoken by the AI agent.
+          description: |-
+            Text for the agent to speak. The caller can interrupt it, as they can a reply. The model receives
+            the text as the agent's own words, right after the result of the function call it came from: in
+            full when it played, cut where the caller stopped hearing it when it was interrupted, and as `…`
+            alone when it never played. So the function's `response` doesn't need to repeat it. On realtime
+            models, the model speaks the text itself.
           title: say
           examples:
             - Welcome to Franklin's Pizza.
@@ -48965,7 +50097,9 @@ components:
           maximum: 1
           description: |-
             The gate passes when the probability that the answer is yes is at or above this value. Above
-            `0` and at most `1`. Higher is stricter.
+            `0` and at most `1`. Higher is stricter. A yes under the threshold fails a yes/no gate and is
+            unclear on a gate with `unclear: true`. A three-way gate shares the probability of yes with
+            unclear, so use a lower value there: about `0.6` where a yes/no gate would use `0.8`.
           exclusiveMinimum: 0
           examples:
             - 0.95
@@ -48977,6 +50111,27 @@ components:
             - response:
                 tool_result: cancel_account was not run.
                 tool_prompt: Ask the caller to confirm that they want to cancel.
+        unclear:
+          type: boolean
+          description: |-
+            If `true`, the decision model can also answer unclear, for a conversation that doesn't settle
+            the question. An unclear answer doesn't run the function. Two unclear results in a row for the
+            same function and the same `semantic_state` ask the caller again; the third counts as a fail.
+            **Default:** `false`.
+          examples:
+            - true
+          default: false
+        on_unclear:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.SemanticGateOnFail'
+          description: |-
+            What the agent gets when this is the first unclear gate and none failed. Same shape and limits
+            as `on_fail`; write it to ask the caller again, not to refuse. When unset, the agent is told the
+            function was not run because the caller's answer didn't settle it, and to ask again plainly.
+          examples:
+            - response:
+                tool_result: "confirm_change was not run: the caller's answer did not settle it."
+                tool_prompt: Say what you were not sure of, read the change back, and ask for a plain yes or no.
         visual_input:
           anyOf:
             - type: boolean
@@ -48988,11 +50143,45 @@ components:
             the post-prompt agent calls the function after the call.
           examples:
             - 1
+        dialogue:
+          type: string
+          enum:
+            - window
+            - proposal
+          description: |-
+            Which part of the conversation the gate judges, case-insensitive: `window`, the newest `history`
+            entries, or `proposal`, what was said since `semantic_state` last changed. Defaults to the
+            agent's
+            [`semantic_gate_dialogue`](/docs/swml/reference/calling/ai/params#paramssemantic_gate_dialogue).
+            Must be the same on every gate of the function.
+          examples:
+            - proposal
+        history:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: |-
+            How many conversation entries the gate reads, a whole number from `1` to `100`. Defaults to the
+            agent's
+            [`semantic_gate_history`](/docs/swml/reference/calling/ai/params#paramssemantic_gate_history).
+            Must be the same on every gate of the function.
+          examples:
+            - 30
+        since:
+          type: string
+          pattern: ^[A-Za-z0-9_]{1,64}$
+          description: |-
+            A mark name set with the `semantic_gate_mark` action. The gate judges the conversation from the
+            agent's first turn after the mark. Until the mark is set, `dialogue` applies. Must be the same
+            on every gate of the function.
+          examples:
+            - refund_readback
       unevaluatedProperties:
         not: {}
       description: |-
-        A yes/no question about the call that must come out yes before the function runs. A key not
-        listed here is an error, not an ignored setting. Keys are matched exactly, case included.
+        A question about the call that must come out yes before the function runs. It is asked yes or no,
+        or yes, no or unclear with `unclear: true`. A key not listed here is an error, not an ignored
+        setting. Keys are matched exactly, case included.
       title: gate
     SWML.Calling.SemanticGateCriteria:
       type: object
@@ -49021,6 +50210,26 @@ components:
       maximum: 5
       description: A number of the caller's newest video frames, from `0` (none) to `5`.
       title: Frame count
+    SWML.Calling.SemanticGateMarkAction:
+      type: object
+      required:
+        - semantic_gate_mark
+      properties:
+        semantic_gate_mark:
+          type: string
+          pattern: ^[A-Za-z0-9_]{1,64}$
+          description: |-
+            Sets a named mark that a semantic gate's `since` judges the conversation from: 1 to 64 letters,
+            digits, or underscores. The mark is set as of the start of the result's action list, so a `say`
+            anywhere in the same list comes after it. Setting a mark again moves it. Marks last for the whole
+            call, and a call keeps up to 16 mark names, dropping the oldest past that. An invalid name sets
+            nothing.
+          title: semantic_gate_mark
+          examples:
+            - refund_readback
+      unevaluatedProperties:
+        not: {}
+      title: semantic_gate_mark Action
     SWML.Calling.SemanticGateOnFail:
       type: object
       required:
@@ -49032,8 +50241,7 @@ components:
             - $ref: '#/components/schemas/SWML.Calling.SemanticGateToolResult'
           description: |-
             What the function returns to the agent. A non-empty string, or an object with `tool_result` and
-            an optional `tool_prompt`. Realtime (speech-to-speech) agents don't use `tool_prompt`, so on
-            those put everything the agent needs in `tool_result`.
+            an optional `tool_prompt`.
           examples:
             - cancel_account was not run. Ask the caller to confirm that they want to cancel.
         action:
@@ -49055,11 +50263,13 @@ components:
       unevaluatedProperties:
         not: {}
       description: |-
-        What the agent gets when this is the first gate that fails, shaped like a
+        What the agent gets when a gate blocks the function (`on_fail` or `on_unclear`), shaped like a
         [`data_map` output](/docs/swml/reference/calling/ai/swaig/functions/data-map). At most
-        8 KB as compact JSON. Its actions run as written: `${...}` variables in them are not expanded,
-        though a `SWML` action resolves the variables in its own document when it runs.
-      title: on_fail
+        8 KB as compact JSON. The whole object is expanded once when the call is blocked: `${...}`
+        variables (`global_data`, the call's `args`, and the rest of the request data) and `@{...}`
+        functions are filled in, and a value brought in is never expanded again. Output that wouldn't
+        parse after expansion is used as written, and a `SWML` action keeps its own variable handling.
+      title: Blocked call result
     SWML.Calling.SemanticGateResponseText:
       type: string
       minLength: 1
@@ -49245,12 +50455,14 @@ components:
           type: object
           unevaluatedProperties: {}
           description: |-
-            Changes the AI model's settings for the rest of the conversation, as a key-value map.
-            Only settings the selected model supports are applied. Requires
+            Changes the AI model's settings for the rest of the call, as a key-value map. Only the keys you
+            name change; every other setting, including one set on `prompt`, keeps its current value. A key
+            the model doesn't accept is ignored. The change lasts across steps. Requires
             [`params.swaig_allow_settings`](/docs/swml/reference/calling/ai/params#paramsswaig_allow_settings),
-            which is on by default. The new map replaces the current settings: any setting you leave out,
-            including one set on `prompt`, returns to the model's default.
+            which is on by default.
           title: settings
+          examples:
+            - temperature: 0.3
       unevaluatedProperties:
         not: {}
       title: settings Action
@@ -49294,6 +50506,27 @@ components:
       type: integer
       minimum: 1
       description: A positive number of milliseconds.
+    SWML.Calling.SpeechEventTimeoutAction:
+      type: object
+      required:
+        - speech_event_timeout
+      properties:
+        speech_event_timeout:
+          anyOf:
+            - type: integer
+            - type: string
+          description: |-
+            Changes the agent's
+            [`speech_event_timeout`](/docs/swml/reference/calling/ai/params#paramsspeech_event_timeout).
+            A number is milliseconds; a string can be a
+            [duration](/docs/swml/reference/calling/ai/params#duration-values) such as `"500ms"`. The value
+            must be above `0`.
+          title: speech_event_timeout
+          examples:
+            - 500ms
+      unevaluatedProperties:
+        not: {}
+      title: speech_event_timeout Action
     SWML.Calling.StartAction:
       type: object
       required:
@@ -49324,23 +50557,48 @@ components:
               examples:
                 - es-ES
             from_voice:
-              type: string
+              anyOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              maxItems: 8
               description: |-
-                The TTS voice that speaks translations into `from_lang` (the first direction in `direction`).
+                The TTS voice that speaks translations into `from_lang` (the first direction in `direction`),
+                as `<engine>.<voice>` or `<engine>.<voice>:<model>`.
                 Defaults to `azure.en-US-RyanMultilingualNeural`.
                 A voice that doesn't start with a lowercase engine prefix live translation supports, such as `polly.`, `gcloud.`,
                 `azure.` or `elevenlabs.`, is replaced by the default. For example, `rachel`, `amazon.Joanna` and `Polly.Joanna` are all spoken as `azure.en-US-RyanMultilingualNeural`.
+                Supply an array of up to 8 voices to give it backups: the first speaks, and when it fails, at the start or
+                during the call, the next voice that opens takes over and speaks the same text again. After the array, the
+                platform's last-resort voice, `cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e`, is tried.
               examples:
                 - polly.Joanna
             to_voice:
-              type: string
+              anyOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+              maxItems: 8
               description: |-
-                The TTS voice that speaks translations into `to_lang` (a second direction in `direction`).
+                The TTS voice that speaks translations into `to_lang` (a second direction in `direction`),
+                as `<engine>.<voice>` or `<engine>.<voice>:<model>`.
                 Defaults to `azure.en-US-RyanMultilingualNeural`.
                 A voice that doesn't start with a lowercase engine prefix live translation supports, such as `polly.`, `gcloud.`,
                 `azure.` or `elevenlabs.`, is replaced by the default. For example, `rachel`, `amazon.Joanna` and `Polly.Joanna` are all spoken as `azure.en-US-RyanMultilingualNeural`.
+                Supply an array of up to 8 voices to give it backups, the same way as `from_voice`.
               examples:
                 - polly.Lucia
+            translation_model:
+              type: string
+              description: |-
+                The model that translates each utterance and writes the AI summaries.
+                A name containing `gpt-6-luna`, `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-oss-120b`, or `gpt-oss-20b`,
+                in any case, selects that model. Any other value uses the default.
+              examples:
+                - gpt-6-luna
+              default: gpt-6-luna
             filter_from:
               anyOf:
                 - $ref: '#/components/schemas/SWML.Calling.TranslationFilterPreset'
@@ -49368,16 +50626,25 @@ components:
                 - true
               default: false
             speech_timeout:
-              type: integer
-              description: The timeout for speech recognition in milliseconds.
+              anyOf:
+                - type: integer
+                - type: string
+              description: |-
+                The timeout for speech recognition in milliseconds.
+                Also accepts a duration string with units, such as `30s`; see [duration values](/docs/swml/reference/calling/ai/params#duration-values).
+                Any other string is read by its leading integer.
               examples:
                 - 30000
               default: 60000
             vad_silence_ms:
-              type: integer
+              anyOf:
+                - type: integer
+                - type: string
               description: |-
                 Voice activity detection silence time in milliseconds. Default depends on the speech engine: `700` for Deepgram, `500` for Google.
                 Omitting the value or setting it to `0` uses the engine default.
+                Also accepts a duration string with units, such as `700ms`; see [duration values](/docs/swml/reference/calling/ai/params#duration-values).
+                Any other string is read by its leading integer.
               examples:
                 - 500
               default: 700
@@ -50308,16 +51575,25 @@ components:
               examples:
                 - true
             speech_timeout:
-              type: integer
-              description: The timeout for speech recognition in milliseconds.
+              anyOf:
+                - type: integer
+                - type: string
+              description: |-
+                The timeout for speech recognition in milliseconds.
+                Also accepts a duration string with units, such as `30s`; see [duration values](/docs/swml/reference/calling/ai/params#duration-values).
+                Any other string is read by its leading integer.
               examples:
                 - 30000
               default: 60000
             vad_silence_ms:
-              type: integer
+              anyOf:
+                - type: integer
+                - type: string
               description: |-
                 Voice activity detection silence time in milliseconds. Default depends on the speech engine: `700` for Deepgram, `500` for Google.
                 Omitting the value or setting it to `0` uses the engine default.
+                Also accepts a duration string with units, such as `700ms`; see [duration values](/docs/swml/reference/calling/ai/params#duration-values).
+                Any other string is read by its leading integer.
               examples:
                 - 500
               default: 700
@@ -50356,6 +51632,15 @@ components:
               description: The AI prompt that instructs how to summarize the conversation when `ai_summary` is enabled.
               examples:
                 - Summarize the key points of this conversation.
+            ai_model:
+              type: string
+              description: |-
+                The model that writes the AI summaries.
+                A name containing `gpt-6-luna`, `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-oss-120b`, or `gpt-oss-20b`,
+                in any case, selects that model. Any other value uses the default.
+              examples:
+                - gpt-6-luna
+              default: gpt-6-luna
             hints:
               type: array
               items:
@@ -51127,7 +52412,7 @@ components:
       properties:
         user_input:
           type: string
-          description: Used to inject text into the users queue as if they input the data themselves.
+          description: Adds text to the conversation as the caller's turn, as if the caller had said it, and the agent answers it. Works on realtime models too.
           title: user_input
           examples:
             - I would like to speak to a manager
@@ -51267,8 +52552,11 @@ components:
           minItems: 1
           maxItems: 8
           description: |-
-            Semantic gates: 1 to 8 yes/no questions that must all pass before the function runs. When any
-            fails, the function does not run and the agent gets the first failing gate's `on_fail` instead.
+            Semantic gates: 1 to 8 questions about the call that must all pass before the function runs.
+            When any fails, the function does not run and the agent gets the first failing gate's `on_fail`
+            instead. With no failing gate, the first unclear gate's `on_unclear` applies. The gates are
+            asked together about one conversation, so `dialogue`, `history` and `since` must be the same on
+            every gate.
             A gated function needs a `description` and a `web_hook_url` (its own, from `SWAIG.defaults`,
             or for a function returned by `includes`, from the `defaults` the include returns) or a
             `data_map`. If any gate is invalid, the function is not added to the agent at all, even with
@@ -51347,6 +52635,27 @@ components:
       maximum: 5
       description: A number of the caller's newest video frames, from `1` to `5`.
       title: Frame count
+    SWML.Calling.WaitForUserAction:
+      type: object
+      required:
+        - wait_for_user
+      properties:
+        wait_for_user:
+          type: boolean
+          description: |-
+            Whether the agent waits for the caller to speak before it takes its turn. Set after the caller
+            has spoken, the agent waits up to
+            [`attention_timeout`](/docs/swml/reference/calling/ai/params#paramsattention_timeout), and when
+            that runs out it takes its turn as after any silence. Set before the caller's first words, it
+            waits up to
+            [`outbound_attention_timeout`](/docs/swml/reference/calling/ai/params#paramsoutbound_attention_timeout)
+            and ends the call when that runs out.
+          title: wait_for_user
+          examples:
+            - true
+      unevaluatedProperties:
+        not: {}
+      title: wait_for_user Action
     SWML.Calling.WebhookWithExpressions:
       type: object
       required:
@@ -63086,12 +64395,21 @@ components:
           description: How long the check took, in milliseconds.
           examples:
             - 212
+        dialogue:
+          type: string
+          description: |-
+            The conversation the gates judged: `window` (the newest entries), `proposal` (what was said
+            since `semantic_state` last changed), or `since:` followed by a mark name set with
+            `semantic_gate_mark`.
+          examples:
+            - proposal
         outcome:
           type: string
           enum:
             - pass
             - disabled
             - fail
+            - unclear
             - timeout
             - provider_error
             - invalid_response
@@ -63104,7 +64422,11 @@ components:
             - `pass`: every gate passed, and the function ran.
             - `disabled`: gates are turned off for the call (`semantic_gates_enabled: false`), and the
               function ran.
-            - `fail`: a gate answered under its threshold or had no video frame to look at.
+            - `fail`: a gate answered no, answered yes under its threshold (on a gate without `unclear`),
+              or had no video frame to look at. A third `unclear` in a row also ends as `fail`, with
+              `unclear_limit: true`.
+            - `unclear`: no gate failed, but a three-way gate answered `unclear` or answered yes under its
+              threshold. The function didn't run, and this isn't an error.
             - `timeout`: the check ran out of time (`semantic_gate_timeout_ms`).
             - `provider_error`: the decision model refused or failed.
             - `invalid_response`: the decision model's answer could not be used.
@@ -63119,9 +64441,16 @@ components:
             - fail
         dispatched:
           type: boolean
-          description: Whether the function ran.
+          description: Whether the function ran. `false` means nothing was sent to your server.
           examples:
             - false
+        unclear_limit:
+          type: boolean
+          description: |-
+            Always `true` when present, meaning the third `unclear` result in a row for the same function
+            and `semantic_state` was turned into a fail.
+          examples:
+            - true
         error:
           type: string
           description: A short description of the error. Present when `outcome` is an error.
@@ -63188,6 +64517,17 @@ components:
           description: Whether the gate passed. Present once the gate was decided.
           examples:
             - true
+        choice:
+          type: string
+          enum:
+            - 'yes'
+            - 'no'
+            - unclear
+          description: |-
+            The decision model's answer: `yes`, `no`, or `unclear`. Present only on a three-way gate (one
+            with `unclear: true`).
+          examples:
+            - unclear
         reason:
           type: string
           description: '`no_frame` when the gate failed because the call had no video frame to show it.'
@@ -63203,6 +64543,7 @@ components:
         - pass
         - fail
         - error
+        - unclear
         - disabled
         - latency_ms_total
         - latency_ms_max
@@ -63225,6 +64566,11 @@ components:
         error:
           type: integer
           description: How many checks ended in an error, such as a timeout.
+          examples:
+            - 0
+        unclear:
+          type: integer
+          description: How many checks ended `unclear`. The function didn't run, and these aren't counted as errors.
           examples:
             - 0
         disabled:
@@ -63438,13 +64784,18 @@ components:
             - 2
         url:
           type: string
-          description: The URL the function was served from. Present when the call reached your server.
+          description: |-
+            The URL the function was served from. Present when the call reached your server, and on a call
+            its semantic gates blocked, where it is the URL the call would have gone to.
           examples:
             - https://example.com/tools/get_weather
         post_data:
           type: object
           unevaluatedProperties: {}
-          description: The body sent to your server. Present when the call reached it.
+          description: |-
+            The body sent to your server, including the call's `tool_call_id` when the model gave one.
+            Present when the call reached your server, and on a call its semantic gates blocked, where it
+            is the body that would have been sent.
         post_response:
           type: object
           unevaluatedProperties: {}
@@ -63474,7 +64825,8 @@ components:
             The result of checking the function's
             [semantic gates](/docs/swml/reference/calling/ai/swaig/functions/gates). Present only on a call
             to a gated function. When the function was blocked, `post_response` holds what the agent got
-            instead of a reply from your server: the failing gate's `on_fail` output, or the temporary-problem
+            instead of a reply from your server: the failing gate's `on_fail` output, the unclear gate's
+            `on_unclear` output or built-in result when the check ended `unclear`, or the temporary-problem
             message when the check ended in an error. An `on_fail` with `post_process: true` and actions is
             in `delayed_post_response` instead.
         visual_input_frames:
@@ -63485,6 +64837,13 @@ components:
             the log.
           examples:
             - 1
+        superseded:
+          type: boolean
+          description: |-
+            Always `true` when present, meaning the call never ran: with `barge_functions` on, the caller
+            spoke again and overtook the turn before the call could run, so it was dropped.
+          examples:
+            - true
       unevaluatedProperties:
         not: {}
       description: One tool call the agent made, in the order it was made.
@@ -64842,7 +66201,20 @@ components:
             - 1694541297950440
         call_ended_by:
           type: string
-          description: Who or what ended the call. Included when the session recorded it.
+          enum:
+            - caller
+            - assistant
+            - system
+          description: |-
+            Who or what ended the call: the first end the session recorded, the same value as `ended_by`
+            on the call timeline's `session_end` entry.
+
+            - `caller`: the call was already down when the session ended, or when the platform decided to
+              end it.
+            - `assistant`: with the call still up, the model ended it (its hangup, or an approved end call),
+              or a function did (a `hangup`, `transfer`, or `stop` action, or a SWML transfer).
+            - `system`: the platform ended the session: the last turn of a `hard_stop_time`, a fatal
+              error, the `inactivity_timeout`, or a caller who never spoke while `wait_for_user` was set.
           examples:
             - assistant
         ai_end_date:
@@ -64991,6 +66363,8 @@ components:
         - description
         - call_id
         - ai_session_id
+        - model
+        - turn
         - app_name
         - meta_data_token
         - meta_data
@@ -65064,12 +66438,53 @@ components:
           description: The ID of the AI session on the call.
           examples:
             - a0d4e6e5-5d07-413d-9668-55542992eec0
+        tool_call_id:
+          type: string
+          description: |-
+            The model provider's id for this tool call. A request the platform sends again after a
+            connection error or a `5xx` response carries the same id, so your endpoint can tell a resend
+            from a new call; each call the model makes has its own. Omitted when the provider gave no id,
+            and on requests the platform makes on its own, such as `startup_hook` and `hangup_hook`.
+          examples:
+            - call_Xz8Rq0vB3nTfKp5wLm2Yd7Ha
         conversation_id:
           type: string
           description: |-
             The conversation ID, when the AI session has one. A text conversation held over the
             [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods) always has one, and it matches
             `call_id`.
+        step:
+          type: string
+          description: |-
+            The name of the current step. Included when the agent has
+            [steps](/docs/swml/reference/calling/ai/prompt).
+          examples:
+            - lookup
+        context:
+          type: string
+          description: |-
+            The name of the current context. Included when the agent has
+            [contexts](/docs/swml/reference/calling/ai/prompt).
+          examples:
+            - orders
+        language:
+          type: string
+          description: |-
+            The language being spoken: the caller's detected language under
+            [`multilingual`](/docs/swml/reference/calling/ai/multilingual), otherwise the current voice's
+            language code.
+          examples:
+            - en-US
+        model:
+          type: string
+          description: The model the agent's requests go to.
+          examples:
+            - gpt-4o-mini
+        turn:
+          type: integer
+          description: The number of the agent's turn, counted once per model turn the caller triggered.
+          examples:
+            - 4
         app_name:
           type: string
           description: The name of your AI application.
@@ -68565,8 +69980,9 @@ webhooks:
         Sent to your [`ai.post_prompt_url`](/docs/swml/reference/calling/ai) when the AI session ends. It
         carries the agent's answer to your [`post_prompt`](/docs/swml/reference/calling/ai)
         alongside the full record of the call: the conversation, the tool calls, the timings, and the
-        token counts. This is the one report you get per call, so store the body verbatim and extract only
-        the fields you query. Nothing you return in the response is read.
+        token counts. This is the one report you get per call, and no Relay event or event webhook carries
+        it, so store the body verbatim and extract only the fields you query. Nothing you return in the
+        response is read.
 
         Read `action` first. It is `post_conversation` on the end-of-call report described here. The same
         URL also receives `fetch_conversation` when the agent starts with a stored conversation
@@ -68672,9 +70088,10 @@ webhooks:
         a valid reply and a handler that only steers the call can return `action` alone:
 
         - `response` — the result the agent reads next, written to the AI rather than spoken to the
-          caller. A plain string becomes the tool message as-is; the object form
-          `{tool_result, tool_prompt}` splits the data half from the steering half. Omit it and the agent
-          reads a default result.
+          caller. A plain string becomes the tool message as-is, followed by an instruction to answer the
+          caller from it; the object form `{tool_result, tool_prompt}` splits the data half from the
+          steering half, and `tool_prompt` takes that instruction's place. Omit it and the agent reads a
+          default result.
         - `action` — a single action object or an array of them, executed on the live call.
         - `post_process` — hold the actions until after the agent has spoken. **Default:** `false`.
       parameters: []

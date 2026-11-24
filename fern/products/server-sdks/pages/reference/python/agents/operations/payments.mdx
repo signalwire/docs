@@ -1,0 +1,194 @@
+---
+title: "Payments"
+slug: reference/python/agents/operations/payments
+description: Task pack that takes a card payment the caller agreed to through your payment connector, without the model hearing the card.
+max-toc-depth: 3
+---
+
+[operations]: /docs/server-sdks/reference/python/agents/operations/operations
+[service-agent]: /docs/server-sdks/reference/python/agents/operations/service-agent
+[refuse]: /docs/server-sdks/reference/python/agents/operations/refuse
+[need]: /docs/server-sdks/reference/python/agents/operations/need
+[wording]: /docs/server-sdks/reference/python/agents/operations/wording
+[record]: /docs/server-sdks/reference/python/agents/operations/record
+[add-language]: /docs/server-sdks/reference/python/agents/agent-base/add-language
+[swml-pay]: /docs/swml/reference/calling/pay
+
+`Payments` is a task pack that takes a card payment the caller agreed to, and the
+model never hears the card. Add it to an [`Operations`][operations] or a
+[`ServiceAgent`][service-agent] with `add_to()`.
+
+1. The caller says what they're paying, such as an invoice number.
+2. Your `charge` function returns the amount. The amount never comes from the model.
+3. The amount is read back for the caller's yes.
+4. The platform's [`pay`][swml-pay] verb takes the card on the keypad and charges it
+   through your payment connector.
+5. The model is told to call the result tool, which reads the outcome the platform
+   recorded. A payment that went through is added to the call's [record][record] with
+   its money.
+
+In a chat, the payment tool says a payment is taken on a call, and nothing changes.
+
+The pack adds `pay_result` and `pay_payment_results` to the agent's
+`swaig_post_swml_vars` param. The card prompts need a language: `language=`, or the
+agent's first language from [`add_language()`][add-language]. Without either, the agent
+raises `ValueError` when it's set up. A payment also needs a currency, from the
+`Charge`, the pack, or the service.
+
+```python
+from signalwire.operations import Charge, PaymentResult, Payments
+```
+
+## Parameters
+
+All parameters are keyword-only.
+
+<ParamField path="connector_url" type="str" required={true} toc={true}>
+  Your payment connector, which the platform sends the card to. An empty value raises
+  `ValueError`.
+</ParamField>
+
+<ParamField path="charge" type="Callable[[CallContext, str], Charge]" required={true} toc={true}>
+  `charge(call, paying_for)` returns the `Charge` for what the caller said they're
+  paying. May be `async`, and may raise [`Refuse`][refuse] (nothing owed, not theirs)
+  or [`Need`][need]. An amount of 0 or less is refused.
+</ParamField>
+
+<ParamField path="currency" type="str | None" default="None" toc={true}>
+  ISO 4217 code of the amounts. Defaults to the service's `currency`.
+</ParamField>
+
+<ParamField path="language" type="str | None" default="None" toc={true}>
+  Language code for the platform's card prompts, such as `"en-US"`. Defaults to the
+  agent's first language.
+</ParamField>
+
+<ParamField path="voice" type="str | None" default="None" toc={true}>
+  Voice for the card prompts. Defaults to the voice of the agent's first language.
+</ParamField>
+
+<ParamField path="security_code" type="bool" default="True" toc={true}>
+  Whether the card's security code is asked for.
+</ParamField>
+
+<ParamField path="postal_code" type="bool" default="True" toc={true}>
+  Whether the billing postal code is asked for.
+</ParamField>
+
+<ParamField path="max_attempts" type="int" default="1" toc={true}>
+  How many times the caller may try the card.
+</ParamField>
+
+<ParamField path="reusable" type="bool" default="False" toc={true}>
+  `True` asks for a reusable token the connector can charge again, in place of a
+  one-time token.
+</ParamField>
+
+<ParamField path="card_types" type="Sequence[str] | None" default="None" toc={true}>
+  Card types taken, such as `["visa", "mastercard"]`. `None` takes Visa, Mastercard,
+  and American Express.
+</ParamField>
+
+<ParamField path="status_url" type="str | None" default="None" toc={true}>
+  Where the platform posts each step of the payment.
+</ParamField>
+
+<ParamField path="connector_parameters" type="Mapping[str, str] | None" default="None" toc={true}>
+  More name/value pairs sent to the connector.
+</ParamField>
+
+<ParamField path="on_result" type="Callable[[CallContext, PaymentResult], Any] | None" default="None" toc={true}>
+  `on_result(call, result)` receives every `PaymentResult`, for your records. May be
+  `async`.
+</ParamField>
+
+<ParamField path="before_identity" type="bool" default="False" toc={true}>
+  `True` to take payments from callers who aren't identified.
+</ParamField>
+
+<ParamField path="tool" type="str" default="take_payment" toc={true}>
+  The payment tool's name.
+</ParamField>
+
+<ParamField path="result_tool" type="str" default="payment_result" toc={true}>
+  The result tool's name.
+</ParamField>
+
+<ParamField path="wording" type="Mapping[str, str] | None" default="None" toc={true}>
+  Replacements keyed like `PAYMENTS_WORDING`. See [wording][wording].
+</ParamField>
+
+<ParamField path="state_key" type="str" default="payments" toc={true}>
+  Where in `call.state` the payment under way is kept.
+</ParamField>
+
+## Methods
+
+`add_to(target)` registers the pack's operations on an `Operations` or a
+`ServiceAgent`, and returns `target`.
+
+## Charge
+
+A frozen dataclass that `charge` returns.
+
+<ParamField path="Charge.amount" type="Decimal | int | float | str" required={true} toc={true}>
+  How much to charge: more than 0.
+</ParamField>
+
+<ParamField path="Charge.description" type="str" required={true} toc={true}>
+  What it's for, as it's said: "invoice 1042, for March".
+</ParamField>
+
+<ParamField path="Charge.currency" type="str | None" default="None" toc={true}>
+  Its ISO 4217 code. Defaults to the pack's, then the service's.
+</ParamField>
+
+## PaymentResult
+
+A frozen dataclass that `on_result` receives.
+
+<ParamField path="PaymentResult.result" type="str" toc={true}>
+  The platform's `pay_result`, such as `success`, `too-many-failed-attempts`,
+  `payment-connector-error`, `caller-interrupted-with-star`, `caller-hung-up`,
+  `validation-error`, or `internal-error`.
+</ParamField>
+
+<ParamField path="PaymentResult.amount" type="Decimal" toc={true}>
+  The amount charged or attempted.
+</ParamField>
+
+<ParamField path="PaymentResult.currency" type="str" toc={true}>
+  The amount's ISO 4217 code.
+</ParamField>
+
+<ParamField path="PaymentResult.description" type="str" toc={true}>
+  What the payment was for, from the `Charge`.
+</ParamField>
+
+<ParamField path="PaymentResult.paying_for" type="str" toc={true}>
+  What the caller said they were paying, as `charge` received it.
+</ParamField>
+
+<ParamField path="PaymentResult.details" type="Mapping[str, Any]" toc={true}>
+  The platform's `pay_payment_results`: the token, confirmation code, and masked card,
+  when there are any.
+</ParamField>
+
+<ParamField path="PaymentResult.succeeded" type="bool" toc={true}>
+  `True` when `result` is `success`.
+</ParamField>
+
+## Example
+
+```python
+from signalwire.operations import Charge, Payments, ServiceAgent
+
+BALANCES = {"1042": "54.04"}
+
+agent = ServiceAgent("billing", role="You take payments for a water utility.", currency="USD")
+agent.add_language("English", "en-US", "rime.spore")
+Payments(
+    connector_url="https://pay.example.com/connector",
+    charge=lambda call, invoice: Charge(BALANCES[invoice], f"invoice {invoice}"),
+).add_to(agent)
+```

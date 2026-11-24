@@ -7,11 +7,12 @@ using TypeSpec.JsonSchema;
 
 namespace SWML.Calling;
 
-// `on_fail` is a SWAIG function result: the platform hands it to the agent exactly as
-// it would a `data_map` output, so it shares `Output`. Gate validation diverges in two
-// places: a blocked function must never read as a success, so `response` is required
-// here and its object form requires `tool_result`; and the gate parser refuses a
-// single action object, so `action` must be an array.
+// `on_fail` and `on_unclear` are SWAIG function results: the platform hands them to the
+// agent exactly as it would a `data_map` output, so they share `Output`. Gate validation
+// diverges in two places: a blocked function must never read as a success, so `response`
+// is required here and its object form requires `tool_result`; and the gate parser
+// refuses a single action object, so `action` must be an array. `on_unclear` has the same
+// shape and limits as `on_fail`, so both use `SemanticGateOnFail`.
 
 @summary("Semantic gate tool result")
 @doc("""
@@ -27,18 +28,19 @@ model SemanticGateToolResult {
   ...OmitProperties<SwaigToolResult, "tool_result">;
 }
 
-@summary("on_fail")
+@summary("Blocked call result")
 @doc("""
-  What the agent gets when this is the first gate that fails, shaped like a
+  What the agent gets when a gate blocks the function (`on_fail` or `on_unclear`), shaped like a
   [`data_map` output](/docs/swml/reference/calling/ai/swaig/functions/data-map). At most
-  8 KB as compact JSON. Its actions run as written: `\${...}` variables in them are not expanded,
-  though a `SWML` action resolves the variables in its own document when it runs.
+  8 KB as compact JSON. The whole object is expanded once when the call is blocked: `\${...}`
+  variables (`global_data`, the call's `args`, and the rest of the request data) and `@{...}`
+  functions are filled in, and a value brought in is never expanded again. Output that wouldn't
+  parse after expansion is used as written, and a `SWML` action keeps its own variable handling.
   """)
 model SemanticGateOnFail {
   @doc("""
     What the function returns to the agent. A non-empty string, or an object with `tool_result` and
-    an optional `tool_prompt`. Realtime (speech-to-speech) agents don't use `tool_prompt`, so on
-    those put everything the agent needs in `tool_result`.
+    an optional `tool_prompt`.
     """)
   @example("cancel_account was not run. Ask the caller to confirm that they want to cancel.")
   response: SemanticGateResponseText | SemanticGateToolResult;
@@ -68,8 +70,9 @@ model SemanticGateCriteria {
 
 @summary("gate")
 @doc("""
-  A yes/no question about the call that must come out yes before the function runs. A key not
-  listed here is an error, not an ignored setting. Keys are matched exactly, case included.
+  A question about the call that must come out yes before the function runs. It is asked yes or no,
+  or yes, no or unclear with `unclear: true`. A key not listed here is an error, not an ignored
+  setting. Keys are matched exactly, case included.
   """)
 model SemanticGate {
   @doc("""
@@ -101,7 +104,9 @@ model SemanticGate {
 
   @doc("""
     The gate passes when the probability that the answer is yes is at or above this value. Above
-    `0` and at most `1`. Higher is stricter.
+    `0` and at most `1`. Higher is stricter. A yes under the threshold fails a yes/no gate and is
+    unclear on a gate with `unclear: true`. A three-way gate shares the probability of yes with
+    unclear, so use a lower value there: about `0.6` where a yes/no gate would use `0.8`.
     """)
   @minValueExclusive(0)
   @maxValue(1)
@@ -118,6 +123,28 @@ model SemanticGate {
   on_fail: SemanticGateOnFail;
 
   @doc("""
+    If `true`, the decision model can also answer unclear, for a conversation that doesn't settle
+    the question. An unclear answer doesn't run the function. Two unclear results in a row for the
+    same function and the same `semantic_state` ask the caller again; the third counts as a fail.
+    **Default:** `false`.
+    """)
+  @example(true)
+  unclear?: boolean = false;
+
+  @doc("""
+    What the agent gets when this is the first unclear gate and none failed. Same shape and limits
+    as `on_fail`; write it to ask the caller again, not to refuse. When unset, the agent is told the
+    function was not run because the caller's answer didn't settle it, and to ask again plainly.
+    """)
+  @example(#{
+    response: #{
+      tool_result: "confirm_change was not run: the caller's answer did not settle it.",
+      tool_prompt: "Say what you were not sure of, read the change back, and ask for a plain yes or no.",
+    },
+  })
+  on_unclear?: SemanticGateOnFail;
+
+  @doc("""
     How many of the caller's newest video frames the gate looks at, as `visual_input`: `true` is
     `1`, a whole number from `0` to `5`, and `false` or `0` is none. If the call has no video frame
     to show, the gate fails without being asked, so a gate with `visual_input` always fails when
@@ -125,6 +152,36 @@ model SemanticGate {
     """)
   @example(1)
   visual_input?: boolean | SemanticGateFrameCount;
+
+  @doc("""
+    Which part of the conversation the gate judges, case-insensitive: `window`, the newest `history`
+    entries, or `proposal`, what was said since `semantic_state` last changed. Defaults to the
+    agent's
+    [`semantic_gate_dialogue`](/docs/swml/reference/calling/ai/params#paramssemantic_gate_dialogue).
+    Must be the same on every gate of the function.
+    """)
+  @example("proposal")
+  dialogue?: "window" | "proposal";
+
+  @doc("""
+    How many conversation entries the gate reads, a whole number from `1` to `100`. Defaults to the
+    agent's
+    [`semantic_gate_history`](/docs/swml/reference/calling/ai/params#paramssemantic_gate_history).
+    Must be the same on every gate of the function.
+    """)
+  @minValue(1)
+  @maxValue(100)
+  @example(30)
+  history?: integer;
+
+  @doc("""
+    A mark name set with the `semantic_gate_mark` action. The gate judges the conversation from the
+    agent's first turn after the mark. Until the mark is set, `dialogue` applies. Must be the same
+    on every gate of the function.
+    """)
+  @pattern("^[A-Za-z0-9_]{1,64}$")
+  @example("refund_readback")
+  since?: string;
 }
 
 // The JSON Schema length keywords count characters, while the platform's limits count
@@ -147,8 +204,11 @@ scalar SemanticGateResponseText extends string;
 @summary("Gated function settings")
 model SemanticGateFunctionFields {
   @doc("""
-    Semantic gates: 1 to 8 yes/no questions that must all pass before the function runs. When any
-    fails, the function does not run and the agent gets the first failing gate's `on_fail` instead.
+    Semantic gates: 1 to 8 questions about the call that must all pass before the function runs.
+    When any fails, the function does not run and the agent gets the first failing gate's `on_fail`
+    instead. With no failing gate, the first unclear gate's `on_unclear` applies. The gates are
+    asked together about one conversation, so `dialogue`, `history` and `since` must be the same on
+    every gate.
     A gated function needs a `description` and a `web_hook_url` (its own, from `SWAIG.defaults`,
     or for a function returned by `includes`, from the `defaults` the include returns) or a
     `data_map`. If any gate is invalid, the function is not added to the agent at all, even with

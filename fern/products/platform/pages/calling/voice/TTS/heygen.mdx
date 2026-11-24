@@ -1,0 +1,213 @@
+---
+title: HeyGen
+subtitle: Text-to-speech
+slug: voice/tts/heygen
+description: Learn how to use HeyGen Voice models and voices in SignalWire AI agents.
+max-toc-depth: 3
+---
+
+[ai-languages]: /docs/swml/reference/calling/ai/languages
+[ai-params]: /docs/swml/reference/calling/ai/params
+[heygen-key]: /docs/swml/reference/calling/ai/params#paramsheygen_key
+[heygen-model]: /docs/swml/reference/calling/ai/params#paramsheygen_model
+[heygen-stream-first]: /docs/swml/reference/calling/ai/params#paramsheygen_stream_first
+[expressiveness-boost]: /docs/swml/reference/calling/ai/languages#paramsexpressiveness_boost
+[voice-fallback]: /docs/swml/reference/calling/ai#voice-fallback
+
+HeyGen Voice is HeyGen's text-to-speech engine, with two voice models and 66 public English voices.
+Give an AI agent built with the SWML [`ai`](/docs/swml/reference/calling/ai) method a HeyGen voice
+by naming the `heygen` engine in its voice string.
+
+## Models
+
+| Model | Description |
+|-------|-------------|
+| `heygen-voice-1-turbo` | **Default.** Lower latency: first audio in about 0.9 to 1.1 seconds in testing, whatever the text length |
+| `heygen-voice-1` | Higher latency, especially on short phrases |
+
+The model comes from the voice string's `:<model>` suffix, otherwise from the
+[`heygen_model`][heygen-model] parameter, otherwise the default. Model IDs match exactly. Any other
+ID, including HeyGen's free-tier `heygen-voice-1-turbo-free`, uses the default.
+
+## Voices
+
+The voice is either a HeyGen voice ID, 32 lowercase hexadecimal characters, or one of HeyGen's public
+voices named by the first word of its name, in any case. The public voices are all English:
+
+`adam`, `bram`, `brian`, `cecily`, `chloe`, `christopher`, `claire`, `connor`, `conor`, `corinne`,
+`craig`, `daniel`, `darren`, `elowen`, `emily`, `emma`, `eric`, `ethan`, `ewan`, `felicity`,
+`gareth`, `harrison`, `hugh`, `huw`, `iona`, `jack`, `jackson`, `jake`, `james`, `jason`,
+`jennifer`, `jessica`, `jocelyn`, `jonah`, `joshua`, `justin`, `kieran`, `liam`, `lucian`,
+`marielle`, `matthew`, `meredith`, `michael`, `michelle`, `nadine`, `neha`, `nicola`, `noelle`,
+`oliver`, `paul`, `rahul`, `richard`, `robert`, `rory`, `ryan`, `sabrina`, `sarah`, `sharon`,
+`simon`, `sophie`, `soren`, `tabitha`, `thomas`, `victoria`, `vincent`, and `weston`.
+
+Any other voice, or no voice, speaks as `nadine`.
+
+## Languages
+
+A HeyGen voice speaks in the language of the agent's [`languages`][ai-languages] entry, sent as its
+base language: `en-US` is sent as `en`. With no usable language code, HeyGen detects the language
+from the text, which can fail on text such as a number on its own.
+
+## Usage
+
+A voice identifier string has three parts: the `heygen` engine code, a voice, and an optional model.
+The engine code must be exactly `heygen`.
+
+**Format**: `heygen.<voice>:<model>`
+
+- `voice` (required): a public voice name or a HeyGen voice ID from [Voices](#voices).
+- `model` (optional): one of the [models](#models) above.
+
+**Examples**:
+```text
+heygen.claire
+heygen.claire:heygen-voice-1-turbo
+heygen.oliver:heygen-voice-1
+```
+
+## Parameters
+
+These settings tune HeyGen voices. The first three go in the agent's [`params`][ai-params]; the last
+goes in the voice's own `params`, on a `languages` or `multilingual.languages` entry.
+
+| Parameter | Default | Description |
+|---|---|---|
+| [`heygen_key`][heygen-key] | The platform's key | Your HeyGen API key. It needs HeyGen's `voices:write` scope, and can contain only letters, digits, `-`, `_`, and `.` |
+| [`heygen_model`][heygen-model] | `heygen-voice-1-turbo` | The model for voice strings that don't name one |
+| [`heygen_stream_first`][heygen-stream-first] | `true` | Set to `false` to stop streaming each reply's first sentence |
+| [`expressiveness_boost`][expressiveness-boost] | HeyGen's default, `1` | How expressive the voice is, from `0` to `1`. HeyGen suggests `0.5` to keep a voice's character |
+
+## How HeyGen voices play
+
+- Each reply's first sentence streams, so playback starts at its first audio while the rest is generated in the background.
+- HeyGen's public voices take no speed control, so [`auto_speed`](/docs/swml/reference/calling/ai/languages#languagesauto_speed) has no effect.
+- A caller who interrupts stops the audio cleanly.
+- A HeyGen voice that fails gives way to the next voice the agent has. See [Voice fallback][voice-fallback].
+
+## Rate limits
+
+HeyGen sets its own limits: 5,000 characters per request and, by default, 30 requests per minute per
+HeyGen workspace member. HeyGen raises the request limit for enterprise accounts. Each spoken sentence
+is one request, so a busy call, or several calls on one key, can reach the limit. A request over the
+limit is retried.
+
+---
+
+## Give an AI agent a HeyGen voice via SWML
+
+The [`languages`][ai-languages] list of the SWML [`ai`](/docs/swml/reference/calling/ai) method sets
+the voice an AI agent speaks in. This agent speaks with HeyGen's Claire, with Cartesia's Kurt as a
+backup voice, and uses your own HeyGen key. The [Server SDKs](/docs/server-sdks) build the document
+and serve it at `/swml` on port 3000, only to requests that carry the username `signalwire` and your
+password.
+
+Replace these values in the samples:
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for your SWML server. You include it in the server URL you give SignalWire: `https://signalwire:<password>@<host>/swml` |
+| `<YOUR_HEYGEN_KEY>` | Your HeyGen API key, with the `voices:write` scope |
+
+<CodeBlocks>
+<CodeBlock title="Python — Agents">
+```python
+# Install: python -m pip install signalwire-sdk
+# Save as heygen_ai_agent.py and run: python heygen_ai_agent.py
+from signalwire import AgentBase
+
+agent = AgentBase(
+    name="heygen-ai-agent",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+agent.set_prompt_text("You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride.")
+agent.set_param("heygen_key", "<YOUR_HEYGEN_KEY>")
+agent.add_language(
+    "English",
+    "en-US",
+    ["heygen.claire:heygen-voice-1-turbo", "cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e"],
+    params={"expressiveness_boost": 0.5},
+)
+
+agent.serve()
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - ai:
+        prompt:
+          text: "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride."
+        params:
+          heygen_key: "<YOUR_HEYGEN_KEY>"
+        languages:
+          - name: English
+            code: en-US
+            voice:
+              - "heygen.claire:heygen-voice-1-turbo"
+              - "cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e"
+            params:
+              expressiveness_boost: 0.5
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "answer": {}
+      },
+      {
+        "ai": {
+          "prompt": {
+            "text": "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride."
+          },
+          "params": {
+            "heygen_key": "<YOUR_HEYGEN_KEY>"
+          },
+          "languages": [
+            {
+              "name": "English",
+              "code": "en-US",
+              "voice": ["heygen.claire:heygen-voice-1-turbo", "cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e"],
+              "params": {
+                "expressiveness_boost": 0.5
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+To send calls from your phone number to the server, follow
+[Answer a call via SWML](/docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml).
+Call the number, and the agent greets you in Claire's voice. If you hear Nadine instead, the voice
+name isn't one of HeyGen's public voices. If you hear Kurt, the HeyGen voice failed to open: check
+that the key has the `voices:write` scope and contains only letters, digits, `-`, `_`, and `.`.
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card title="Voice fallback" icon="regular life-ring" href="/docs/swml/reference/calling/ai#voice-fallback">
+    Give an agent backup voices that take over when a voice fails.
+  </Card>
+  <Card title="Voice and language" icon="regular language" href="/docs/server-sdks/guides/voice-language">
+    Configure voices, languages, and pronunciation for AI agents built with the Server SDKs.
+  </Card>
+  <Card title="AI languages reference" icon="regular book-open" href="/docs/swml/reference/calling/ai/languages">
+    Every voice and language setting the SWML `ai` method accepts.
+  </Card>
+</CardGroup>

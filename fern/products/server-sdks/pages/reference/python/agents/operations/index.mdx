@@ -1,0 +1,195 @@
+---
+title: "Operations"
+slug: reference/python/agents/operations
+description: Build an agent from the changes it can make for a caller, with read-backs, confirmation, writes, and a call record generated for you.
+max-toc-depth: 3
+---
+
+[operation]: /docs/server-sdks/reference/python/agents/operations/operation
+[field]: /docs/server-sdks/reference/python/agents/operations/field
+[change]: /docs/server-sdks/reference/python/agents/operations/change
+[need]: /docs/server-sdks/reference/python/agents/operations/need
+[refuse]: /docs/server-sdks/reference/python/agents/operations/refuse
+[write]: /docs/server-sdks/reference/python/agents/operations/write
+[record]: /docs/server-sdks/reference/python/agents/operations/record
+[front-desk]: /docs/server-sdks/reference/python/agents/prefabs/front-desk-agent
+[appointments]: /docs/server-sdks/reference/python/agents/operations/appointments
+[info-bot]: /docs/server-sdks/reference/python/agents/operations/info-bot-knowledge
+[concierge]: /docs/server-sdks/reference/python/agents/prefabs/concierge-agent
+[receptionist]: /docs/server-sdks/reference/python/agents/prefabs/receptionist-agent
+[faq-bot]: /docs/server-sdks/reference/python/agents/prefabs/faq-bot-agent
+[semantic-gate]: /docs/server-sdks/reference/python/agents/semantic-gate
+
+The `signalwire.operations` package builds an agent from the things it can change
+for a caller, such as cancelling an order or moving a booking. You write each
+operation once: its fields, a docstring the model reads, and `prepare()`, which
+checks the request and returns a [`Change`][change] or raises [`Need`][need] or
+[`Refuse`][refuse]. The SDK generates the tools, the steps, the confirm gate, and
+the call's record in global data, and runs every change the same way.
+
+```python
+from signalwire.operations import (
+    Change, Field, Need, Operation, Operations, Refuse, ServiceAgent, Write, WriteFailed,
+)
+```
+
+## Change lifecycle
+
+Every change goes through the same steps:
+
+1. The model calls an operation's tool with everything the caller said. Every
+   operation tool has a required `data_supplied_by_user` argument, and nothing runs
+   unless the model sets it to `true`.
+2. A required [`Field`][field] with `ask` that the model sent empty, `null`, or as
+   `"not said"` is asked for before `prepare()` runs.
+3. `prepare()` returns a `Change`, or raises `Need` (something wasn't said) or
+   `Refuse` (the request breaks a rule). Nothing is written yet.
+4. The change becomes the one waiting for the caller's answer, the call moves to the
+   `confirm` step, and the platform says the change's `read_back` word for word.
+5. The model calls `confirm_change` or `decline_change`. `confirm_change` carries
+   one [semantic gate][semantic-gate]: did the caller agree to the change read back.
+   A yes said while the read-back was still playing counts.
+6. The change's [writes][write] run in order. A write that raises `WriteFailed`
+   stops the change, and the writes before it stay made.
+7. The change is added to the call's [record][record], with any money it moved.
+   A change set aside for after this one is offered next.
+
+When the caller asks for something else while a change waits, the SDK compares the
+two by what both touch. It merges them, sets one aside for after the other, replaces
+part of the waiting change, or refuses. The hooks for this are on
+[`Operation`][operation].
+
+## What the SDK generates
+
+- Steps: `identify` (when the service identifies callers), `main`, `confirm`, a
+  step for each operation with `guidance`, each declared phase, and `transferred`
+  (when the service offers a transfer). Tool handlers move between them.
+- Prompt sections: Role, from `role=`, and Rules, from `DEFAULT_RULES` or `rules=`.
+- Tools: one per operation and lookup, `confirm_change` and `decline_change`
+  when any operation confirms, `find_account` with `identify()`, and
+  `transfer_to_human` with `transfer_with()`.
+- The call's record, in `global_data.ops`, whose `now` line the `conscience`
+  param shows on every request.
+
+Every generated tool's result starts with `back_to_back_functions` set to
+`"forever"`, so a refused gate doesn't stop the model from chaining tools for the
+rest of the call.
+
+## Example
+
+```python
+from signalwire.operations import Change, Field, Operation, Refuse, ServiceAgent, Write
+
+ORDERS = {"#W1": {"status": "pending", "total": 54.04}}
+
+agent = ServiceAgent("store", role="You answer the phone for an online store.", currency="USD")
+agent.identify(
+    any_of=[["email"]],
+    find=lambda call, keys: "u1" if keys["email"] == "ann@example.com" else None,
+)
+agent.writes_with(lambda call, write: print("write", write.name, write.args))
+
+
+@agent.operation(tool="cancel_order")
+class Cancel(Operation):
+    """Cancel a pending order."""
+
+    order_id = Field(str, "The order to cancel.")
+
+    def prepare(self, call, f):
+        order = ORDERS.get(f.order_id)
+        if order is None or order["status"] != "pending":
+            raise Refuse(f"{f.order_id} can't be cancelled: only pending orders can.")
+        return Change(
+            read_back=f"Cancel order {f.order_id}, refunding ${order['total']:.2f}. Shall I go ahead?",
+            touches=[f"order:{f.order_id}"],
+            writes=[Write("cancel_order", order_id=f.order_id)],
+            money=[-order["total"]],
+            done=f"Order {f.order_id} is cancelled.",
+        )
+
+
+if __name__ == "__main__":
+    print(agent.preview())
+    agent.run()
+```
+
+`preview()` prints each generated step's text and tools as the model gets them.
+The `CallSimulator` in `signalwire.testing` runs an operations agent's tools
+offline, including the steps they move to and the gates.
+
+## Replacing deprecated prefabs
+
+[`ConciergeAgent`][concierge], [`ReceptionistAgent`][receptionist], and
+[`FAQBotAgent`][faq-bot] are deprecated:
+
+- For bookings, use [`FrontDeskAgent`][front-desk] with the
+  [`Appointments`][appointments] pack in place of `ConciergeAgent`, and
+  [`InfoBotKnowledge`][info-bot] for amenities and hours.
+- For transfers to departments, use `FrontDeskAgent` in place of `ReceptionistAgent`.
+- For answers from a knowledge base, use `InfoBotKnowledge` in place of `FAQBotAgent`.
+
+## Classes
+
+<CardGroup cols={2}>
+  <Card title="ServiceAgent" href="/docs/server-sdks/reference/python/agents/operations/service-agent">
+    An `AgentBase` that owns an `Operations` service and installs it before the first request.
+  </Card>
+  <Card title="Operations" href="/docs/server-sdks/reference/python/agents/operations/operations">
+    The service: operations, lookups, identity, writes, and transfers, installable on any agent.
+  </Card>
+  <Card title="Operation" href="/docs/server-sdks/reference/python/agents/operations/operation">
+    Base class for one change the agent can make.
+  </Card>
+  <Card title="Field" href="/docs/server-sdks/reference/python/agents/operations/field">
+    One argument an operation or lookup takes from the caller.
+  </Card>
+  <Card title="Change" href="/docs/server-sdks/reference/python/agents/operations/change">
+    The change `prepare()` builds, ready to read back.
+  </Card>
+  <Card title="Need" href="/docs/server-sdks/reference/python/agents/operations/need">
+    Raised when something the operation needs wasn't said.
+  </Card>
+  <Card title="Refuse" href="/docs/server-sdks/reference/python/agents/operations/refuse">
+    Raised when a request breaks a rule.
+  </Card>
+  <Card title="Write and WriteFailed" href="/docs/server-sdks/reference/python/agents/operations/write">
+    One backend write, and the exception a refused write raises.
+  </Card>
+  <Card title="CallContext and Values" href="/docs/server-sdks/reference/python/agents/operations/call-context">
+    The call as an operation sees it, and the fields the model gave.
+  </Card>
+  <Card title="Money" href="/docs/server-sdks/reference/python/agents/operations/money">
+    Currencies, exact amounts, and `format_money()`.
+  </Card>
+  <Card title="Wording, rules, and medium" href="/docs/server-sdks/reference/python/agents/operations/wording">
+    Replace the generated words and rules, and fix the conversation's medium.
+  </Card>
+  <Card title="Call record" href="/docs/server-sdks/reference/python/agents/operations/record">
+    The service's state in `global_data`.
+  </Card>
+  <Card title="Appointments" href="/docs/server-sdks/reference/python/agents/operations/appointments">
+    Task pack that books, moves, and cancels appointments against your calendar.
+  </Card>
+  <Card title="Messages" href="/docs/server-sdks/reference/python/agents/operations/messages">
+    Task pack that takes a message and passes it on.
+  </Card>
+  <Card title="Payments" href="/docs/server-sdks/reference/python/agents/operations/payments">
+    Task pack that takes a card payment through your payment connector.
+  </Card>
+  <Card title="InfoBotKnowledge" href="/docs/server-sdks/reference/python/agents/operations/info-bot-knowledge">
+    A search tool that answers from your documents.
+  </Card>
+  <Card title="Continuity" href="/docs/server-sdks/reference/python/agents/operations/continuity">
+    Carries a conversation across a switch between voice and chat.
+  </Card>
+  <Card title="Dialer" href="/docs/server-sdks/reference/python/agents/operations/dialer">
+    Places outbound calls only once every check passes.
+  </Card>
+  <Card title="FrontDeskAgent" href="/docs/server-sdks/reference/python/agents/prefabs/front-desk-agent">
+    Prefab front desk: departments, appointments, messages, and answers.
+  </Card>
+  <Card title="PersonalAssistantAgent" href="/docs/server-sdks/reference/python/agents/prefabs/personal-assistant-agent">
+    Prefab that screens calls for one person and puts them through.
+  </Card>
+</CardGroup>

@@ -1,0 +1,134 @@
+---
+title: "Appointments"
+slug: reference/python/agents/operations/appointments
+description: Task pack that finds open times and books, moves, and cancels a caller's appointments against your calendar.
+max-toc-depth: 3
+---
+
+[operations]: /docs/server-sdks/reference/python/agents/operations/operations
+[service-agent]: /docs/server-sdks/reference/python/agents/operations/service-agent
+[refuse]: /docs/server-sdks/reference/python/agents/operations/refuse
+[need]: /docs/server-sdks/reference/python/agents/operations/need
+[write]: /docs/server-sdks/reference/python/agents/operations/write
+[wording]: /docs/server-sdks/reference/python/agents/operations/wording
+[front-desk]: /docs/server-sdks/reference/python/agents/prefabs/front-desk-agent
+
+`Appointments` is a task pack that finds open times and books, moves, and cancels the
+caller's appointments against your calendar, which you supply as functions. Add it to
+an [`Operations`][operations] or a [`ServiceAgent`][service-agent] with `add_to()`.
+
+Each slot and appointment comes with a `label`, which is how it's said ("Tuesday the 3rd
+at 2 pm"). The pack never reads or writes a date itself, so the time zone, the calendar,
+and the language stay yours. Only a slot the pack found open can be booked, and every
+booking, move, and cancellation is read back for the caller's yes.
+
+```python
+from signalwire.operations import Appointment, Appointments, Slot
+```
+
+## Parameters
+
+All parameters are keyword-only. Every function may be `async`.
+
+<ParamField path="openings" type="Callable[[CallContext, str, str | None], list[Slot]]" required={true} toc={true}>
+  `openings(call, when, kind)` returns the `Slot`s open near `when`, the caller's words
+  ("Tuesday afternoon"). `kind` is one of `kinds`, or `None`. May raise
+  [`Refuse`][refuse] or [`Need`][need].
+</ParamField>
+
+<ParamField path="book" type="Callable[[CallContext, Slot, str | None, str | None], Any]" required={true} toc={true}>
+  `book(call, slot, kind, note)` books the slot once the caller says yes. Raise
+  [`WriteFailed`][write] when the calendar refuses.
+</ParamField>
+
+<ParamField path="booked" type="Callable[[CallContext], list[Appointment]] | None" default="None" toc={true}>
+  `booked(call)` returns the caller's `Appointment`s. Needed for `move` and `cancel`.
+</ParamField>
+
+<ParamField path="move" type="Callable[[CallContext, Appointment, Slot], Any] | None" default="None" toc={true}>
+  `move(call, appointment, slot)` moves one. Raises `ValueError` without `booked`.
+</ParamField>
+
+<ParamField path="cancel" type="Callable[[CallContext, Appointment], Any] | None" default="None" toc={true}>
+  `cancel(call, appointment)` cancels one. Raises `ValueError` without `booked`.
+</ParamField>
+
+<ParamField path="kinds" type="Sequence[str] | None" default="None" toc={true}>
+  What an appointment can be for, as the caller would say it ("cleaning"). `None` gives
+  no choice.
+</ParamField>
+
+<ParamField path="before_identity" type="bool" default="False" toc={true}>
+  `True` to find openings and book before the caller is identified, for new customers.
+  The caller's own appointments always need an identified account.
+</ParamField>
+
+<ParamField path="wording" type="Mapping[str, str] | None" default="None" toc={true}>
+  Replacements keyed like `APPOINTMENTS_WORDING`. See [wording][wording].
+</ParamField>
+
+<ParamField path="tools" type="Mapping[str, str] | None" default="None" toc={true}>
+  New names for the generated tools, by key. An unknown key raises `ValueError`.
+
+  | Key | Default tool name |
+  |---|---|
+  | `openings` | `find_openings` |
+  | `booked` | `my_appointments` |
+  | `book` | `book_appointment` |
+  | `move` | `move_appointment` |
+  | `cancel` | `cancel_appointment` |
+</ParamField>
+
+<ParamField path="state_key" type="str" default="appointments" toc={true}>
+  Where in `call.state` the pack keeps the slots it found.
+</ParamField>
+
+## Properties
+
+<ParamField path="tools" type="Mapping[str, str]" toc={true}>
+  The generated tools' names, by key.
+</ParamField>
+
+## Methods
+
+`add_to(target)` registers the pack's lookups and operations on an `Operations` or a
+`ServiceAgent`, and returns `target`.
+
+## Slot and Appointment
+
+Frozen dataclasses your calendar functions return and receive.
+
+<ParamField path="Slot.id" type="str" required={true} toc={true}>
+  The calendar's id for an open time.
+</ParamField>
+
+<ParamField path="Slot.label" type="str" required={true} toc={true}>
+  How the time is said, in the calendar's own time zone and words.
+</ParamField>
+
+<ParamField path="Appointment.id" type="str" required={true} toc={true}>
+  The calendar's id for one of the caller's appointments.
+</ParamField>
+
+<ParamField path="Appointment.label" type="str" required={true} toc={true}>
+  How the appointment is said: "your cleaning on Tuesday the 3rd at 2 pm".
+</ParamField>
+
+## Example
+
+```python
+from signalwire.operations import Appointments, ServiceAgent, Slot
+
+OPEN = {"s1": "Tuesday at 2 pm", "s2": "Wednesday at 10 am"}
+
+agent = ServiceAgent("dentist", role="You answer the phone for a dental practice.")
+Appointments(
+    openings=lambda call, when, kind: [Slot(i, label) for i, label in OPEN.items()],
+    book=lambda call, slot, kind, note: OPEN.pop(slot.id),
+    kinds=["cleaning", "check-up"],
+    before_identity=True,
+).add_to(agent)
+```
+
+[`FrontDeskAgent`][front-desk] and `PersonalAssistantAgent` take an `Appointments`
+pack as `appointments=`.

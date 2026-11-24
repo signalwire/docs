@@ -1,0 +1,72 @@
+---
+title: "add_tool_middleware"
+slug: reference/python/agents/agent-base/add-tool-middleware
+description: Run a function around every tool call, to log, change arguments or results, or answer without the handler.
+max-toc-depth: 3
+---
+
+[ref-agentbase]: /docs/server-sdks/reference/python/agents/agent-base
+[define-tool]: /docs/server-sdks/reference/python/agents/agent-base/define-tool
+[tool-refusal]: /docs/server-sdks/reference/python/agents/tool-refusal
+[set-tool-resend-dedupe]: /docs/server-sdks/reference/python/agents/agent-base/set-tool-resend-dedupe
+
+Run middleware around every tool call, after any middleware added before it.
+Middleware runs before the handler and calls `call_next(args, raw_data)` to run the
+rest of the chain and the handler, possibly with changed arguments. What it returns
+is the call's result: the handler's, a changed one, or its own without calling
+`call_next`, as a `FunctionResult` or a dict.
+
+- Agent-wide middleware runs outside a tool's own `middleware=` from
+  [`define_tool()`][define-tool].
+- Middleware that raises [`ToolRefusal`][tool-refusal] declines the call. Any other
+  exception gives the model the unknown-outcome result, as a handler that raises
+  does.
+- It covers tools defined with `define_tool()`, not DataMap or native tools, which
+  run on the platform.
+- For an `async def` handler, `call_next` returns an awaitable. An `async def`
+  middleware can `await resolve(call_next(args, raw_data))`, with `resolve` from
+  `signalwire.core.tool_middleware`, to take either.
+- Synchronous handlers for different calls run at once in worker threads, so guard
+  any shared state.
+
+The retry dedupe from [`set_tool_resend_dedupe()`][set-tool-resend-dedupe] runs
+first, before any middleware.
+
+## Parameters
+
+<ParamField path="middleware" type="ToolMiddleware" required={true} toc={true}>
+  Called as `middleware(name, args, raw_data, call_next)`.
+
+  - `name` -- the tool's name.
+  - `args` -- the parsed arguments.
+  - `raw_data` -- the SWAIG request.
+  - `call_next` -- runs the rest of the chain and the handler when called as
+    `call_next(args, raw_data)`.
+
+  `ToolMiddleware` and `CallNext` are type aliases in
+  `signalwire.core.tool_middleware`.
+</ParamField>
+
+## Returns
+
+[`AgentBase`][ref-agentbase] -- Self for method chaining.
+
+## Example
+
+```python {13}
+import time
+from signalwire import AgentBase
+
+agent = AgentBase(name="timed", route="/timed")
+agent.prompt_add_section("Role", "You answer questions.")
+
+def log_calls(name, args, raw_data, call_next):
+    started = time.monotonic()
+    result = call_next(args, raw_data)
+    print(name, round((time.monotonic() - started) * 1000), "ms")
+    return result
+
+agent.add_tool_middleware(log_calls)
+
+agent.serve()
+```

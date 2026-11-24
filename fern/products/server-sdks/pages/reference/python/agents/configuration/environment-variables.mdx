@@ -221,8 +221,9 @@ settings for webhook URL generation.
 ## Relay and REST Client
 
 `RelayClient`, `RestClient`, and `AIChatClient` read these variables. The
-three clients agree on the credential variables but not on `SIGNALWIRE_SPACE`,
-so read that entry before setting it in a process that uses more than one client.
+three clients agree on the credential variables. `SIGNALWIRE_SPACE` holds the space
+hostname for REST and AI Chat; `RelayClient` takes its endpoint from
+`SIGNALWIRE_RELAY_HOST` first, so set both in a process that uses more than one client.
 
 <ParamField path="SIGNALWIRE_PROJECT_ID" type="str" toc={true}>
   SignalWire project ID for authentication.
@@ -244,22 +245,31 @@ The SDK reads `SIGNALWIRE_API_TOKEN` only. Older examples that used
 <ParamField path="SIGNALWIRE_SPACE" type="str" toc={true}>
   Your space hostname, for example `your-space.signalwire.com`. `RestClient` uses
   it as the REST API host and raises `ValueError` when neither this variable nor
-  the `host` argument is set. `AIChatClient` reads the same variable but expects
-  the bare space name, `your-space`, and appends `.signalwire.com` itself.
+  the `host` argument is set. `AIChatClient` reads the same variable and accepts
+  either the hostname or the bare space name, `your-space`, to which it appends
+  `.signalwire.com`.
+</ParamField>
+
+<ParamField path="SIGNALWIRE_RELAY_HOST" type="str" default="relay.signalwire.com" toc={true}>
+  The Relay WebSocket endpoint `RelayClient` connects to when no `host` argument is
+  given. Set it to `relay.signalwire.com` wherever `SIGNALWIRE_SPACE` is also set.
 </ParamField>
 
 <Warning title="Relay reads SIGNALWIRE_SPACE too">
 `RelayClient` connects to `relay.signalwire.com` by default and needs no space
-setting. When `SIGNALWIRE_SPACE` is set, it connects to that host instead. If
-the same process uses REST and Relay, pass `host="relay.signalwire.com"` to
-`RelayClient` so the REST setting does not redirect the WebSocket connection.
+setting. It resolves its host from the `host` argument, then `SIGNALWIRE_RELAY_HOST`,
+then `SIGNALWIRE_SPACE`. When `SIGNALWIRE_SPACE` is set for REST and
+`SIGNALWIRE_RELAY_HOST` isn't, Relay connects to the space hostname, which isn't the
+Relay endpoint. Set `SIGNALWIRE_RELAY_HOST=relay.signalwire.com` in any environment
+that sets `SIGNALWIRE_SPACE`.
 </Warning>
 
 <Note>
-`sw-agent-init` and `sw-agent-dokku` read and write a different variable,
-`SIGNALWIRE_SPACE_NAME`, holding the bare space name. No client reads it, so a
-scaffolded project still needs `SIGNALWIRE_SPACE` before `RestClient()` can
-start from the environment.
+`sw-agent-init` and `sw-agent-dokku` also use `SIGNALWIRE_SPACE_NAME`, holding the
+bare space name, for the CLI and dashboard links. No client reads it. The `.env`
+files they generate set `SIGNALWIRE_SPACE` to the space hostname and
+`SIGNALWIRE_RELAY_HOST` to `relay.signalwire.com`, so `RestClient()` and
+`RelayClient()` both start from the environment.
 </Note>
 
 <ParamField path="SIGNALWIRE_REST_CA_FILE" type="str" toc={true}>
@@ -396,8 +406,10 @@ SIGNALWIRE_LOG_LEVEL=info
 # Relay / REST
 SIGNALWIRE_PROJECT_ID=your-project-id
 SIGNALWIRE_API_TOKEN=your-api-token
-# REST host. RelayClient reads it too; pass host="relay.signalwire.com" there.
+# The space hostname, for the REST and AI Chat clients
 SIGNALWIRE_SPACE=your-space.signalwire.com
+# The Relay endpoint: set it so RelayClient doesn't take the space hostname
+SIGNALWIRE_RELAY_HOST=relay.signalwire.com
 
 # Custom Skills
 SIGNALWIRE_SKILL_PATHS=/opt/custom_skills

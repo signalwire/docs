@@ -1,0 +1,66 @@
+---
+title: "gate_conversation"
+slug: reference/python/agents/testing/call-simulator/gate-conversation
+description: Return the dialogue a semantic gate would judge now, chosen by its mark, proposal, or window.
+max-toc-depth: 3
+---
+
+[semantic-gate]: /docs/server-sdks/reference/python/agents/semantic-gate
+[model-view]: /docs/server-sdks/reference/python/agents/testing/call-simulator/model-view
+
+The dialogue a [semantic gate][semantic-gate] judges now, as `"role: text"` lines,
+oldest first. The lines are the spoken turns the model sees (see
+[`model_view()`][model-view]), chosen as the platform chooses them:
+
+1. With the gate's `since` mark set, the turns from the agent's first turn at or
+   after the mark.
+2. Otherwise, with `dialogue` set to `"proposal"` (the gate's, or the agent's
+   `semantic_gate_dialogue`) and a proposal recorded, the turns from the agent's
+   first turn after `semantic_state` last changed.
+3. Otherwise, the window.
+
+Then at most `history` of the newest: the gate's, the agent's
+`semantic_gate_history`, or 20. Pass it to your gate callback to judge a gate in a
+test, for example `gates=lambda gate, sim, args: judge(gate["question"],
+sim.gate_conversation(gate))`.
+
+## Parameters
+
+<ParamField path="gate" type="Mapping[str, Any] | None" default="None" toc={true}>
+  The gate's dictionary, or just its `dialogue`, `history`, and `since` keys.
+  `None` uses the agent's settings.
+</ParamField>
+
+## Returns
+
+`list[str]` -- The lines, such as `"user: Yes."`.
+
+## Raises
+
+`NotImplementedError` once the call has entered a step with a reset, as for
+`model_view()`.
+
+## Example
+
+```python {19}
+from signalwire import AgentBase, FunctionResult
+from signalwire.testing import CallSimulator
+
+agent = AgentBase(name="orders", route="/orders")
+agent.prompt_add_section("Role", "You take orders.")
+agent.define_tool("review_order", "Read the order back", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Read the order back.").swml_change_step("confirm"))
+agent.define_tool("place_order", "Place the order", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Order placed."))
+ctx = agent.define_contexts().add_context("default")
+ctx.add_step("take").set_text("Take the order.").set_functions(["review_order"])
+ctx.add_step("confirm").set_text("Confirm the order.").set_functions(["place_order"]).set_history("isolate")
+
+sim = CallSimulator(agent)
+sim.caller("A large tea, please.")
+sim.call("review_order")
+sim.agent_says("That's one large tea. Shall I place it?")
+sim.caller("Yes.")
+print(sim.gate_conversation({"history": 2}))
+# ["assistant: That's one large tea. Shall I place it?", 'user: Yes.']
+```

@@ -1,0 +1,62 @@
+---
+title: "change_voice"
+slug: reference/python/agents/function-result/change-voice
+description: Change the agent's voice, or its list of fallback voices, for the rest of the call.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/server-sdks/reference/python/agents/function-result
+[addlanguage]: /docs/server-sdks/reference/python/agents/agent-base/add-language
+[swml-languages]: /docs/swml/reference/calling/ai/languages
+
+Change the agent's voice for the rest of the call. The new voice replaces the
+current language's voice from the next batch of speech on, never in the middle
+of an utterance, and stays with that language for the rest of the call. It can
+be on a different TTS engine from the current voice.
+
+Pass a list to give fallbacks: the first voice speaks, and the platform tries
+the others in order when it fails. When every voice in the list fails, the
+platform moves on to the agent's fallback voices.
+
+## Parameters
+
+<ParamField path="voice" type="str | Sequence[str]" required={true} toc={true}>
+  One voice in the `engine.voice:model` form a language's voice takes, such as
+  `"elevenlabs.rachel"` (see [`add_language()`][addlanguage] and the
+  [SWML `languages` reference][swml-languages]), or a list of up to 8 of them.
+  A one-item list is sent as a list.
+</ParamField>
+
+## Returns
+
+[`FunctionResult`][functionresult] -- self, for chaining.
+
+## Raises
+
+`ValueError` for an empty string, an empty list, more than 8 voices, or a list
+entry that isn't a non-empty string.
+
+## Example
+
+```python {9-11}
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="support", route="/support")
+agent.set_prompt_text("You answer support calls.")
+agent.add_language("English", "en-US", ["elevenlabs.rachel:eleven_flash_v2_5", "cartesia.kurt"])
+
+@agent.tool(name="calmer_voice", description="Switch to a calmer voice")
+def calmer_voice(args, raw_data):
+    return FunctionResult("Switching voices.").change_voice(
+        ["elevenlabs.josh", "cartesia.kurt"]
+    )
+
+agent.serve()
+```
+
+`calmer_voice` returns:
+
+```json
+{"response": "Switching voices.",
+ "action": [{"change_voice": ["elevenlabs.josh", "cartesia.kurt"]}]}
+```

@@ -1,0 +1,73 @@
+---
+title: "Write and WriteFailed"
+slug: reference/python/agents/operations/write
+description: One backend write a change carries out, kept as data, and the exception a writer raises when the backend refuses it.
+max-toc-depth: 3
+---
+
+[change]: /docs/server-sdks/reference/python/agents/operations/change
+[operation]: /docs/server-sdks/reference/python/agents/operations/operation
+[operations]: /docs/server-sdks/reference/python/agents/operations/operations
+[call-context]: /docs/server-sdks/reference/python/agents/operations/call-context
+
+A `Write` is one backend write a [`Change`][change] carries out, kept as data. The
+writes run in order after the caller says yes, through the operation's own
+[`apply()`][operation] or the service's [`writes_with()`][operations] writer. A
+change's writes are fixed once it's read back; a later amendment builds a new change.
+
+Raise `WriteFailed` from a writer when the backend refuses a write. The change stops at
+that write, the writes before it stay made, and the model is told what went through.
+
+While a write runs, [`call.write_key`][call-context] is unique to it within the call,
+for backends that take an idempotency key.
+
+```python
+from signalwire.operations import Write, WriteFailed
+```
+
+## Write
+
+### Parameters
+
+<ParamField path="name" type="str" required={true} toc={true}>
+  Positional-only. What the write does, such as the backend call's name.
+</ParamField>
+
+<ParamField path="**args" type="Any" toc={true}>
+  The write's arguments, available as `write.args`.
+</ParamField>
+
+### Methods
+
+`to_dict()` returns `{"name": ..., "args": {...}}`, and the class method
+`from_dict(data)` builds a `Write` from that form. Two writes are equal when their
+names and arguments are.
+
+## WriteFailed
+
+### Parameters
+
+<ParamField path="reason" type="str" required={true} toc={true}>
+  Why the backend refused the write, in words the caller can hear. Available as
+  `.reason`.
+</ParamField>
+
+## Example
+
+```python
+from signalwire.operations import ServiceAgent, Write, WriteFailed
+
+BACKEND = {"#W1": "pending"}
+
+agent = ServiceAgent("store", role="You answer the phone for an online store.")
+
+
+def writer(call, write: Write):
+    if write.name == "cancel_order":
+        if BACKEND.get(write.args["order_id"]) != "pending":
+            raise WriteFailed("The order shipped before it could be cancelled.")
+        BACKEND[write.args["order_id"]] = "cancelled"
+
+
+agent.writes_with(writer)
+```

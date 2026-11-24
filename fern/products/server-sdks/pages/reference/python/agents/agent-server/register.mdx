@@ -6,10 +6,17 @@ max-toc-depth: 3
 ---
 
 [agentbase]: /docs/server-sdks/reference/python/agents/agent-base
+[swmlservice]: /docs/server-sdks/reference/python/agents/swml-service
 
 Register an [`AgentBase`][agentbase] instance at a URL route
 on the server. The agent's FastAPI router is mounted at the specified prefix so all of its
 endpoints (SWML, SWAIG, debug, post-prompt) become available under that path.
+
+A plain [`SWMLService`][swmlservice] registers the same way. It answers at its route,
+with or without a trailing slash, under its own basic auth, and serves its `/swaig`
+endpoint and routing callbacks. The agent-only endpoints (`/post_prompt`,
+`/check_for_input`, `/debug`) return 404 for it. The server's CGI and Lambda modes
+need agents.
 
 <Warning>
 Registering a duplicate route raises `ValueError`. Each route can only host one agent.
@@ -17,9 +24,9 @@ Registering a duplicate route raises `ValueError`. Each route can only host one 
 
 ## **Parameters**
 
-<ParamField path="agent" type="AgentBase" required={true} toc={true}>
-  The agent instance to register. Must be an [`AgentBase`][agentbase]
-  subclass.
+<ParamField path="agent" type="AgentBase | SWMLService" required={true} toc={true}>
+  The agent or service to register: an [`AgentBase`][agentbase] instance or a plain
+  [`SWMLService`][swmlservice]. The type hint names `AgentBase` only.
 </ParamField>
 
 <ParamField path="route" type="str | None" default="None" toc={true}>
@@ -44,5 +51,19 @@ class SalesAgent(AgentBase):
 
 server = AgentServer(port=3000)
 server.register(SalesAgent(), "/sales")
+server.run()
+```
+
+Host a plain `SWMLService` next to the agents:
+
+```python {8}
+from signalwire import AgentServer, SWMLService
+
+ivr = SWMLService(name="ivr", route="/ivr", basic_auth=("user", "pass"))
+ivr.add_verb("answer", {})
+ivr.add_verb("play", {"url": "say:Hello"})
+
+server = AgentServer()
+server.register(ivr, "/ivr")      # serves /ivr and /ivr/
 server.run()
 ```

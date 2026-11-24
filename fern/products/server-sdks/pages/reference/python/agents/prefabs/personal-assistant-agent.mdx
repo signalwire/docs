@@ -1,0 +1,121 @@
+---
+title: "PersonalAssistantAgent"
+slug: reference/python/agents/prefabs/personal-assistant-agent
+description: Answers the phone for one person, screens the caller, and rings the person with a whisper so they can take the call.
+max-toc-depth: 3
+---
+
+[service-agent]: /docs/server-sdks/reference/python/agents/operations/service-agent
+[operations]: /docs/server-sdks/reference/python/agents/operations/operations
+[appointments]: /docs/server-sdks/reference/python/agents/operations/appointments
+[messages]: /docs/server-sdks/reference/python/agents/operations/messages
+[info-bot]: /docs/server-sdks/reference/python/agents/operations/info-bot-knowledge
+[wording]: /docs/server-sdks/reference/python/agents/operations/wording
+
+`PersonalAssistantAgent` answers the phone for one person, built on
+[`ServiceAgent`][service-agent]. It asks who is calling and what it's about, then rings
+the person. The caller hears ringing. When the person answers, they hear a whisper
+("Bo is calling about the contract. Press 1 to take the call.") and press the accept
+key to take it, and the calls are joined. When the joined call ends, the caller's call
+ends too.
+
+If the person doesn't answer or doesn't take the call, the assistant carries on with
+the caller and offers a message or a time on the calendar, from `messages` and
+`appointments`. In a chat, nobody is put through.
+
+```python
+from signalwire.prefabs import PersonalAssistantAgent
+```
+
+## Parameters
+
+<ParamField path="name" type="str" default="assistant" toc={true}>
+  The agent's name.
+</ParamField>
+
+<ParamField path="role" type="str" required={true} toc={true}>
+  Keyword-only, as are all the parameters below. Who the agent is and how it sounds.
+</ParamField>
+
+<ParamField path="owner" type="str" required={true} toc={true}>
+  The person's name, as the assistant says it.
+</ParamField>
+
+<ParamField path="reach" type="str" required={true} toc={true}>
+  Where the person's calls go: a phone number in E.164 form, or a SIP address.
+</ParamField>
+
+<ParamField path="available" type="Callable[[CallContext], bool] | None" default="None" toc={true}>
+  `available(call)` returns whether the person is taking calls now. May be `async`.
+  When it returns false, the call isn't put through. `None` means always.
+</ParamField>
+
+<ParamField path="messages" type="Messages | None" default="None" toc={true}>
+  A [`Messages`][messages] pack, to take a message when the person doesn't take the
+  call.
+</ParamField>
+
+<ParamField path="appointments" type="Appointments | None" default="None" toc={true}>
+  An [`Appointments`][appointments] pack, for the person's calendar.
+</ParamField>
+
+<ParamField path="knowledge" type="InfoBotKnowledge | None" default="None" toc={true}>
+  An [`InfoBotKnowledge`][info-bot] to answer questions from.
+</ParamField>
+
+<ParamField path="caller_id" type="str | None" default="None" toc={true}>
+  The number the put-through call comes from. `None` shows the caller's own number to
+  the person.
+</ParamField>
+
+<ParamField path="ring_seconds" type="int" default="20" toc={true}>
+  How long to ring the person.
+</ParamField>
+
+<ParamField path="answer_seconds" type="int" default="15" toc={true}>
+  How long the person has, once they answer, to press the accept key.
+</ParamField>
+
+<ParamField path="whisper_voice" type="str | None" default="None" toc={true}>
+  The voice of the whisper. The platform's default when `None`.
+</ParamField>
+
+<ParamField path="whisper_language" type="str | None" default="None" toc={true}>
+  The whisper's language code, such as `"en-US"`. The platform's default when `None`.
+</ParamField>
+
+<ParamField path="accept_key" type="str" default="1" toc={true}>
+  The keypad key the person presses to take the call: one of `0`-`9`, `*`, or `#`.
+  Anything else raises `ValueError`. Any other key, or none, ends the person's leg.
+</ParamField>
+
+<ParamField path="tool" type="str" default="put_through" toc={true}>
+  The put-through tool's name.
+</ParamField>
+
+<ParamField path="assistant_wording" type="Mapping[str, str] | None" default="None" toc={true}>
+  Replacements for the assistant's own words, keyed like
+  `PersonalAssistantAgent.WORDING`. See [wording][wording].
+</ParamField>
+
+<ParamField path="**kwargs" type="Any" toc={true}>
+  `ServiceAgent`'s arguments: every [`Operations`][operations] keyword argument and
+  every `AgentBase` argument.
+</ParamField>
+
+## Example
+
+```python
+from signalwire.operations import Messages
+from signalwire.prefabs import PersonalAssistantAgent
+
+assistant = PersonalAssistantAgent(
+    role="You answer Ann Lee's phone. You are friendly and brief.",
+    owner="Ann",
+    reach="+15550100002",
+    messages=Messages(save=lambda call, message: print(message)),
+)
+
+if __name__ == "__main__":
+    assistant.run()
+```

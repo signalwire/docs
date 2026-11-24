@@ -6,6 +6,12 @@ max-toc-depth: 3
 ---
 
 [security]: /docs/server-sdks/guides/security
+[ref-on-call-start]: /docs/server-sdks/reference/python/agents/agent-base/on-call-start
+[ref-on-call-end]: /docs/server-sdks/reference/python/agents/agent-base/on-call-end
+[ref-on-ai-event]: /docs/server-sdks/reference/python/agents/agent-base/on-ai-event
+[ref-record-speech-finals]: /docs/server-sdks/reference/python/agents/agent-base/record-speech-finals
+[ref-set-tool-resend-dedupe]: /docs/server-sdks/reference/python/agents/agent-base/set-tool-resend-dedupe
+[ref-tool-refusal]: /docs/server-sdks/reference/python/agents/tool-refusal
 
 ### The Complete Call Flow
 
@@ -130,7 +136,25 @@ def _render_swml(self, request_body=None):
 
 ### Phase 3: AI Conversation
 
-Once SignalWire has the SWML, it executes the instructions:
+Once SignalWire has the SWML, it executes the instructions.
+
+#### Before the first turn
+
+To run code when the call starts, register a handler with [`on_call_start()`][ref-on-call-start]. The platform calls it once, after the call is answered and before the AI speaks, and waits for it, so keep it short. The actions of the `FunctionResult` it returns run at once, and its response text is added to the conversation as a system message the model reads before it speaks:
+
+```python
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="vip", route="/vip")
+agent.prompt_add_section("Role", "You greet callers.")
+
+@agent.on_call_start
+def load_caller(raw_data):
+    return (FunctionResult("The caller is a gold member.")
+            .update_global_data({"tier": "gold"}))
+```
+
+#### The conversation loop
 
 <llms-ignore>
 
@@ -164,6 +188,10 @@ flowchart TD
 | `inactivity_timeout` | 30000ms | Max silence before ending call |
 | `barge_match_string` | - | Words that immediately interrupt AI |
 
+#### AI events during the call
+
+The platform can also post AI events while the call runs, such as `ai.speech_detect` for each final of the caller's speech. Register a handler with [`on_ai_event()`][ref-on-ai-event], and the agent points the call's `event_webhook_url` at its own `/ai_events` endpoint. To keep the recognizer's words and confidences for tool handlers, use [`record_speech_finals()`][ref-record-speech-finals]. Both need the agent's own web server, so they aren't available in serverless modes.
+
 ### Phase 4: Function Calls
 
 When the AI needs to call a function:
@@ -190,9 +218,11 @@ sequenceDiagram
 
 </llms-only>
 
+If your agent doesn't answer in time, the connection fails, or it returns a 5xx response, SignalWire sends the request again with the same `tool_call_id`. The agent answers the retry with the first attempt's result instead of running the tool twice; see [`set_tool_resend_dedupe()`][ref-set-tool-resend-dedupe].
+
 ### Phase 5: Call End
 
-When the call ends, the post-prompt summary is sent:
+When the call ends, the post-prompt summary is sent. To get the transcript at hangup instead, register a handler with [`on_call_end()`][ref-on-call-end].
 
 <llms-ignore>
 
@@ -487,7 +517,7 @@ def _render_swml(self):
 
 #### SWAIG Errors
 
-If a function fails:
+When a handler raises, the agent logs the exception and doesn't send it. The model is told the function failed before it finished, so whether it took effect is unknown. To decline a call with an outcome you know, raise [`ToolRefusal`][ref-tool-refusal]. To answer with your own text, catch the error and return a result:
 
 ```python
 def get_balance(self, args, raw_data):

@@ -13,6 +13,17 @@ scalar AttentionTimeout extends integer;
 @maxValue(3600000)
 scalar InactivityTimeout extends integer;
 
+// A timing value written with units or in clock form. The pattern only admits the characters a
+// duration can contain; the full grammar is in the @doc and on the params page.
+@summary("Duration string")
+@doc("""
+  A duration with units, such as `"1.5s"`, `"500ms"`, `"20m"` or `"1h30m"`, or in clock form, such as
+  `"1:30"` (90 seconds). Units are `h`, `m`, `s` and `ms`. See
+  [Duration values](/docs/swml/reference/calling/ai/params#duration-values).
+  """)
+@pattern("^[\\s\\d.:hHmMsS]+$")
+scalar AIDuration extends string;
+
 @summary("Positive count")
 @doc("A whole number greater than `0`.")
 @minValue(1)
@@ -45,7 +56,7 @@ model ConversationMessage {
   @doc("The role of the message sender.")
   role: ConversationRole;
 
-  @doc("The text content of the message.")
+  @doc("The text content of the message. With `redact_prompt` set, `user` entries are exported as `----` in the call logs.")
   @example("Hello, how can I assist you today?")
   content: string;
 
@@ -64,7 +75,13 @@ model AIParams {
   @example(true)
   acknowledge_interruptions?: boolean | PositiveCount;
 
-  @doc("The model to use for the AI. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.")
+  @doc("""
+    The model for the conversation, used when `prompt.model` isn't set. Name a model on the supported list:
+    `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.6-luna`,
+    `gpt-6-luna`, `gpt-oss-120b`, or `gpt-oss-20b`, optionally as `model@provider` with the provider `openai`,
+    `azure-openai`, or `anthropic`. Any other name runs as `gpt-4o-mini`, and the call gets a non-fatal `calling.error`
+    whose `error` is `model_substituted`. **Default:** `gpt-4o-mini`.
+    """)
   @example("gpt-4o-mini")
   ai_model?: SupportedAIModels = "gpt-4o-mini";
 
@@ -90,9 +107,9 @@ model AIParams {
   @example(true)
   asr_smart_format?: boolean;
 
-  @doc("Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `1,000` - `600,000`. **Default:** `5000` ms.")
+  @doc("Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `1,000` - `600,000`. Also accepts a duration string, such as `\"10s\"`. **Default:** `5000` ms.")
   @example(30000)
-  attention_timeout?: AttentionTimeout | 0;
+  attention_timeout?: AttentionTimeout | 0 | AIDuration;
 
   @doc("A custom prompt that is fed into the AI when the attention_timeout is reached.")
   @example("Ask if the user would like you to repeat yourself, or if they need more time to respond.")
@@ -109,7 +126,8 @@ model AIParams {
 
   @doc("""
     If true, will force the AI Agent to only respond to the speaker who reesponds to the AI Agent first.
-    Any other speaker will be ignored.
+    Any other speaker will be ignored. With `redact_prompt` set, other speakers' words are exported as
+    `Speaker N said: ----`.
     **Default:** `false`
     """)
   @example(true)
@@ -138,7 +156,24 @@ model AIParams {
   background_file_volume?: integer = 0;
 
   @doc("""
+    Tells the model about sounds in the background of the caller's turn: dog barking, phone ringing,
+    alarm going off, and siren. On a turn with words, the groups heard are added after the caller's
+    words, each once and in the order heard, as in `Yes. (background: dog barking, phone ringing)`, and
+    the note becomes part of the caller's turn text. Sounds heard with no words after them don't start
+    a turn or move any of the caller's timers; each adds a system-log entry with
+    `action: "background_sound"` to the call log.
+    **Default:** `false`.
+    """)
+  @example(true)
+  background_sounds?: boolean = false;
+
+  @doc("""
     Controls the barge behavior. Allowed values are `"complete"`, `"partial"`, `"all"`, or boolean.
+    With partial transcripts enabled, a partial transcript that passes the barge checks while the model
+    request is still out, before any of its reply has played, cancels that request, and none of the reply
+    plays. `barge_min_words`, `barge_match_string`, and `barge_functions` apply as they do while the
+    agent speaks. Under `transparent_barge`, only a statement begun inside the window cancels the
+    request; one begun later is the caller's next turn, and the reply plays first.
     **Default:** `"complete,partial"`
     """)
   @example("complete,partial")
@@ -207,13 +242,33 @@ model AIParams {
   @example(3)
   barge_min_words?: integer;
 
-  @doc("If `true`, allows functions to be executed while the AI is being interrupted. **Default:** `false`.")
+  @doc("""
+    If `true`, allows functions to be executed while the AI is being interrupted.
+    With `false`, a function's filler holds back the caller's words while it is playing or queued, and
+    neither keypad input nor `interrupt_on_noise` cuts it. Once the calls have returned and no filler or
+    `say` is left, the reply after them can be barged. Under `transparent_barge`, a turn whose function
+    ran is kept rather than discarded. A function has run once its call was sent; a call that a semantic
+    gate blocked, or that names no available function, didn't run.
+    With `true`, a turn that transparent barge discards also loses its tool calls and results: actions
+    it queued with `post_process` don't run, and a call that hadn't run yet is dropped.
+    **Default:** `false`.
+    """)
   @example(true)
   barge_functions?: boolean = false;
 
   @doc("If `true`, enables response caching for improved performance. **Default:** `false`.")
   @example(true)
   cache_mode?: boolean = false;
+
+  @doc("""
+    The maximum buffer delay, in ms, for Cartesia voices. Allowed values from `0` to `5,000`. Also
+    accepts a duration string, such as `"0.5s"`. A value out of range, or one that's neither a whole
+    number nor a duration, keeps the default. **Default:** `500` ms.
+    """)
+  @minValue(0)
+  @maxValue(5000)
+  @example(500)
+  cartesia_max_buffer_delay_ms?: integer | AIDuration = 500;
 
   @doc("Sets the prompt which binds the agent to its purpose.")
   @example("Place an order")
@@ -226,7 +281,7 @@ model AIParams {
   @example("Conversation ID")
   conversation_id?: string;
 
-  @doc("Sets the size of the sliding window for conversation history. This limits how much conversation history is sent to the AI model.")
+  @doc("Sets the size of the sliding window for conversation history. This limits how much conversation history is sent to the AI model. The current step's instructions and the current gather question are never dropped from the window.")
   @example(20)
   conversation_sliding_window?: integer;
 
@@ -252,21 +307,33 @@ model AIParams {
   @example("#")
   digit_terminators?: string;
 
-  @doc("Time, in ms, at the end of digit input to detect end of input. Allowed values from `1` - `29,999`; any other value keeps the default. **Default:** `3000` ms.")
+  @doc("Time, in ms, at the end of digit input to detect end of input. Allowed values from `1` - `29,999`; any other value keeps the default. Also accepts a duration string. **Default:** `3000` ms.")
   @minValue(1)
   @maxValue(29999)
   @example(3000)
-  digit_timeout?: integer = 3000;
+  digit_timeout?: integer | AIDuration = 3000;
 
-  @doc("Amount of silence, in ms, at the end of an utterance to detect end of speech. Allowed values from `0` - `10,000`. **Default:** `700` ms.")
+  @doc("Amount of silence, in ms, at the end of an utterance to detect end of speech. Allowed values from `0` - `10,000`. Also accepts a duration string, such as `\"0.8s\"`. **Default:** `700` ms.")
   @minValue(0)
   @maxValue(10000)
   @example(700)
-  end_of_speech_timeout?: integer = 700;
+  end_of_speech_timeout?: integer | AIDuration = 700;
 
   @doc("If `true`, enables usage accounting. The default is `false`.")
   @example(true)
   enable_accounting?: boolean;
+
+  @doc("""
+    Whether the model can end the call itself. Set it to `false` and the call ends only when the caller
+    hangs up, through a SWAIG action such as `hangup`, `transfer`, or `stop`, or through `hard_stop_time`
+    or `inactivity_timeout`. With it off, the model isn't taught how to hang up, an end-call marker it
+    writes anyway is removed from the spoken words, and a hangup tool call is refused.
+    `false`, `0`, and the strings `"false"`, `"no"`, `"off"`, `"f"`, `"disabled"`, `"inactive"`,
+    `"disallow"`, and `"0"` turn it off. Any other value, `1` included, leaves it on.
+    **Default:** `true`.
+    """)
+  @example(false)
+  enable_end_call?: boolean = true;
 
   @doc("""
     Enables thinking output for the AI Agent.
@@ -308,9 +375,22 @@ model AIParams {
   @doc("""
     A plain-language description of sensitive content to redact from everything the platform records or transmits about the call — logs, events, webhook payloads, the call timeline, and the post-conversation `call_log` and `raw_call_log`. For example: `"credit card numbers, social security numbers, and full names"`. Redacted content is replaced with `----`. Set this parameter to enable redaction; omit it to leave redaction off.
     The caller still hears the content in full, and the AI still receives the real text — redaction protects what is recorded and transmitted, not what the AI processes. Redaction can occasionally miss content, so treat it as a safeguard for your logs and integrations rather than an absolute guarantee.
+    With redaction on, a caller turn with no redacted form is exported as `----`, never as said: a turn whose redaction failed, a turn that doesn't wake the agent, and `user` entries given in `convo`. Recognizer details on caller entries show `----`, other speakers under `asr_speaker_affinity` are exported as `Speaker N said: ----`, `calling.ai.partial_result` is sent without its text, and `calling.ai.speech_detect` isn't sent.
     """)
   @example("credit card numbers, social security numbers, and full names")
   redact_prompt?: string;
+
+  @doc("""
+    The model that answers a turn the agent's model couldn't: a model name, or `model@provider`. When
+    the agent's model gives unusable replies (degenerate output twice in one request, a tool call written
+    as text twice in one request, or provider refusals), the turn goes once to the rescue model, with the
+    same conversation, tools, and step. The next turn goes back to the agent's model. There is no rescue
+    when the agent's model is the rescue model, when the name isn't a configured model, or for HTTP
+    errors and timeouts. To turn rescue off, set this to the agent's own model.
+    **Default:** `gpt-6-luna`.
+    """)
+  @example("gpt-4o-mini")
+  rescue_model?: SupportedAIModels = "gpt-6-luna";
 
   @doc("""
     Enables visual input processing for the AI Agent.
@@ -325,11 +405,11 @@ model AIParams {
   @example(52.0)
   energy_level?: float = 52.0;
 
-  @doc("Amount of time, in ms, to wait for the first word after speech is detected. Allowed values from `0` - `10,000`. **Default:** `1000` ms.")
+  @doc("Amount of time, in ms, to wait for the first word after speech is detected. Allowed values from `0` - `10,000`. Also accepts a duration string. **Default:** `1000` ms.")
   @minValue(0)
   @maxValue(10000)
   @example(1000)
-  first_word_timeout?: integer = 1000;
+  first_word_timeout?: integer | AIDuration = 1000;
 
   @doc("""
     If `true`, the AI will wait for any `filler` to finish playing before executing a function.
@@ -355,13 +435,13 @@ model AIParams {
     conversation then ends and the next SWML instruction runs. The stop is not exact and does not cut
     off speech in progress.
     
-    **Time Format:** a string in `HH:MM:SS` or `MM:SS` form, or a whole number of seconds. For example,
-    `"30:00"` and `"1800"` are both 30 minutes. In the colon forms, minutes and seconds go up to `59`.
-    Unit suffixes such as `30m` or `1h` are not converted: the letters are ignored, so `30m` is read as
-    30 seconds.
+    The value is a duration in which a bare number is seconds, rounded to the second. For example,
+    `"30m"`, `"30:00"`, and `"1800"` are all 30 minutes, and `"1h30m"` is 90 minutes. A string the
+    duration rules refuse is read by its digits and colons with the letters `h`, `m`, and `s` dropped,
+    so `"30ss"` is 30 seconds. A value that reads neither way sets no stop. See
+    [Duration values](/docs/swml/reference/calling/ai/params#duration-values).
     """)
-  @pattern("^\\d+(?::\\d+){0,2}$")
-  @example("30:00")
+  @example("30m")
   hard_stop_time?: string;
 
   @doc("A URL for the hold music to play, accepting WAV, mp3, and FreeSWITCH tone_stream.")
@@ -372,12 +452,50 @@ model AIParams {
   @example(true)
   hold_on_process?: boolean = false;
 
-  @doc("Amount of time, in ms, to wait before exiting the app due to inactivity. Allowed values: `0` (to disable) or `10,000` - `3,600,000`. **Default:** `600000` ms (10 minutes).")
+  @doc("""
+    HeyGen API key used by HeyGen Voice (`heygen.<voice>` voices). Without it, the platform's key is
+    used. The key can contain only letters, digits, `-`, `_`, and `.`; a key with other characters
+    doesn't open. It needs HeyGen's `voices:write` scope.
+    """)
+  @example("YOUR_HEYGEN_KEY")
+  heygen_key?: string;
+
+  @doc("""
+    The HeyGen Voice model, used when the voice string doesn't name one (`heygen.<voice>:<model>`).
+    `heygen-voice-1-turbo` has lower latency; `heygen-voice-1` has higher latency, especially on short
+    phrases. Any other value uses the default. **Default:** `heygen-voice-1-turbo`.
+    """)
+  @example("heygen-voice-1")
+  heygen_model?: "heygen-voice-1-turbo" | "heygen-voice-1" | string = "heygen-voice-1-turbo";
+
+  @doc("""
+    Whether a HeyGen voice streams each reply's first sentence, so playback starts at its first audio
+    while the rest is generated in the background. Set it to `false` to turn that streaming off.
+    **Default:** `true`.
+    """)
+  @example(false)
+  heygen_stream_first?: boolean = true;
+
+  @doc("""
+    Ignores a bare acknowledgement that the caller says over the agent's speech, such as "mm-hmm",
+    "uh-huh", "yeah", "okay", "right", or "got it": it doesn't interrupt the agent and isn't treated as a
+    turn. "Yes", "no", "stop", and "wait" are never treated as acknowledgements, and an acknowledgement
+    said into silence is a turn as usual. During a reply that a `no_barge_next_response` action protects,
+    an acknowledgement is held until the reply has played, and then it's the caller's answer. Each
+    ignored acknowledgement adds a system-log entry with `action: "backchannel"` to the call log.
+    "Okay", "alright", and "right" also answer questions, so one said over the end of a question the
+    agent is still finishing is ignored. Set it to `false` to treat acknowledgements like any other
+    speech. **Default:** `true`.
+    """)
+  @example(false)
+  ignore_backchannels?: boolean = true;
+
+  @doc("Amount of time, in ms, to wait before exiting the app due to inactivity. Allowed values: `0` (to disable) or `10,000` - `3,600,000`. Also accepts a duration string, such as `\"15m\"`. **Default:** `600000` ms (10 minutes).")
   @example(600000)
-  inactivity_timeout?: InactivityTimeout | 0 = 600000;
+  inactivity_timeout?: InactivityTimeout | 0 | AIDuration = 600000;
 
   @doc("Specifies the AI model to use for the inner dialog feature. Can be set to a different (often smaller/faster) model than the main conversation model. Only used when `enable_inner_dialog` is `true`.")
-  @example("gpt-4.1-nano")
+  @example("gpt-4.1-mini")
   inner_dialog_model?: SupportedAIModels;
 
   @doc("""
@@ -391,24 +509,43 @@ model AIParams {
   @doc("Has no effect and can be omitted. Setting it does not change how the inner dialog runs.")
   inner_dialog_synced?: boolean;
 
-  @doc("Amount of time, in ms, to wait before starting the conversation. Allowed values from `0` - `300,000`.")
+  @doc("""
+    Amount of time, in ms, to wait before starting the conversation. Allowed values from `0` -
+    `300,000`. Also accepts a duration string. Speech recognition is already running during the wait,
+    and anything the caller says during it is taken once the wait ends. **Default:** `0`.
+    """)
   @minValue(0)
   @maxValue(300000)
   @example(1000)
-  initial_sleep_ms?: integer = 0;
+  initial_sleep_ms?: integer | AIDuration = 0;
+
+  @doc("Duration in milliseconds. Range: 0 to 10000. **Default:** `1500`.")
+  min_utterance_ms?: integer | AIDuration = 1500;
+
+  @doc("Duration in milliseconds. Range: 0 or greater. **Default:** `60000`.")
+  escalate_after_ms?: integer | AIDuration = 60000;
+
+  @doc("Duration in milliseconds. Range: Greater than 0. **Default:** `1200`.")
+  function_filler_sequence_gap_ms?: integer | AIDuration = 1200;
+
+  @doc("Duration in milliseconds. **Default:** `-1`.")
+  double_turn_wait_ms?: integer | AIDuration = -1;
+
+  @doc("Duration in milliseconds. Range: Greater than 0, or 0 to disable. **Default:** `0`.")
+  double_turn_filler_min_ms?: integer | AIDuration = 0;
 
   @doc("""
     Check for input function with check_for_input.
     Example use case: Feeding an inbound SMS to AI on a voice call, eg., for collecting an email address or other complex information.
-    Allowed values from `1000` to `10000` ms.
+    Allowed values from `1000` to `10000` ms. Also accepts a duration string.
     **Default:** `2000` ms.
     """)
   @minValue(1000)
   @maxValue(10000)
   @example(2000)
-  input_poll_freq?: integer = 2000;
+  input_poll_freq?: integer | AIDuration = 2000;
 
-  @doc("When enabled, barges agent upon any sound interruption longer than 1 second. The 1-second threshold can't be changed. **Default:** `false`.")
+  @doc("When enabled, barges agent upon any sound interruption longer than 1 second. The 1-second threshold can't be changed. With `barge_functions` off, it doesn't cut a function's filler. **Default:** `false`.")
   @example(true)
   interrupt_on_noise?: boolean;
 
@@ -440,18 +577,40 @@ model AIParams {
   @doc("Has no effect and can be omitted. Setting it does not change the voice.")
   max_emotion?: integer;
 
-  @doc("Has no effect and can be omitted. Setting it does not limit the length of the AI's responses.")
+  @doc("""
+    How many tokens to keep free for the reply when the platform summarizes a long conversation to fit
+    the model's context window. Summarizing starts early enough to leave this much room. Setting it does
+    not limit the length of the AI's responses.
+    """)
   max_response_tokens?: integer;
+
+  @doc("""
+    How much loud audio with no recognized words, in ms, the caller's line can carry before the agent
+    says it seems very noisy on the caller's side and asks whether they can make it a little quieter, in
+    the language of the conversation. The notice also follows a turn that ended with no words over noise,
+    or with noise after its last words. Loud audio is never taken for speech. Each notice adds a
+    system-log entry with `action: "noisy_line"` to the call log. Allowed values from `0` to `600,000`,
+    where `0` turns the notice off. Also accepts a duration string, such as `"6s"`. The notice needs a
+    speech recognizer that reports line loudness. **Default:** `4000` ms.
+    """)
+  @minValue(0)
+  @maxValue(600000)
+  @example(6000)
+  noisy_line_ms?: integer | AIDuration = 4000;
 
   @doc("The ASR (Automatic Speech Recognition) engine to use. Common values include `deepgram:nova-2` and `deepgram:nova-3`.")
   @example("deepgram:nova-3")
   openai_asr_engine?: string = "deepgram:nova-3";
 
-  @doc("Sets a time duration for the outbound call recipient to respond to the AI agent before timeout, in a range from `10000` to `600000`. **Default:** `120000` ms (2 minutes).")
+  @doc("""
+    How long, in ms, the agent waits for the caller's first words. When it runs out and the caller has
+    never spoken, the call ends. Allowed values from `10000` to `600000`. Also accepts a duration string,
+    such as `"2m"`. **Default:** `120000` ms (2 minutes).
+    """)
   @minValue(10000)
   @maxValue(600000)
   @example(120000)
-  outbound_attention_timeout?: integer = 120000;
+  outbound_attention_timeout?: integer | AIDuration = 120000;
 
   @doc("""
     When enabled, the `global_data` object is automatically saved to a channel variable
@@ -469,8 +628,10 @@ model AIParams {
     Send a summary of the conversation after the call ends.
     This requires `ai.post_prompt_url` and `conversation_id` to be set.
     This eliminates the need for a `post_prompt` in the ai parameters.
-    Separately from that end-of-call report, an agent that starts with a `conversation_id` asks
-    `ai.post_prompt_url` for the summary you stored for that ID, and resumes the conversation with it.
+    The platform stores nothing: the summary goes to `ai.post_prompt_url` as `conversation_summary`, and
+    keeping it is up to you. The next call that starts with the same `conversation_id` asks
+    `ai.post_prompt_url` for the summary you stored, and resumes the conversation with the
+    `conversation_summary` in your reply.
     """)
   @example(true)
   save_conversation?: boolean;
@@ -484,25 +645,39 @@ model AIParams {
   semantic_gates_enabled?: boolean = true;
 
   @doc("""
-    How long one semantic gate check may take in total, in milliseconds. A check that runs
-    out of time blocks the function. Allowed values from `500` to `10,000`; a value outside the range
-    is clamped to it. **Default:** `2500` ms.
+    How long one semantic gate check may take in total, in milliseconds, retries included. A check that
+    runs out of time blocks the function. Allowed values from `500` to `10,000`; a value outside the
+    range is clamped to it. Also accepts a whole number in a string (`"3000"`) or a duration string
+    (`"3000ms"`, `"2.5s"`); a bare decimal string such as `"2.5"` keeps the default.
+    **Default:** `2500` ms.
     """)
   @example(3000)
-  semantic_gate_timeout_ms?: integer = 2500;
+  semantic_gate_timeout_ms?: integer | AIDuration = 2500;
 
   @doc("""
     How many recent conversation entries a semantic gate check reads. Allowed values from `0` to
-    `100`; a value outside the range is clamped to it. **Default:** `20`.
+    `100`; a value outside the range is clamped to it. A gate's own `history` replaces it for that gate.
+    **Default:** `20`.
     """)
   @example(30)
   semantic_gate_history?: integer = 20;
 
-  @doc("Amount of time, in ms, to wait for a speech event. Allowed values from `0` - `10,000`. `0`, or leaving it unset, lets speech recognition set this timing itself. **Default:** `0`.")
+  @doc("""
+    Which part of the conversation a semantic gate check judges, unless a gate sets its own `dialogue`.
+    `window` sends the newest `semantic_gate_history` entries. `proposal` sends only what was said since
+    `semantic_state` last changed, from the agent's first turn after the change: the read-back and the
+    caller's reply. If the agent has said nothing since, the conversation is empty. With no
+    `semantic_state` set, `window` is used. Only the word `proposal`, in any case, selects it; any other
+    value is `window`. **Default:** `window`.
+    """)
+  @example("proposal")
+  semantic_gate_dialogue?: "window" | "proposal" | string = "window";
+
+  @doc("Amount of time, in ms, to wait for a speech event. Allowed values from `0` - `10,000`. `0`, or leaving it unset, lets speech recognition set this timing itself. Also accepts a duration string. **Default:** `0`.")
   @minValue(0)
   @maxValue(10000)
   @example(1400)
-  speech_event_timeout?: integer = 0;
+  speech_event_timeout?: integer | AIDuration = 0;
 
   @doc("Number of quick stops to generate for speech. Allowed values from `0` - `10`. **Default:** `3`.")
   @minValue(0)
@@ -517,7 +692,8 @@ model AIParams {
     When enabled, the AI agent remains silent until directly addressed by name (using `ai_name`).
     This creates a "push-to-talk" style interaction where the agent only responds when explicitly
     called upon, useful for scenarios where the agent should listen but not interrupt.
-    Cannot be used together with `enable_pause`.
+    Cannot be used together with `enable_pause`. With `redact_prompt` set, turns that don't wake the
+    agent are exported as `----`.
     """)
   @example(true)
   speak_when_spoken_to?: boolean = false;
@@ -538,7 +714,7 @@ model AIParams {
   @example(true)
   static_greeting_no_barge?: boolean = false;
 
-  @doc("Defines the mode for summary generation. Allowed values are `\"string\"` and `\"original\"`.")
+  @doc("Defines the mode for summary generation. Only `\"string\"` and `\"original\"` are accepted.")
   @example("string")
   summary_mode?: "string" | "original" | SWMLVar;
 
@@ -566,6 +742,30 @@ model AIParams {
   swaig_set_global_data?: boolean = true;
 
   @doc("""
+    How long, in ms, the model's first words can take before the agent plays a filler to cover the
+    wait. Allowed values from `0` to `5,000`. Also accepts a duration string. Under
+    `transparent_barge`, this filler doesn't hold back the caller's words.
+    Separately, when the model has sent nothing for 3 seconds after a request, the agent plays one of the
+    current language's thinking fillers (`speech_fillers`, or `multilingual.fillers`), and the filler
+    from this param then stays silent. That 3-second filler plays once per request and right after a
+    function call; its timing can't be changed. **Default:** `200` ms.
+    """)
+  @minValue(0)
+  @maxValue(5000)
+  @example(500)
+  target_first_segment_ms?: integer | AIDuration = 200;
+
+  @doc("""
+    When the Deepgram recognizer formats the transcript, the model also reads the words as spoken after
+    each span the formatting changed, as in
+    `The order number is w7123456 (heard: w seven one two three four five six).` The annotation becomes
+    part of the caller's turn text. Recognizers that don't format the transcript themselves get no
+    annotation. **Default:** `false`.
+    """)
+  @example(true)
+  text_normalization_show_heard?: boolean = false;
+
+  @doc("""
     Controls whether SWML variables are included in SWAIG function webhook payloads.
     When set to `true`, all SWML variables are posted. When set to an array of strings,
     only the specified variable names are included.
@@ -573,28 +773,37 @@ model AIParams {
   @example(true)
   swaig_post_swml_vars?: boolean | string[];
 
-  @doc("The model to use for the AI's thinking capabilities — for example `gpt-4o-mini`, `gpt-4.1-mini`, or `gpt-4.1-nano`. A value that is not a recognized model is ignored, and the agent's main model is used instead.")
+  @doc("The model to use for the AI's thinking capabilities — for example `gpt-4o-mini` or `gpt-4.1-mini`. A value that is not a recognized model is ignored, and the agent's main model is used instead.")
   @example("gpt-4.1-mini")
   thinking_model?: SupportedAIModels;
 
-  @doc("The AI model used for lightweight background tasks such as redaction (`redact_prompt`) and transcription cleanup (`auto_correct`). Choose a small, fast model, such as `gpt-4o-mini`, `gpt-4.1-mini`, or `gpt-4.1-nano` — these tasks run while the caller is waiting for a response. A value that is not a recognized model is ignored, and the agent's main model is used instead. **Default:** the value of the `ai_model` parameter.")
+  @doc("The AI model used for lightweight background tasks such as redaction (`redact_prompt`) and transcription cleanup (`auto_correct`). Choose a small, fast model, such as `gpt-4o-mini` or `gpt-4.1-mini` — these tasks run while the caller is waiting for a response. A value that is not a recognized model is ignored, and the agent's main model is used instead. **Default:** the value of the `ai_model` parameter.")
   @example("gpt-4o-mini")
   utility_model?: SupportedAIModels;
 
   @doc("""
-    When enabled, the AI will not respond to the user's input when the user is speaking over the agent.
-    The agent will wait for the user to finish speaking before responding.
-    Additionally, any attempt the LLM makes to barge will be ignored and scraped from the conversation logs.
+    Lets the caller correct or extend what they just said. When the caller's next statement begins within
+    `transparent_barge_max_time` of their previous one, the agent's turn in between is discarded, whether
+    or not any of it played, a request still in flight is cancelled, and the two statements go to the
+    model as one. At or past the window, the agent's turn stands and the new words are a turn of their
+    own. Speech the barge settings hold back never discards a turn on its own, and with `barge_functions`
+    off a turn whose function ran is kept. The greeting is never discarded. Off when
+    `barge_match_string` is set.
     **Default:** `true`.
     """)
   @example(true)
   transparent_barge?: boolean = true;
 
-  @doc("Maximum time, in ms, for transparent barge mode. Allowed values from `0` - `60,000`. **Default:** `3000` ms.")
+  @doc("""
+    The transparent barge window, in ms. It runs from when the caller's previous final transcript arrived
+    to when their next statement began: its first partial transcript with words, its final transcript if
+    no partial came first, or the first key for keypad input. Allowed values from `0` to `60,000`, where
+    `0` means no limit. Also accepts a duration string, such as `"2.5s"`. **Default:** `3000` ms.
+    """)
   @minValue(0)
   @maxValue(60000)
   @example(3000)
-  transparent_barge_max_time?: integer = 3000;
+  transparent_barge_max_time?: integer | AIDuration = 3000;
 
   @doc("Pass a summary of a conversation from one AI agent to another. For example, transfer a call summary between support agents in two departments.")
   @example(true)
@@ -622,14 +831,14 @@ model AIParams {
     caller who has finished usually commits well inside it. Lowering it therefore doesn't make the
     agent answer faster, and values below `500` degrade transcription accuracy on words the
     recognizer needs the extra audio to disambiguate.
-    Set to `0` to use the default. Has no effect when `enable_turn_detection` is `off` or
-    `acoustic_only`.
+    Set to `0` to use the default. Also accepts a duration string. Has no effect when
+    `enable_turn_detection` is `off` or `acoustic_only`.
     **Default:** the value of `end_of_speech_timeout`.
     """)
   @minValue(0)
   @maxValue(10000)
   @example(700)
-  turn_detection_timeout?: integer;
+  turn_detection_timeout?: integer | AIDuration;
 
   @doc("""
     Which deliberate waits earn a backchannel from `languages[].turn_fillers`, or from
@@ -647,8 +856,8 @@ model AIParams {
     The default answers `spell` and `number` only, because those pauses are expected and cannot be
     shortened. A backchannel during `text` or `acoustic` usually talks over a caller who is still
     going, so give either its own delay with a `<token>:<ms>` suffix rather than listing it bare,
-    as in `spell,number,text:1200`.
-    
+    as in `spell,number,text:1200`. The delay can also be a duration string, as in `veto:2s`.
+
     Tokens are matched whole and case-insensitively, and a space after a comma is fine. A token
     that is not one of the five above matches no wait, so nothing here is validated and a
     misspelling silently leaves the agent with no backchannels at all.
@@ -668,7 +877,8 @@ model AIParams {
   turn_filler_every_n?: integer = 1;
 
   @doc("""
-    How long a wait must already have run, in milliseconds, before a backchannel plays. Off by
+    How long a wait must already have run, in milliseconds, before a backchannel plays. Also accepts
+    a duration string. Off by
     default: waits open the moment the agent decides to hold, and `spell` and `number` are meant to
     be answered right then. A positive `<token>:<ms>` suffix in `turn_filler_sources` replaces this for
     that token, but `:0` does not clear it. To answer one source immediately while delaying others,
@@ -676,20 +886,57 @@ model AIParams {
     """)
   @minValue(0)
   @example(800)
-  turn_filler_min_ms?: integer = 0;
+  turn_filler_min_ms?: integer | AIDuration = 0;
+
+  @doc("""
+    How loud `languages[].turn_fillers` and `multilingual.turn_fillers` play, relative to the agent's
+    voice as the caller hears it. `1` is the agent's own level, `0.5` is half the amplitude (-6 dB), and
+    `0.25` is -12 dB. Allowed values above `0` and up to `1`; a numeric string is also read, and any
+    other value keeps the default. Levels are applied in whole dB, and a level at or below -50 dB is
+    silence. It applies to both text phrases and audio-file entries, and includes `ai_volume` on voices
+    that apply it. **Default:** `0.5`.
+    """)
+  @minValueExclusive(0)
+  @maxValue(1)
+  @example(0.7)
+  turn_filler_volume?: float = 0.5;
 
   @doc("""
     The format for the AI agent to reference phone numbers.
-    Allowed values are `e164`, `international`, and `national`.
+    Allowed values are `e164`, `international`, and `national`; `e.164` is accepted as another
+    spelling of `e164`.
     **Default:** `e164`.
-    
+
     **Example:**
     - `e164`: `+12345678901`
     - `international`: `+1 234-567-8901`
     - `national`: `(234) 567-8901`
     """)
   @example("national")
-  tts_number_format?: "e164" | "international" | "national" = "e164";
+  tts_number_format?: "e164" | "e.164" | "international" | "national" = "e164";
+
+  @doc("""
+    The longest pause, in ms, that plays inside the agent's speech. A quiet stretch between two sounds
+    of a reply plays up to the cap, and the rest is dropped; quiet before a reply's first sound and after
+    its last isn't played. Allowed values from `0` to `2,000`, where `0` plays speech as the engine made
+    it; a value outside the range is clamped to it. Also accepts a whole number in a string or a
+    duration string, such as `"250ms"`; any other value keeps the default. The cap applies to the
+    platform's built-in TTS engines when they don't stream, not to a voice with `streaming: true` or
+    the `polly`, `gcloud`, and `amazon` engines. **Default:** `300` ms.
+    """)
+  @example(250)
+  tts_pause_cap_ms?: integer | AIDuration = 300;
+
+  @doc("""
+    What the model is told when it calls a function that can't run right now: one that's switched off,
+    used up, or not in the current step's functions, or a name the agent doesn't have. Nothing runs
+    either way. `\${function}` is the name the model called, `\${tools}` the tools the request offered,
+    and `\${steps}` the other steps in the current context that offer the function (empty for a name the
+    agent doesn't have); lists are comma-separated. Without it, the model is told that nothing ran,
+    which steps offer the function, and which tools are available now.
+    """)
+  @example("\${function} cannot run right now. Available: \${tools}.")
+  unavailable_function_response?: string;
 
   @doc("Has no effect and can be omitted.")
   verbose_logs?: boolean;
@@ -717,7 +964,7 @@ model AIParams {
   @example("https://example.com/talking.mp4")
   video_talking_file?: url;
 
-  @doc("The model to use for the AI's vision capabilities. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.")
+  @doc("The model to use for the AI's vision capabilities. Allowed values are `gpt-4o-mini` and `gpt-4.1-mini`.")
   @example("gpt-4o-mini")
   vision_model?: SupportedAIModels;
 

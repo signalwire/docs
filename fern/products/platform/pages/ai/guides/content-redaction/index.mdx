@@ -353,13 +353,14 @@ generates — in the completed turns that reach AI events, webhook payloads, and
 call log. The conversation itself is untouched. The caller hears the agent normally and the agent
 understands the caller perfectly. Only the recorded text changes.
 
-Recorded text is the limit of it: redaction reaches the text of a turn and not the structured fields
-the platform records beside that turn. Coverage is narrower than every record of the call, and
-[what gets masked](#what-gets-masked) sets out every surface, masked and unmasked.
+Recorded text is the limit of it: redaction reaches the text of each turn and the recognition detail
+recorded beside a caller's turn, but not every field the platform records. Coverage is narrower than
+every record of the call, and [what gets masked](#what-gets-masked) sets out every surface, masked and
+unmasked.
 
 <llms-ignore>
 
-  <img src="/assets/images/img/redaction-flow-themed.svg" alt="What redaction changes: the caller speaks a real card number, the AI agent receives the real value and replies normally, the caller hears the reply in full, and the recorded conversation text shows the number masked as four dashes while the structured fields recorded beside that turn still hold the real value." />
+  <img src="/assets/images/img/redaction-flow-themed.svg" alt="What redaction changes: the caller speaks a real card number, the AI agent receives the real value and replies normally, the caller hears the reply in full, and the records show the number masked as four dashes, both in the conversation text and in the recognized entity recorded beside that turn." />
 
 </llms-ignore>
 
@@ -372,8 +373,8 @@ flowchart TD
     T["Caller hears: 'Thanks, your card has been updated.'"]
     R["Conversation text in events, webhooks, and the call log
     'My card number is ----'"]
-    M["Structured fields recorded beside the same turn
-    entity type 'card', entity value '4242424242424242'"]
+    M["Recognition detail recorded beside the same turn
+    entity type 'card', entity value '----'"]
 
     C --> A
     A --> T
@@ -384,8 +385,8 @@ flowchart TD
     stays real"]
     N2["Conversation text
     is masked"]
-    N3["The fields beside it
-    are not"]
+    N3["So is the recognized
+    entity beside it"]
     N1 -.-> A
     N2 -.-> R
     N3 -.-> M
@@ -462,29 +463,38 @@ of those, so a [`say` action](#speak-a-value)'s text is recorded as you wrote it
 | Audio the caller hears | The real content, spoken in full |
 | Text the model receives | The real content, every turn |
 | Conversation text in completed-turn AI events and webhook payloads | Masked as `----` |
-| Conversation text in the post-conversation `call_log` and `raw_call_log` | Masked as `----` |
-| Structured fields recorded beside a turn, such as a recognized `entity` or a tool result's `original_result` | The real content |
-| Turn entries on the call timeline | Those same structured fields, unmasked |
-| Interim events sent while the caller is still speaking, including partial transcripts and transparent barge-in | The real content |
-| Timeline entries recording a text transformation, such as transcription cleanup, text normalization, or pronunciation | The real content |
+| Conversation text in the post-conversation `call_log`, `raw_call_log`, and `previous_contexts` | Masked as `----` |
+| Caller turns that have no masked form | The whole turn exported as `----` |
+| Recognition detail recorded beside a caller's turn: a recognized `entity`'s value, and the raw and formatted text of each `itn_spans` item | Masked as `----` |
+| Other speakers' turns when [`asr_speaker_affinity`](/docs/swml/reference/calling/ai/params#paramsasr_speaker_affinity) is on | Exported as `Speaker N said: ----` |
+| A tool result's `original_result` | The real content |
+| Turn entries on the call timeline | The same fields as the turn's call log entry |
+| Timeline entries recording a text transformation: transcription cleanup, text normalization, hearing hints, or pronunciation | The caller's words masked as `----` |
+| What the caller heard of each reply, and text the platform speaks itself (the `calling.ai.response_heard` and `calling.ai.manual_say` events) | Masked as `----` |
+| Partial transcripts (`calling.ai.partial_result`) | Sent without their text |
+| Final transcripts (`calling.ai.speech_detect`) | Not sent |
+| Transparent barge-in events | The real content |
 | Arguments your SWAIG functions receive | The real content |
 
-The structured-field row is the one to design around. Alongside each turn's text, the platform records
-what it worked out about that turn, and none of that is rewritten. A turn where the caller read out a
-phone number, a card number, or a social security number can carry an `entity` field holding that
-value in canonical form, and a tool result that was shortened before the model saw it carries the full
-original in `original_result`. Both travel with the turn into your webhook payloads and the call log.
-Turn entries on the call timeline are built from these fields rather than from the turn's own text, so
-masking the text leaves them unchanged.
+A caller turn can reach the records without a masked version of its own: its redaction failed, it was
+merged into the turn before it, it didn't wake the agent (with `speak_when_spoken_to`, or while the
+agent was paused), or it was given to the call rather than heard, such as a `user_prompt` or a turn in
+`convo`. Rather than export such a turn as said, the platform replaces all of it with `----` in the
+call log and in what the post-conversation summary reads.
 
-Interim events fire while a turn is still in progress, before there is a finished turn to mask, so an
-application that receives them sees the caller's raw words. Where no unmasked text may leave the
-platform, keep those events out of your own systems and turn
+Alongside each turn's text, the platform records what it worked out about that turn. On a caller's
+turn, that detail is masked too. A turn where the caller read out a phone number, a card number, or a
+social security number can carry an `entity` field holding that value in canonical form, and its
+value is replaced with `----`, as are the before and after text of each span that transcript
+formatting changed (`itn_spans`). A tool result is different: when a result was shortened before the
+model saw it, the full original travels unmasked in `original_result`, into your webhook payloads and
+the call log.
+
+Interim events fire while a turn is still in progress, before there is a finished turn to mask. With
+redaction on, partial transcripts arrive without their text and the final-transcript event isn't sent,
+but a transparent barge-in event still carries the caller's words. Where no unmasked text may leave
+the platform, keep those events out of your own systems and turn
 [`transparent_barge`](/docs/swml/reference/calling/ai/params#paramstransparent_barge) off.
-
-Timeline entries that record a transformation carry both the text before and the text after, so a
-transcription-cleanup, normalization, or pronunciation entry can hold the original alongside the
-masked version.
 
 The SWAIG row is deliberate. Your handler is the code that has to act on the value, so the arguments
 the agent extracted arrive intact. What is masked in a SWAIG payload is the conversation text carried
@@ -578,9 +588,9 @@ conversation run on for a few more turns.
 ### Check the call records
 
 Open the call in your Dashboard and review the logs. In the `call_log` and `raw_call_log`, the
-conversation turns where the number was said, by you or by the agent, should read `----`. Timeline
-entries recording a text transformation can still show the original, as
-[What gets masked](#what-gets-masked) describes.
+conversation turns where the number was said, by you or by the agent, should read `----`, and so
+should the `entity` value recorded on your turn. A tool result's `original_result` can still show the
+original, as [What gets masked](#what-gets-masked) describes.
 
 ### Check your webhook payloads
 

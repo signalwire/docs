@@ -1,0 +1,63 @@
+---
+title: "on_ai_event"
+slug: reference/python/agents/agent-base/on-ai-event
+description: Register a handler for the AI events the platform posts during calls.
+max-toc-depth: 3
+---
+
+[record-speech-finals]: /docs/server-sdks/reference/python/agents/agent-base/record-speech-finals
+[ai-params]: /docs/swml/reference/calling/ai/params
+
+Register a handler for the AI events the platform posts during calls, such as
+`ai.speech_detect` for each final of the caller's speech, with its `text` and the
+recognizer's `words` and confidences. Usable as a decorator or called directly.
+
+The agent sets the call's `event_webhook_url` [AI parameter][ai-params] to its own
+`/ai_events` endpoint and calls each handler with every event posted there. If you
+set `event_webhook_url` to another URL yourself, events go there instead, and the
+agent logs `event_webhook_url_already_set`.
+
+The endpoint takes POST requests under the agent's basic auth, with the signature
+checked when a signing key is set. The agent's own web server serves it, so it isn't
+available in serverless modes. A call with `redact_prompt` set sends no
+`ai.speech_detect` events unless debug is on.
+
+To keep the caller's speech finals for tool handlers to read, use
+[`record_speech_finals()`][record-speech-finals].
+
+## Parameters
+
+<ParamField path="handler" type="Callable[[str, dict[str, Any], dict[str, Any]], Any]" required={true} toc={true}>
+  Called as `handler(event_type, params, event)`. It may be sync or async. Its
+  return value is ignored, and an exception is logged.
+
+  - `event_type` -- the event, such as `"ai.speech_detect"`.
+  - `params` -- the event's fields, including `call_id`.
+  - `event` -- the whole event as posted, with its `timestamp`.
+</ParamField>
+
+## Returns
+
+The handler, unchanged, so the method works as a decorator.
+
+## Example
+
+```python {6-9}
+from signalwire import AgentBase
+
+agent = AgentBase(name="listen", route="/listen")
+agent.prompt_add_section("Role", "You answer questions.")
+
+@agent.on_ai_event
+def heard(event_type, params, event):
+    if event_type == "ai.speech_detect":
+        print(params["call_id"], params.get("text"))
+
+agent.serve()
+```
+
+The agent's params gain:
+
+```json
+"params": {"event_webhook_url": "https://agent.example.com/listen/ai_events/"}
+```

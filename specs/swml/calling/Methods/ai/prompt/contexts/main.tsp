@@ -14,16 +14,32 @@ model Contexts {
   ...TypeSpec.Record<ContextsObject>;
 }
 
+// Matched case-insensitively; any other value, or none, is read as `default`.
 @summary("Context history mode")
 union ContextHistoryMode {
-  @doc("Hide the instructions of earlier steps, but keep the conversation.")
+  @doc("Remove the instructions of earlier steps, and keep the earlier conversation and function calls for the rest of the call.")
   "default",
 
-  @doc("Keep the instructions of earlier steps and the conversation.")
+  @doc("Keep the instructions of earlier steps, the conversation, and function calls.")
   "keep",
 
-  @doc("Hide the instructions of earlier steps and the earlier conversation, including function calls and their results.")
+  @doc("""
+    Remove the instructions of earlier steps, the earlier conversation, and earlier function calls and their
+    results for the rest of the call. The exchange that entered the step and any conversation summary stay.
+    """)
   "hide",
+
+  @doc("""
+    While the agent is in this step, show the model only the base prompt, this step's instructions, the exchange
+    that entered the step, and what is said in the step. When the agent leaves the step, what was hidden comes back.
+    """)
+  "isolate",
+
+  @doc("""
+    Remove the instructions of earlier steps and every earlier function call, its result, and the notes added with
+    it, for the rest of the call. What the caller and the agent said stays.
+    """)
+  "spoken",
 }
 
 model ContextObjectBase {
@@ -39,22 +55,25 @@ model ContextObjectBase {
   initial_step?: string;
 
   @doc("""
-    How much of the earlier conversation the AI sees when it moves from one step to the next in this context.
-    **Default:** `default`.
+    How much of the earlier conversation the AI sees when a step in this context begins: `keep`, `default`,
+    `hide`, `isolate`, or `spoken`, matched case-insensitively. A step's own `history` overrides it.
+    Any other value is read as `default`. **Default:** `default`.
     """)
   @example("hide")
   history?: ContextHistoryMode;
 
   @doc("""
-    Steps the AI can move to when it switches to this context, before the current step's own
-    `valid_steps` apply. Include `next` to allow the following step.
+    Steps the AI can move to when it switches to this context. It applies only until the context's first
+    step loads; from then on, the current step's own `valid_steps` apply. Include `next` to allow the
+    following step.
     """)
   @example(#["collect_details", "next"])
   valid_steps?: string[];
 
   @doc("""
-    Contexts the AI can switch to when it switches to this context, before the current step's own
-    `valid_contexts` apply.
+    Contexts the AI can switch to when it switches to this context. It applies only until the context's
+    first step loads; from then on, the current step's own `valid_contexts` apply, so set `valid_contexts`
+    on each step the AI may leave the context from.
     """)
   @example(#["support"])
   valid_contexts?: string[];

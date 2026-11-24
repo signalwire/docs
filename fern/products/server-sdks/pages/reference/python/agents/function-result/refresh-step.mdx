@@ -1,0 +1,70 @@
+---
+title: "refresh_step"
+slug: reference/python/agents/function-result/refresh-step
+description: Enter the current step again so its text shows the current global data.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/server-sdks/reference/python/agents/function-result
+[swmlchangestep]: /docs/server-sdks/reference/python/agents/function-result/swml-change-step
+[updateglobaldata]: /docs/server-sdks/reference/python/agents/function-result/update-global-data
+[sethistory]: /docs/server-sdks/reference/python/agents/context-builder/step/set-history
+
+Enter the current step again, so the step starts over with its text expanded
+from the current global data.
+
+The platform expands a step's `${global_data.*}` values when the step is
+entered. Current platform releases also expand the text again, in place, before
+a request whenever a value it reads has changed, so new global data reaches the
+model without this method. Earlier releases and realtime models keep the values
+from when the step was entered. For those, return `refresh_step()` with the
+current step's name, after [`update_global_data()`][updateglobaldata] in the
+same result.
+
+Entering the step starts it over, so its [`history`][sethistory] mode applies
+again. Under `"hide"`, for example, the step's dialogue so far also leaves the
+model's context.
+
+This is the same action as [`swml_change_step(step_name)`][swmlchangestep].
+
+## Parameters
+
+<ParamField path="step_name" type="str" required={true} toc={true}>
+  The name of the step the call is in.
+</ParamField>
+
+## Returns
+
+[`FunctionResult`][functionresult] -- self, for chaining.
+
+## Example
+
+```python {17}
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="cafe", route="/cafe")
+agent.set_prompt_text("You take coffee orders.")
+agent.set_global_data({"order_total": "$12.00"})
+
+ctx = agent.define_contexts().add_context("default")
+ctx.add_step("take_order").set_text(
+    "Take the caller's order. The total so far is ${global_data.order_total}."
+)
+
+@agent.tool(name="add_drink", description="Add a drink to the order")
+def add_drink(args, raw_data):
+    return (
+        FunctionResult("Added the drink.")
+        .update_global_data({"order_total": "$14.50"})
+        .refresh_step("take_order")
+    )
+
+agent.serve()
+```
+
+`add_drink` returns:
+
+```json
+{"response": "Added the drink.",
+ "action": [{"set_global_data": {"order_total": "$14.50"}}, {"change_step": "take_order"}]}
+```

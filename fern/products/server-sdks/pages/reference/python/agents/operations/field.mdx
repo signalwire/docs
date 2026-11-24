@@ -1,0 +1,63 @@
+---
+title: "Field"
+slug: reference/python/agents/operations/field
+description: One argument an operation or lookup takes from the caller, with its type, description, and the question to ask when it's missing.
+max-toc-depth: 3
+---
+
+[operation]: /docs/server-sdks/reference/python/agents/operations/operation
+[operations]: /docs/server-sdks/reference/python/agents/operations/operations
+
+`Field` declares one thing an [operation][operation] or a [lookup][operations] takes
+from the caller. Declare it as a class attribute on an `Operation` subclass; the
+attribute name is the tool argument's name. `Field` is a frozen dataclass.
+
+A field whose value is missing, `None`, an empty string, or the text `"not said"`
+(the `NOT_SAID` constant, any case) counts as not given: `values.<name>` is `None`.
+
+```python
+from signalwire.operations import Field
+```
+
+## Parameters
+
+<ParamField path="kind" type="Any" required={true} toc={true}>
+  The value's type: `str`, `int`, `float`, `bool`, a `Literal`, `list[...]`,
+  `dict[str, ...]`, a `TypedDict`, or a JSON schema dict. Any other type raises
+  `TypeError` when the schema is built.
+</ParamField>
+
+<ParamField path="description" type="str" required={true} toc={true}>
+  What it is, in the caller's terms. The model reads it.
+</ParamField>
+
+<ParamField path="required" type="bool" default="True" toc={true}>
+  Whether the operation needs it.
+</ParamField>
+
+<ParamField path="ask" type="str | None" default="None" toc={true}>
+  The question for the caller when it's missing. With `ask`, a required field the model
+  sends empty, `null`, or as `"not said"` is asked for before `prepare()` runs, so the
+  model isn't pushed to invent a value. A field with a fixed choice of values gets
+  `"not said"` as an extra option.
+</ParamField>
+
+## Methods
+
+`schema()` returns the field's JSON schema, with its description.
+
+## Example
+
+```python
+from typing import Literal
+
+from signalwire.operations import Field
+
+order_id = Field(str, "The order to cancel.")
+reason = Field(
+    Literal["no longer needed", "ordered by mistake"],
+    "Why they're cancelling.",
+    ask="Why are they cancelling it?",
+)
+print(reason.schema())
+```

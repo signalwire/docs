@@ -33,16 +33,22 @@ model TranscribeStartAction {
     @example(true)
     live_events?: boolean | SWMLVar;
 
-    @doc("The timeout for speech recognition in milliseconds.")
+    @doc("""
+      The timeout for speech recognition in milliseconds.
+      Also accepts a duration string with units, such as `30s`; see [duration values](/docs/swml/reference/calling/ai/params#duration-values).
+      Any other string is read by its leading integer.
+      """)
     @example(30000)
-    speech_timeout?: integer | SWMLVar = 60000;
+    speech_timeout?: integer | string = 60000;
 
     @doc("""
       Voice activity detection silence time in milliseconds. Default depends on the speech engine: `700` for Deepgram, `500` for Google.
       Omitting the value or setting it to `0` uses the engine default.
+      Also accepts a duration string with units, such as `700ms`; see [duration values](/docs/swml/reference/calling/ai/params#duration-values).
+      Any other string is read by its leading integer.
       """)
     @example(500)
-    vad_silence_ms?: integer | SWMLVar = 700;
+    vad_silence_ms?: integer | string = 700;
 
     @doc("""
       Voice activity detection threshold (0-1800).
@@ -71,6 +77,14 @@ model TranscribeStartAction {
     @doc("The AI prompt that instructs how to summarize the conversation when `ai_summary` is enabled.")
     @example("Summarize the key points of this conversation.")
     ai_summary_prompt?: string;
+
+    @doc("""
+      The model that writes the AI summaries.
+      A name containing `gpt-6-luna`, `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-oss-120b`, or `gpt-oss-20b`,
+      in any case, selects that model. Any other value uses the default.
+      """)
+    @example("gpt-6-luna")
+    ai_model?: string = "gpt-6-luna";
 
     @doc("""
       Words or phrases that help speech recognition pick out specific terms, such as product names or industry jargon.

@@ -6,6 +6,11 @@ max-toc-depth: 3
 ---
 
 [ref-contextbuilder]: /docs/server-sdks/reference/python/agents/context-builder
+[ref-set-history]: /docs/server-sdks/reference/python/agents/context-builder/step/set-history
+[ref-set-expected-answer]: /docs/server-sdks/reference/python/agents/context-builder/step/set-expected-answer
+[ref-set-gather-info]: /docs/server-sdks/reference/python/agents/context-builder/step/set-gather-info
+[ref-refresh-step]: /docs/server-sdks/reference/python/agents/function-result/refresh-step
+[ref-render-warnings]: /docs/server-sdks/reference/python/agents/context-builder/render-warnings
 
 The features in this chapter build on the fundamentals covered earlier. While basic agents handle free-form conversations well, many real-world applications require more structure: guided workflows that ensure certain information is collected, the ability to transfer between different "departments" or personas, recording for compliance, and integration with knowledge bases.
 
@@ -408,6 +413,13 @@ Simple text prompt for the step:
 
 */}
 
+The platform expands variables in the text, such as `${global_data.order_total}`,
+when the step is entered, and expands them again before a request whenever a
+value they read has changed. On earlier platform releases and realtime models,
+the text keeps the values from entry; return
+[`refresh_step()`][ref-refresh-step] from a tool to enter the step again with
+the new values.
+
 ### add_section() / add_bullets()
 
 POM-style structured prompts:
@@ -524,6 +536,58 @@ step.set_skip_to_next_step(True)
 ```
 
 These flags are useful for non-interactive steps like announcements, automated transitions, or terminal farewell steps.
+
+### set_expected_answer()
+
+Tell the recognizer how many digits the caller's answer has, such as a ZIP code
+or a PIN, so it stops waiting once the caller has said them. Pass `digits` for
+an exact count, or `min_digits` and `max_digits` for a range, each from 1 to 64.
+See [`set_expected_answer()`][ref-set-expected-answer].
+
+```python
+ctx.add_step("collect").set_text("Ask for the caller's ZIP code.").set_expected_answer(digits=5)
+ctx.add_step("pin").set_text("Ask for the caller's PIN.").set_expected_answer(min_digits=4, max_digits=6)
+```
+
+## Conversation History Between Steps
+
+When the agent enters a step, its history mode decides what the model still
+sees from earlier steps. Set it with
+[`set_history()`][ref-set-history] on a step, or on a context to apply it to
+every step in the context that sets no mode of its own. Nothing is deleted: the
+call log keeps every message.
+
+| Mode | Earlier step instructions | Earlier tool calls and results | Earlier spoken turns |
+|---|---|---|---|
+| `keep` | Kept | Kept | Kept |
+| `default` (when unset) | Cleared | Kept | Kept |
+| `spoken` | Cleared | Gone for the rest of the call | Kept |
+| `hide` | Cleared | Gone for the rest of the call | Gone for the rest of the call |
+| `isolate` | Cleared | Gone while in the step | Gone while in the step |
+
+Which to use at a stage boundary:
+
+- `spoken` keeps the conversation and drops the work. Use it where the
+  caller's earlier requests must stay but the finished stage's tool results
+  shouldn't.
+- `isolate` shows the model only the step's own turns, and brings the earlier
+  dialogue back when the agent leaves the step. Use it on a confirm step, so
+  the read-back is all the model has.
+- `hide` removes the earlier dialogue for the rest of the call. Bring back
+  what the step needs with a `${step_history.*}` reference in its text.
+
+```python
+ctx = agent.define_contexts().add_context("default")
+ctx.add_step("take").set_text("Take the caller's order.")
+ctx.add_step("confirm").set_text("Read the order back.").set_history("isolate")
+ctx.add_step("wrap").set_text("Thank the caller.").set_history("spoken").set_end(True)
+```
+
+Under `hide`, `isolate` and `spoken`, the step keeps the exchange that entered
+it: the tool call whose action changed the step, its result, its notes and its
+`say`, so the read-back the caller just heard stays. A step entered with
+`next_step` keeps nothing of the exchange. A platform release that doesn't
+support `isolate` or `spoken` treats it as `default`.
 
 ## Understanding Step Criteria
 
@@ -894,7 +958,9 @@ if __name__ == "__main__":
 |-----------|-------------|
 | `output_key` | Key in `global_data` where answers are stored (default: top-level) |
 | `completion_action` | Set to `"next_step"` to auto-advance when all questions are answered |
-| `prompt` | Preamble text giving the AI personality/context for the questions |
+| `prompt` | Preamble text giving the AI personality/context for the questions. Sent with every question, each copy replacing the one before; under the `keep` history mode, only the first question's copy is sent |
+| `isolated` | Ask each question with the sibling questions and answers hidden from the model |
+| `say_questions` | Have the platform say each question word for word, instead of the model |
 
 ### Gather Question Parameters
 
@@ -906,6 +972,28 @@ if __name__ == "__main__":
 | `confirm` | bool | `False` | Require confirmation before accepting |
 | `prompt` | str | None | Extra instruction text for this specific question |
 | `functions` | List[str] | None | Additional functions visible during this question |
+| `isolated` | bool | None | Override the gather's `isolated` for this question |
+| `expected_answer` | dict | None | Digits in the answer, `{"digits": 5}` or `{"min_digits": 4, "max_digits": 6}`; replaces the step's expected answer while this question is asked |
+| `say` | bool | None | `True` for the platform to say this question, `False` for the model to ask it; overrides `say_questions` |
+
+### Questions the Platform Says Itself
+
+With `say_questions=True`, the platform says each question word for word, its
+`${...}` values filled in, when the gather reaches it. The model is told the
+caller was just asked, checks the answer, does any confirm read-back, and asks
+again in its own words if the answer is unclear. A question's own `say`
+overrides the gather's setting. Realtime models ask every question themselves.
+See [`set_gather_info()`][ref-set-gather-info].
+
+```python
+from signalwire.core.contexts import expected_answer
+
+step = ctx.add_step("survey").set_text("Ask the survey questions.").set_functions("none")
+step.set_gather_info(output_key="survey", completion_action="next_step", say_questions=True)
+step.add_gather_question("zip", "What is your ZIP code?", expected_answer=expected_answer(5))
+step.add_gather_question("pin", "What is your PIN?", say=False,
+                         expected_answer={"min_digits": 4, "max_digits": 6})
+```
 
 ### When to Use Gather Info vs Regular Steps
 
@@ -928,6 +1016,11 @@ The ContextBuilder validates your configuration:
 - Cannot mix `set_text()` with `add_section()` on same step
 - Cannot mix `set_prompt()` with `add_section()` on same context
 
+Rendering also warns about designs that are valid but don't do what they
+appear to, such as a tool no step offers, a step that names a tool it doesn't
+offer, or a step with a reset (which makes the step terminal). See
+[Render-time warnings][ref-render-warnings].
+
 ## Step and Context Methods Summary
 
 | Method | Level | Purpose |
@@ -942,6 +1035,8 @@ The ContextBuilder validates your configuration:
 | `set_end()` | Step | End conversation after this step |
 | `set_skip_user_turn()` | Step | Skip waiting for user input |
 | `set_skip_to_next_step()` | Step | Auto-advance to next step |
+| `set_history()` | Both | What the model still sees from earlier steps |
+| `set_expected_answer()` | Step | Digits in the caller's answer, for the recognizer |
 | `clear_sections()` | Step | Remove all sections/text for repopulation |
 | `set_gather_info()` | Step | Enable structured question gathering |
 | `add_gather_question()` | Step | Add a question to gather info |
@@ -963,7 +1058,7 @@ When the AI switches between contexts, several things can happen depending on yo
 
 ### Isolated Contexts
 
-When `isolated=True`, the conversation history is cleared when entering the context. This is useful when:
+When `isolated=True`, the conversation history is cleared when entering the context: every entry except the base system prompt is dropped. A context reset (consolidate or full reset) runs in place of the truncation. This is useful when:
 - You want a clean slate for a new department
 - Previous context shouldn't influence the new persona
 - You're implementing strict separation between workflow segments
@@ -981,6 +1076,7 @@ When `consolidate=True`, the AI summarizes the previous conversation before swit
 
 ```python
 billing = contexts.add_context("billing") \
+    .set_system_prompt("You are a billing specialist.") \
     .set_consolidate(True)  # Summarize previous conversation
 ```
 
@@ -992,10 +1088,16 @@ The summary includes key facts and decisions, giving the new context awareness o
 
 ```python
 escalation = contexts.add_context("escalation") \
+    .set_system_prompt("You are a senior support manager.") \
     .set_full_reset(True)  # Complete prompt replacement
 ```
 
 Use this when the new context needs to behave as if it were a completely different agent.
+
+<Note>
+A context's `consolidate`, `full_reset` and `user_prompt` act only when the
+context has a system prompt. Without `set_system_prompt()`, they do nothing.
+</Note>
 
 ### Combining with Enter/Exit Fillers
 

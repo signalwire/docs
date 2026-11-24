@@ -1,0 +1,116 @@
+---
+title: "CallContext and Values"
+slug: reference/python/agents/operations/call-context
+description: The call as an operation, lookup, or identify function sees it, and the fields the model gave an operation.
+max-toc-depth: 3
+---
+
+[function-result]: /docs/server-sdks/reference/python/agents/function-result
+[operations]: /docs/server-sdks/reference/python/agents/operations/operations
+[record]: /docs/server-sdks/reference/python/agents/operations/record
+
+`CallContext` is the `call` argument that operations, lookups, `identify()` functions,
+writers, and transfer functions receive: one request of the call. `Values` is the
+`values` argument of `prepare()`: the operation's fields as the model gave them.
+
+```python
+from signalwire.operations import CallContext, Values
+```
+
+## CallContext properties
+
+<ParamField path="data" type="dict[str, Any]" toc={true}>
+  The call's [record][record] as it came with the request.
+</ParamField>
+
+<ParamField path="account" type="Any" toc={true}>
+  The account as `identify()`'s `load` function returned it, or the account id when
+  there's no `load`.
+</ParamField>
+
+<ParamField path="account_id" type="str" toc={true}>
+  The identified account's id, or `""`.
+</ParamField>
+
+<ParamField path="call_id" type="str" toc={true}>
+  The platform's id for the call.
+</ParamField>
+
+<ParamField path="medium" type="str" toc={true}>
+  `"voice"` or `"chat"`: the service's `medium`, or the one found on the call's first
+  request. `""` when neither says.
+</ParamField>
+
+<ParamField path="state" type="dict[str, Any]" toc={true}>
+  Your own state for the call, such as a game's hand or results a caller may pick from.
+  Kept in `global_data` between requests.
+</ParamField>
+
+<ParamField path="write_key" type="str" toc={true}>
+  While a write runs, a key unique to that write in the call, for idempotent backends.
+</ParamField>
+
+<ParamField path="raw_data" type="dict[str, Any]" toc={true}>
+  The request's data as the platform sent it.
+</ParamField>
+
+<ParamField path="service" type="Operations" toc={true}>
+  The [`Operations`][operations] service handling the request.
+</ParamField>
+
+## CallContext methods
+
+Each returns the `CallContext`, so calls chain.
+
+### act
+
+`act(result)` adds the platform actions of a [`FunctionResult`][function-result] to
+this tool's result, after everything else it does, such as hanging up or starting a
+recording. The `FunctionResult`'s text isn't used.
+
+### show
+
+`show(event)` sends an event to the caller's screen (a SWML user event) with this
+tool's result.
+
+### go
+
+`go(step)` moves to a step when this tool's result goes back: a phase declared with
+`phase()`, or `main`. It applies from lookups, changes with `confirm = False`,
+`apply()`, and `identify()`. A change that's read back always waits in the confirm
+step.
+
+## Values
+
+Fields are attributes: `values.order_id`. A field that wasn't given, or came as `null`,
+an empty string, or `"not said"`, is `None`. `values.get(name, default=None)` returns
+the field's value or `default`, and `values.args` holds the arguments as they came.
+
+## Example
+
+```python
+from signalwire.core.function_result import FunctionResult
+from signalwire.operations import Change, Field, Operation, ServiceAgent
+
+agent = ServiceAgent("dealer", role="You deal cards.")
+
+
+@agent.operation(tool="place_bet")
+class Bet(Operation):
+    """Place a bet and deal."""
+
+    amount = Field(int, "The bet, in chips.")
+    confirm = False
+
+    def prepare(self, call, f):
+        call.state["bet"] = f.amount
+        call.show({"type": "deal", "cards": [10, 7]})
+        call.go("playing")
+        if f.amount > 100:
+            call.act(FunctionResult().hangup())
+        return Change(read_back="", done=f"Bet {f.amount}. You have 17.")
+
+
+agent.phase("betting", "Ask how much they'd like to bet, and call place_bet.", ["place_bet"], initial=True)
+agent.phase("playing", "They're playing their hand.", [])
+```

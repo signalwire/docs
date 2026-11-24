@@ -8,6 +8,7 @@ max-toc-depth: 3
 [ai-languages]: /docs/swml/reference/calling/ai/languages
 [swml-languages-reference]: /docs/swml/reference/calling/ai/languages
 [ref-agentbase]: /docs/server-sdks/reference/python/agents/agent-base
+[set-fallback-voice]: /docs/server-sdks/reference/python/agents/agent-base/set-fallback-voice
 
 Add a language configuration with voice settings. The agent uses these configurations
 to support multilingual conversations with appropriate TTS voices.
@@ -33,14 +34,19 @@ engine that can change.
   Language code (e.g., `"en-US"`, `"fr-FR"`, `"es-MX"`).
 </ParamField>
 
-<ParamField path="voice" type="str" required={true} toc={true}>
-  TTS voice identifier. Accepts one of three formats:
+<ParamField path="voice" type="str | Sequence[str]" required={true} toc={true}>
+  TTS voice identifier, or a list of voices. A single voice accepts one of three formats:
   - Engine and voice: `"elevenlabs.josh"`
   - Engine, voice, and model: `"elevenlabs.josh:eleven_turbo_v2_5"`
   - Voice name with explicit `engine`/`model`: `"josh"`
 
   Always name the engine, either in the voice string or through `engine`. A voice name on its own —
   `"en-US-Neural2-F"` — is resolved against a default engine, and that default can change.
+
+  A list holds up to 8 voices, each in the `engine.voice:model` form. The first voice speaks,
+  and the platform tries the rest in order when it fails. After them come the voices from
+  [`set_fallback_voice()`][set-fallback-voice], then the platform's own last resort. A list is
+  sent as written, even with one item, and can't be combined with `engine` or `model`.
 </ParamField>
 
 <ParamField path="speech_fillers" type="list[str] | None" default="None" toc={true}>
@@ -54,12 +60,12 @@ engine that can change.
 
 <ParamField path="engine" type="str | None" default="None" toc={true}>
   Explicit TTS engine name (e.g., `"elevenlabs"`, `"rime"`). Overrides the
-  combined string format if provided.
+  combined string format if provided. Not allowed with a list of voices.
 </ParamField>
 
 <ParamField path="model" type="str | None" default="None" toc={true}>
   Explicit TTS model name (e.g., `"eleven_turbo_v2_5"`, `"coda"`). Overrides the
-  combined string format if provided.
+  combined string format if provided. Not allowed with a list of voices.
 </ParamField>
 
 <ParamField path="params" type="dict[str, Any] | None" default="None" toc={true}>
@@ -72,6 +78,11 @@ engine that can change.
 
 [`AgentBase`][ref-agentbase] -- Returns self for method chaining.
 
+## Raises
+
+`ValueError` for an empty voice, an empty list, a list of more than 8 voices, a list entry
+that isn't a non-empty string, or a list combined with `engine` or `model`.
+
 ## **Examples**
 
 ### Engine and voice (engine.voice)
@@ -83,6 +94,26 @@ agent = AgentBase(name="support", route="/support")
 agent.set_prompt_text("You are a helpful assistant.")
 agent.add_language("English", "en-US", "rime.spore")
 agent.serve()
+```
+
+### Voice with fallbacks
+
+```python {5-8}
+from signalwire import AgentBase
+
+agent = AgentBase(name="support", route="/support")
+agent.set_prompt_text("You are a helpful assistant.")
+agent.add_language(
+    "English", "en-US",
+    ["elevenlabs.rachel:eleven_flash_v2_5", "cartesia.kurt"],
+)
+agent.serve()
+```
+
+The language renders with its voice list as written:
+
+```json
+{"name": "English", "code": "en-US", "voice": ["elevenlabs.rachel:eleven_flash_v2_5", "cartesia.kurt"]}
 ```
 
 ### Explicit engine and model

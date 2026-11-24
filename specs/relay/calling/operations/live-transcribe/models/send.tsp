@@ -77,18 +77,24 @@ model LiveTranscribeStart {
   @example(true)
   live_events?: boolean;
 
-  @doc("Speech-recognition timeout in milliseconds. Default `60000`.")
+  @doc("""
+    Speech-recognition timeout in milliseconds. Default `60000`. Also accepts a
+    duration string with units, such as `30s`; any other string is read by its
+    leading integer.
+    """)
   @minValue(0)
   @example(60000)
-  speech_timeout?: int32 = 60000;
+  speech_timeout?: int32 | string = 60000;
 
   @doc("""
     Voice-activity-detection silence time in milliseconds. The default is
     engine-dependent (Deepgram vs Google) and is not fixed by this method.
+    Also accepts a duration string with units, such as `700ms`; any other string
+    is read by its leading integer.
     """)
   @minValue(0)
   @example(500)
-  vad_silence_ms?: int32;
+  vad_silence_ms?: int32 | string;
 
   @doc("Voice-activity-detection energy threshold (0–1800; default `400`). It sets the audio-energy floor for detecting speech: higher values are less sensitive (they require louder input); lower values are more sensitive.")
   @minValue(0)
@@ -128,13 +134,28 @@ model LiveTranslateStart {
   @example("https://example.com/webhooks/relay")
   webhook?: url;
 
-  @doc("The voice used to speak the source language. Defaults to `josh`.")
-  @example("en-US-Neural2-A")
-  from_voice?: string;
+  @doc("""
+    The voice used to speak the source language. Defaults to the platform's
+    translation voice, `azure.en-US-RyanMultilingualNeural`.
+    Name the engine, as `<engine>.<voice>` or `<engine>.<voice>:<model>`: a voice
+    without a recognized engine is replaced by the default.
+    Supply an array of up to 8 voices to give it backups: the first speaks, and
+    when it fails, the next voice that opens takes over and speaks the same text
+    again, then the platform's last-resort voice.
+    """)
+  @example("gcloud.en-US-Neural2-A")
+  @maxItems(8)
+  from_voice?: string | string[];
 
-  @doc("The voice used to speak the translated language. Defaults to `josh`.")
-  @example("es-ES-Neural2-A")
-  to_voice?: string;
+  @doc("""
+    The voice used to speak the translated language. Defaults to the platform's
+    translation voice, `azure.en-US-RyanMultilingualNeural`.
+    Accepts an engine-prefixed voice string or an array of up to 8, the same way
+    as `from_voice`.
+    """)
+  @example("gcloud.es-ES-Neural2-A")
+  @maxItems(8)
+  to_voice?: string | string[];
 
   @doc("""
     Adjusts the tone or style applied when translating the source speaker — a
@@ -162,18 +183,24 @@ model LiveTranslateStart {
   @example("Summarize the key points and any action items discussed on this call.")
   ai_summary_prompt?: string;
 
-  @doc("Speech-recognition timeout in milliseconds. Default `60000`.")
+  @doc("""
+    Speech-recognition timeout in milliseconds. Default `60000`. Also accepts a
+    duration string with units, such as `30s`; any other string is read by its
+    leading integer.
+    """)
   @minValue(0)
   @example(60000)
-  speech_timeout?: int32 = 60000;
+  speech_timeout?: int32 | string = 60000;
 
   @doc("""
     Voice-activity-detection silence time in milliseconds. The default is
     engine-dependent (Deepgram vs Google) and is not fixed by this method.
+    Also accepts a duration string with units, such as `700ms`; any other string
+    is read by its leading integer.
     """)
   @minValue(0)
   @example(500)
-  vad_silence_ms?: int32;
+  vad_silence_ms?: int32 | string;
 
   @doc("Voice-activity-detection energy threshold (0–1800; default `400`). It sets the audio-energy floor for detecting speech: higher values are less sensitive (they require louder input); lower values are more sensitive.")
   @minValue(0)
@@ -194,11 +221,13 @@ model LiveTranslateStart {
   mode?: LiveTranslateMode = "classic";
 
   @doc("""
-    The model that translates each utterance. An unsupported value falls back to the
-    default `gpt-4.1-nano`. Ignored in `realtime` mode.
+    The model that translates each utterance and writes the AI summaries. A name
+    containing `gpt-6-luna`, `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-oss-120b`, or
+    `gpt-oss-20b`, in any case, selects that model; any other value uses the
+    default. Ignored in `realtime` mode.
     """)
-  @example("gpt-4.1-nano")
-  translation_model?: string = "gpt-4.1-nano";
+  @example("gpt-6-luna")
+  translation_model?: string = "gpt-6-luna";
 
   @doc("""
     Request parameters for the translation model, such as `temperature` or `top_p`,

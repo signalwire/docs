@@ -1,0 +1,76 @@
+---
+title: "set_semantic_gate_mark"
+slug: reference/python/agents/function-result/set-semantic-gate-mark
+description: Set a named mark that semantic gates judge the dialogue from.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/server-sdks/reference/python/agents/function-result
+[semanticgate]: /docs/server-sdks/reference/python/agents/semantic-gate
+[say]: /docs/server-sdks/reference/python/agents/function-result/say
+
+Set a named mark that [semantic gates][semanticgate] judge the dialogue from. A
+gate with `since=name` judges the dialogue from the agent's first turn at or
+after the mark, up to its `history` entries. Until the mark is set, the gate
+judges its dialogue as usual.
+
+The mark dates from the start of the result's action list, so a
+[`say()`][say] anywhere in the same result falls after it. Setting the mark
+again moves it, and marks last for the rest of the call. Older platform
+releases date the mark from its own action instead, so set it before the `say`
+to cover both.
+
+## Parameters
+
+<ParamField path="name" type="str" required={true} toc={true}>
+  The mark's name: 1 to 64 letters, digits, or underscores.
+</ParamField>
+
+## Returns
+
+[`FunctionResult`][functionresult] -- self, for chaining.
+
+## Raises
+
+`ValueError` if `name` is not 1 to 64 letters, digits, or underscores.
+
+## Example
+
+The quote sets the `cancel_offer` mark, and the gate on `book_repair` judges only
+the dialogue from that point on.
+
+```python {10,19}
+from signalwire import AgentBase, FunctionResult, SemanticGate
+
+agent = AgentBase(name="repairs", route="/repairs")
+agent.set_prompt_text("You quote and book repairs.")
+
+@agent.tool(name="give_quote", description="Quote the repair price")
+def give_quote(args, raw_data):
+    return (
+        FunctionResult("Quoted $120 for the repair.")
+        .set_semantic_gate_mark("cancel_offer")
+        .say("The repair is one hundred twenty dollars. Shall I book it?")
+    )
+
+@agent.tool(
+    name="book_repair",
+    description="Book the quoted repair",
+    gates=[SemanticGate(
+        "Has the caller agreed to the quoted price in `conversation`?", 0.9,
+        "book_repair was not run.", since="cancel_offer",
+    )],
+)
+def book_repair(args, raw_data):
+    return FunctionResult("The repair is booked.")
+
+agent.serve()
+```
+
+`give_quote` returns:
+
+```json
+{"response": "Quoted $120 for the repair.",
+ "action": [{"semantic_gate_mark": "cancel_offer"},
+            {"say": "The repair is one hundred twenty dollars. Shall I book it?"}]}
+```

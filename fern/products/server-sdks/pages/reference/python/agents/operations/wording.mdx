@@ -1,0 +1,84 @@
+---
+title: "Wording, rules, and medium"
+slug: reference/python/agents/operations/wording
+description: Replace the words an operations agent generates with DEFAULT_WORDING and wording=, change its prompt rules, and fix the conversation's medium.
+max-toc-depth: 3
+---
+
+[operations]: /docs/server-sdks/reference/python/agents/operations/operations
+[record]: /docs/server-sdks/reference/python/agents/operations/record
+[appointments]: /docs/server-sdks/reference/python/agents/operations/appointments
+[messages]: /docs/server-sdks/reference/python/agents/operations/messages
+[payments]: /docs/server-sdks/reference/python/agents/operations/payments
+[info-bot]: /docs/server-sdks/reference/python/agents/operations/info-bot-knowledge
+[front-desk]: /docs/server-sdks/reference/python/agents/prefabs/front-desk-agent
+[personal-assistant]: /docs/server-sdks/reference/python/agents/prefabs/personal-assistant-agent
+
+Every string an [`Operations`][operations] service generates comes from a key in
+`DEFAULT_WORDING`: the step text, tool descriptions, tool results and prompts, gates,
+the transfer notice, and the [record's][record] `now` line. The prompt's Rules section
+comes from `DEFAULT_RULES`. Both can be changed when the service is made.
+
+```python
+from signalwire.operations import DEFAULT_RULES, DEFAULT_WORDING
+```
+
+## wording
+
+`wording=` on `Operations` or `ServiceAgent` takes overrides keyed like
+`DEFAULT_WORDING`, such as `"step.main"` or `"transfer.notice"`. `DEFAULT_WORDING` is a
+read-only mapping of every key to its default text.
+
+- A `{name}` in a template is a placeholder, filled in when the words are used. An
+  override may leave placeholders out, but not add new ones.
+- An unknown key or placeholder raises `ValueError` when the service is made.
+- Platform variables such as `${global_data.today}` are kept as written.
+
+The model answers in the language its role asks for. The generated words are
+instructions to the model, so English ones work in any language. The transfer notice
+is the one string the platform speaks word for word.
+
+Each task pack and prefab has its own table and `wording=` argument:
+`APPOINTMENTS_WORDING` ([`Appointments`][appointments]), `MESSAGES_WORDING`
+([`Messages`][messages]), `PAYMENTS_WORDING` ([`Payments`][payments]),
+`KNOWLEDGE_WORDING` ([`InfoBotKnowledge`][info-bot]), `FrontDeskAgent.WORDING`
+([`FrontDeskAgent`][front-desk], set with `desk_wording=`), and
+`PersonalAssistantAgent.WORDING` ([`PersonalAssistantAgent`][personal-assistant], set
+with `assistant_wording=`).
+
+## rules
+
+`DEFAULT_RULES` is a read-only mapping with three keys:
+
+| Key | Default rule |
+|---|---|
+| `reply` | Keep each reply short, but give every fact the caller asks for. |
+| `facts` | State only facts that came from a tool result. Never guess records, prices or policies. |
+| `confirm` | Nothing changes until the caller says yes to a change read back to them and it is confirmed. |
+
+`confirm` is left out for a service with no operations. `rules=` as a list replaces
+them all. As a mapping it changes them by key: a new key adds a rule, an existing key
+replaces that rule, and `None` removes it.
+
+## medium
+
+`medium=` is `"voice"`, `"chat"`, or `None`; any other value raises `ValueError`.
+
+- With a value, the `reply` rule starts with "This is a phone call." or "This is a
+  chat."
+- With `None`, each call's medium is read from the request's `conversation_type`, kept
+  in the record as `medium`, and stated at the start of `now`. Your code reads it as
+  `call.medium`.
+
+## Example
+
+```python
+from signalwire.operations import Operations
+
+ops = Operations(
+    role="Atiendes el teléfono de una tienda. Hablas siempre en español.",
+    rules={"facts": None, "tone": "Use usted."},
+    wording={"transfer.notice": "Un momento, le paso con una persona."},
+    medium="voice",
+)
+```

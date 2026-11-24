@@ -8,17 +8,23 @@ max-toc-depth: 3
 [ref-swmlservice]: /docs/server-sdks/reference/python/agents/swml-service
 
 Add a verb to the `main` section of the current SWML document. The verb is validated
-against the SWML schema (or a registered custom handler) before being appended. Raises
-`SchemaValidationError` if validation is enabled and the verb config is invalid.
+against the SWML schema (or a registered custom handler) before being appended.
 
 For verbs with a registered handler, such as `ai`, the handler validates the
 verb's shape and the top-level keys are then checked against the schema, so a
 misspelled or unknown top-level key raises. Nested shapes such as `ai.params`
 are left to the handler.
 
+<Warning title="Invalid bodies raise">
+`add_verb()` returns `True` or raises; it never returns `False`. A body that doesn't
+fit the verb's schema raises `SchemaValidationError`, and a body that isn't a JSON
+value, such as `None`, raises `TypeError`. Catch these exceptions rather than checking
+the return value.
+</Warning>
+
 <Note>
 [SWMLService][ref-swmlservice] also auto-generates convenience methods for every verb defined in the SWML
-schema (e.g., `service.play(url=...)`, `service.connect(to=...)`). These call `add_verb`
+schema (e.g., `service.play(url=...)`, `service.connect({"to": ...})`). These call `add_verb`
 internally. Use `add_verb` directly when you need to pass a pre-built config dictionary
 or work with custom verbs.
 </Note>
@@ -29,27 +35,53 @@ or work with custom verbs.
   The SWML verb name (e.g., `"answer"`, `"play"`, `"ai"`, `"hangup"`, `"connect"`).
 </ParamField>
 
-<ParamField path="config" type="dict[str, Any] | int" required={true} toc={true}>
-  Configuration dictionary for the verb. Most verbs accept a dict of parameters.
-  The `sleep` verb is a special case that accepts a direct `int` value representing
-  milliseconds.
+<ParamField path="config" type="Any" required={true} toc={true}>
+  The verb's body, in the type the verb takes: a `dict` for most verbs, or a `list`,
+  `str`, number, or `bool` for verbs whose body isn't an object, such as `label`'s
+  name, `unset`'s variable names, `cond`'s conditions, `sleep`'s duration, or
+  `return`'s value. A `sleep` duration must be a positive number of milliseconds, `-1`
+  to sleep until the call ends, or a SWML variable string.
 </ParamField>
 
 ## **Returns**
 
-`bool` — `True` if the verb was added successfully, `False` if the config type was
-invalid (non-dict for non-sleep verbs).
+`bool` — Always `True`.
+
+## Raises
+
+- `SchemaValidationError` (from `signalwire.utils.schema_utils`) when schema validation
+  is on and the body doesn't fit the verb. Its `verb_name` attribute names the verb,
+  and `errors` lists the problems found.
+- `TypeError` when the body isn't a `dict`, `list`, `str`, `int`, `float`, or `bool`.
 
 ## **Example**
 
-```python {4-7}
+```python {4-12}
 from signalwire import SWMLService
 
 service = SWMLService(name="ivr")
 service.add_verb("answer", {})
+service.add_verb("label", "start")
 service.add_verb("play", {"url": "https://example.com/greeting.mp3"})
+service.add_verb("cond", [
+    {"when": "tries < 3", "then": [{"goto": {"label": "start"}}]},
+    {"else": [{"hangup": {}}]},
+])
 service.add_verb("sleep", 2000)
-service.add_verb("hangup", {"reason": "completed"})
+service.add_verb("hangup", {})
 
 print(service.render_document())
+```
+
+Handle a body the schema refuses:
+
+```python {7-8}
+from signalwire import SWMLService
+from signalwire.utils.schema_utils import SchemaValidationError
+
+service = SWMLService(name="checks")
+try:
+    service.add_verb("send_sms", {})  # missing to_number, from_number, body
+except SchemaValidationError as e:
+    print(e.verb_name, e.errors)
 ```

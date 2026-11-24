@@ -58,16 +58,25 @@ The `action` property controls the translation session. Use `start` to begin tra
   See [direction order](#direction-order).
 </ParamField>
 
-<ParamField path="start.from_voice" type="string" default="azure.en-US-RyanMultilingualNeural" toc={true}>
-  The TTS voice that speaks translations into `from_lang` (the first direction in `direction`).
+<ParamField path="start.from_voice" type="string | string[]" default="azure.en-US-RyanMultilingualNeural" toc={true}>
+  The TTS voice that speaks translations into `from_lang` (the first direction in `direction`), as `<engine>.<voice>` or `<engine>.<voice>:<model>`.
   A voice that doesn't start with a lowercase engine prefix live translation supports, such as `polly.`, `gcloud.`, `azure.` or `elevenlabs.`, is replaced by the default. For example, `rachel`, `amazon.Joanna` and `Polly.Joanna` are all spoken as `azure.en-US-RyanMultilingualNeural`.
   See [supported voices & languages](/docs/platform/voice/tts).
+
+  Supply an array of up to 8 voices to give it backups; see [backup voices](#backup-voices).
 </ParamField>
 
-<ParamField path="start.to_voice" type="string" default="azure.en-US-RyanMultilingualNeural" toc={true}>
-  The TTS voice that speaks translations into `to_lang` (a second direction in `direction`).
+<ParamField path="start.to_voice" type="string | string[]" default="azure.en-US-RyanMultilingualNeural" toc={true}>
+  The TTS voice that speaks translations into `to_lang` (a second direction in `direction`), as `<engine>.<voice>` or `<engine>.<voice>:<model>`.
   A voice that doesn't start with a lowercase engine prefix live translation supports, such as `polly.`, `gcloud.`, `azure.` or `elevenlabs.`, is replaced by the default. For example, `rachel`, `amazon.Joanna` and `Polly.Joanna` are all spoken as `azure.en-US-RyanMultilingualNeural`.
   See [supported voices & languages](/docs/platform/voice/tts).
+
+  Supply an array of up to 8 voices to give it backups; see [backup voices](#backup-voices).
+</ParamField>
+
+<ParamField path="start.translation_model" type="string" default="gpt-6-luna" toc={true}>
+  The model that translates each utterance and writes the AI summaries.
+  A name containing `gpt-6-luna`, `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-oss-120b`, or `gpt-oss-20b`, in any case, selects that model. Any other value uses the default.
 </ParamField>
 
 <ParamField path="start.filter_from" type="string" toc={true}>
@@ -98,13 +107,15 @@ The `action` property controls the translation session. Use `start` to begin tra
   When enabled, AI-generated summaries in both languages will be sent to your webhook when the translation session ends.
 </ParamField>
 
-<ParamField path="start.speech_timeout" type="integer" default="60000" toc={true}>
+<ParamField path="start.speech_timeout" type="integer | string" default="60000" toc={true}>
   The timeout for speech recognition in milliseconds. Minimum value: `1500`.
+  Also accepts a duration string with units, such as `"30s"`; see [duration values](/docs/swml/reference/calling/ai/params#duration-values). Any other string is read by its leading integer.
 </ParamField>
 
-<ParamField path="start.vad_silence_ms" type="integer" default="700 | 500" toc={true}>
+<ParamField path="start.vad_silence_ms" type="integer | string" default="700 | 500" toc={true}>
   Voice activity detection silence time in milliseconds.
   Default depends on the speech engine: `700` for Deepgram, `500` for Google. Omitting the value or setting it to `0` uses the engine default.
+  Also accepts a duration string with units, such as `"700ms"`; see [duration values](/docs/swml/reference/calling/ai/params#duration-values). Any other string is read by its leading integer.
 </ParamField>
 
 <ParamField path="start.vad_thresh" type="integer" default="400" toc={true}>
@@ -211,6 +222,17 @@ or include it in a SWML section executed via [`transfer`](/docs/swml/reference/c
 
 For example, with `from_lang: en-US`, `to_lang: es-ES`, and `direction: [remote-caller, local-caller]`, the `remote-caller` direction is translated from Spanish into English and spoken with `from_voice`, and the `local-caller` direction is translated from English into Spanish and spoken with `to_voice`. Listing `local-caller` first swaps these assignments.
 
+## Backup voices
+
+`from_voice` and `to_voice` each take one voice or an array of up to 8. The first voice speaks. When it fails,
+at the start or during the call, the next voice that opens takes over and speaks the same text again. After the
+array, the platform's last-resort voice, Cartesia's Kurt (`cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e`), is
+tried, unless the array already ends with it. `live_translate` has no `fallback_voice`.
+
+Each element must name its engine. One without an engine, or with an engine the platform doesn't have, speaks
+with the default voice, `azure.en-US-RyanMultilingualNeural`. When no voice opens at the start, `live_translate`
+fails with a fatal `calling.error` event. A translated text is billed once a voice accepts it, at that voice's rate.
+
 ## Action usage context
 
 | Action | Call start | Live call |
@@ -275,6 +297,66 @@ sections:
               "live_events": true,
               "direction": ["remote-caller", "local-caller"],
               "speech_engine": "deepgram"
+            }
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Start with backup voices, a chosen translation model, and AI summaries:
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - live_translate:
+        action:
+          start:
+            webhook: 'https://example.com/translate-events'
+            from_lang: en-US
+            to_lang: es-ES
+            direction:
+              - remote-caller
+              - local-caller
+            from_voice:
+              - elevenlabs.rachel:eleven_multilingual_v2
+              - cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e
+            to_voice:
+              - azure.es-ES-ElviraNeural
+              - gcloud.es-ES-Neural2-A
+            translation_model: gpt-6-luna
+            live_events: true
+            ai_summary: true
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      {
+        "live_translate": {
+          "action": {
+            "start": {
+              "webhook": "https://example.com/translate-events",
+              "from_lang": "en-US",
+              "to_lang": "es-ES",
+              "direction": ["remote-caller", "local-caller"],
+              "from_voice": ["elevenlabs.rachel:eleven_multilingual_v2", "cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e"],
+              "to_voice": ["azure.es-ES-ElviraNeural", "gcloud.es-ES-Neural2-A"],
+              "translation_model": "gpt-6-luna",
+              "live_events": true,
+              "ai_summary": true
             }
           }
         }

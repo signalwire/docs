@@ -24,6 +24,7 @@ max-toc-depth: 3
 [resetdocument]: /docs/server-sdks/reference/python/agents/swml-service/reset-document
 [serve]: /docs/server-sdks/reference/python/agents/swml-service/serve
 [stop]: /docs/server-sdks/reference/python/agents/swml-service/stop
+[swml-builder-verbs]: /docs/server-sdks/reference/python/agents/swml-builder#dynamic-verb-methods
 
 SWMLService is the foundation class for creating and serving SWML (SignalWire Markup
 Language) documents. It provides SWML document generation with schema validation,
@@ -104,17 +105,42 @@ without subclassing [`AgentBase`][agentbase]. The tool-registration and dispatch
 </ParamField>
 
 <ParamField path="full_validation_enabled" type="bool" toc={true}>
-  Read-only property indicating whether full JSON Schema validation is active.
-  Controlled by the `schema_validation` property or the
-  `SWML_SKIP_SCHEMA_VALIDATION` environment variable.
+  Read-only. `True` when full JSON Schema validation is active, using `jsonschema-rs`
+  or, where that isn't installed, `jsonschema`. `False` when validation is turned off
+  with `schema_validation=False` or `SWML_SKIP_SCHEMA_VALIDATION=1`, or when neither
+  library is installed. Without either library, as on WebAssembly runtimes such as
+  Pyodide, the service still checks verb names and required fields, following `$ref`s
+  and the branches of a union.
 </ParamField>
 
 <Note>
 The constructor also accepts `basic_auth`, `schema_path`, `config_file`, and
 `schema_validation` parameters. These are not exposed as public instance attributes
 after initialization. Use `get_basic_auth_credentials()` to retrieve auth credentials
-and `full_validation_enabled` to check validation status.
+and `full_validation_enabled` to check validation status. Leaving `schema_path` unset
+uses the bundled schema; a `schema_path` that's missing or isn't valid JSON raises
+`ValueError` when the service is created, naming the path and the cause.
 </Note>
+
+## **Verb methods**
+
+SWMLService generates a method for every verb in the SWML schema, such as
+`service.connect()`, `service.label()`, or `service.sleep()`. Each one adds the verb to
+the `main` section through [`add_verb()`][addverb] and returns its result (`True`). The
+methods take the body the same ways as [SWMLBuilder's verb methods][swml-builder-verbs]:
+positionally, as `config=` or `value=`, or as keyword arguments for an object body.
+`return` is a Python keyword, so its method is `return_()`.
+
+```python
+from signalwire import SWMLService
+
+service = SWMLService(name="router")
+service.label("top")                              # positional string body
+service.connect({"to": "+15551234567"})           # positional object body
+service.connect(config={"to": "+15557654321"})    # the same, as config=
+service.sleep(1000)
+service.return_({"status": "done"})
+```
 
 ## **Methods**
 

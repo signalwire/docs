@@ -1,0 +1,211 @@
+---
+title: "CallSimulator"
+slug: reference/python/agents/testing/call-simulator
+description: Run an agent's tools through a simulated call, checked the way the platform checks them, without the platform or a model.
+max-toc-depth: 3
+---
+
+[swaig-test]: /docs/server-sdks/reference/python/agents/cli/swaig-test
+[simulated-call]: /docs/server-sdks/reference/python/agents/testing/simulated-call
+[tool-mention-error]: /docs/server-sdks/reference/python/agents/testing/tool-mention-error
+[request-recorder]: /docs/server-sdks/reference/python/agents/testing/request-recorder
+[semantic-gate]: /docs/server-sdks/reference/python/agents/semantic-gate
+[set-history]: /docs/server-sdks/reference/python/agents/context-builder/step/set-history
+[set-functions]: /docs/server-sdks/reference/python/agents/context-builder/step/set-functions
+[data-map]: /docs/server-sdks/reference/python/agents/data-map
+
+`CallSimulator` runs an agent's tools through a simulated call in a test. It reads
+the agent's rendered SWML as the platform would and plays the model's side: your
+test says what the caller says and which tools the model calls. Where
+[`swaig-test`][swaig-test] runs one tool call, the simulator runs a whole flow,
+such as a confirmation that spans several steps.
+
+Each call is checked the way the platform checks it:
+
+- A tool the current step's [function list][set-functions] doesn't offer doesn't
+  run, and the model gets the platform's reply naming the tools it has.
+- A tool with [semantic gates][semantic-gate] runs only when your gate callback
+  passes every gate.
+- A result's actions change the call: global data and `semantic_state`, the step
+  and context, which functions are on, `say`, `wait_for_user`,
+  `back_to_back_functions`, gate marks, and the end of the call. A `post_process`
+  result's actions run after the model's next reply, given with
+  [`agent_says()`](/docs/server-sdks/reference/python/agents/testing/call-simulator/agent-says).
+
+The simulator is an approximation of the platform, for testing your code's
+decisions. It doesn't run a model, [DataMap][data-map] tools (give a stub), gather
+questions, consolidation, the sliding window, or the gates' decision model (give a
+callback). [`model_view()`](/docs/server-sdks/reference/python/agents/testing/call-simulator/model-view)
+and [`gate_conversation()`](/docs/server-sdks/reference/python/agents/testing/call-simulator/gate-conversation)
+raise `NotImplementedError` once the call has entered a step with a reset.
+
+```python
+from signalwire.testing import CallSimulator
+```
+
+## Parameters
+
+<ParamField path="agent" type="AgentBase" required={true} toc={true}>
+  The agent to simulate a call to.
+</ParamField>
+
+<ParamField path="call_id" type="str" default="simulated-call" toc={true}>
+  Keyword-only. The call's id, as the agent's tools see it in `raw_data["call_id"]`.
+</ParamField>
+
+<ParamField path="gates" type="Callable[[dict, CallSimulator, dict], Any] | None" default="None" toc={true}>
+  Keyword-only. Answers each semantic gate in place of the decision model, called as
+  `gates(gate, sim, args)` with the gate's dictionary, the simulator, and the
+  call's arguments. Return `True` or a probability at or above the gate's threshold
+  to pass, `False` or a probability below it to fail, or `"unclear"`. A failed gate
+  gives the model its `on_fail`; an unclear one gives its `on_unclear`. Without a
+  callback, every gate passes.
+</ParamField>
+
+<ParamField path="stubs" type="Mapping[str, Callable[[dict], Any]] | None" default="None" toc={true}>
+  Keyword-only. Results for tools that don't run locally, such as DataMap tools, by
+  name: `fn(args)` returns a `FunctionResult`, a dict, or text. Calling a DataMap
+  tool without a stub raises `ValueError`.
+</ParamField>
+
+<ParamField path="global_data" type="Mapping[str, Any] | None" default="None" toc={true}>
+  Keyword-only. Global data to start the call with, applied over the agent's own.
+</ParamField>
+
+<ParamField path="check_tool_mentions" type="bool" default="False" toc={true}>
+  Keyword-only. `True` makes [`call()`](/docs/server-sdks/reference/python/agents/testing/call-simulator/call)
+  raise [`ToolMentionError`][tool-mention-error] when a result, or the gate output
+  that blocked the call, names a tool that the step the call ends up in doesn't
+  offer.
+</ParamField>
+
+<ParamField path="request_fields" type="Mapping[str, Any] | None" default="None" toc={true}>
+  Keyword-only. More fields for every simulated tool request, as the platform sends
+  them for a call, such as `{"caller_id_num": "+15551234567"}`.
+</ParamField>
+
+## Properties
+
+<ParamField path="step" type="str | None" toc={true}>
+  The current step, or `None` when the agent has no contexts.
+</ParamField>
+
+<ParamField path="context" type="str | None" toc={true}>
+  The current context, or `None` when the agent has no contexts.
+</ParamField>
+
+<ParamField path="global_data" type="dict[str, Any]" toc={true}>
+  The call's global data, as the results so far have left it.
+</ParamField>
+
+<ParamField path="semantic_state" type="Any" toc={true}>
+  `global_data["semantic_state"]`, or `None`.
+</ParamField>
+
+<ParamField path="params" type="dict[str, Any]" toc={true}>
+  The `ai` verb's `params`, as the agent rendered them.
+</ParamField>
+
+<ParamField path="functions" type="dict[str, dict[str, Any]]" toc={true}>
+  The rendered function definitions, by name.
+</ParamField>
+
+<ParamField path="call_log" type="list[dict[str, Any]]" toc={true}>
+  The conversation so far, as call log entries, each with a `timestamp` in
+  microseconds. Step text is kept as it went in; `model_view()` shows it expanded.
+</ParamField>
+
+<ParamField path="calls" type="list[SimulatedCall]" toc={true}>
+  Every tool call so far, as [`SimulatedCall`][simulated-call] objects.
+</ParamField>
+
+<ParamField path="marks" type="dict[str, int]" toc={true}>
+  The semantic gate marks set so far, by name: the length of `call_log` when each
+  was set, so `call_log[marks[name]:]` is everything since it. The call keeps its
+  16 newest marks.
+</ParamField>
+
+<ParamField path="chaining" type="bool | str" toc={true}>
+  The `back_to_back_functions` setting, as the last result left it. Starts at
+  `"forever"`.
+</ParamField>
+
+<ParamField path="waiting_for_user" type="bool" toc={true}>
+  Whether a result asked the model to wait for the caller. The caller's next words
+  clear it.
+</ParamField>
+
+<ParamField path="ended" type="bool" toc={true}>
+  Whether a result ended the call with `hangup` or `stop`.
+</ParamField>
+
+## Methods
+
+<CardGroup cols={3}>
+  <Card title="caller" href="/docs/server-sdks/reference/python/agents/testing/call-simulator/caller">
+    The caller says something.
+  </Card>
+  <Card title="agent_says" href="/docs/server-sdks/reference/python/agents/testing/call-simulator/agent-says">
+    The agent replies, running any waiting post_process actions.
+  </Card>
+  <Card title="call" href="/docs/server-sdks/reference/python/agents/testing/call-simulator/call">
+    The model calls a tool.
+  </Card>
+  <Card title="offered" href="/docs/server-sdks/reference/python/agents/testing/call-simulator/offered">
+    The tools the model is offered now.
+  </Card>
+  <Card title="replay" href="/docs/server-sdks/reference/python/agents/testing/call-simulator/replay">
+    Run recorded tool requests against the agent again.
+  </Card>
+  <Card title="history_mode" href="/docs/server-sdks/reference/python/agents/testing/call-simulator/history-mode">
+    The current step's history mode.
+  </Card>
+  <Card title="model_view" href="/docs/server-sdks/reference/python/agents/testing/call-simulator/model-view">
+    The conversation entries the model gets now.
+  </Card>
+  <Card title="gate_conversation" href="/docs/server-sdks/reference/python/agents/testing/call-simulator/gate-conversation">
+    The dialogue a semantic gate judges now.
+  </Card>
+</CardGroup>
+
+## Example
+
+A test of a confirm flow built with
+[`Proposal`](/docs/server-sdks/reference/python/agents/patterns/proposal): the
+order tool runs only after a read-back, and a yes
+moves the call to the last step. To check changed code against real calls, record
+tool requests with [`RequestRecorder`][request-recorder].
+
+```python {26-31}
+from signalwire import AgentBase, FunctionResult
+from signalwire.patterns import Proposal
+from signalwire.testing import CallSimulator
+
+agent = AgentBase(name="tea", route="/tea")
+agent.prompt_add_section("Role", "You take tea orders.")
+order = Proposal("place_order", decline_tool="review_order")
+
+def review_order(args, raw_data):
+    return order.propose(f"That's a {args['item']}. Is that right?",
+                         raw_data=raw_data, details={"item": args["item"]})
+
+def place_order(args, raw_data):
+    return order.complete("Order 4471 is placed",
+                          FunctionResult("Order 4471 is placed.").swml_change_step("done"))
+
+agent.define_tool("review_order", "Read the order back",
+                  {"type": "object", "properties": {"item": {"type": "string"}}, "required": ["item"]},
+                  review_order)
+agent.define_tool("place_order", "Place the order the caller said yes to",
+                  {"type": "object", "properties": {}}, place_order, gates=order.confirm_gates())
+ctx = agent.define_contexts().add_context("default")
+ctx.add_step("take").set_text("Take the order, then read it back.").set_functions(["review_order", "place_order"])
+ctx.add_step("done").set_text("Thank the caller.").set_functions("none").set_history("spoken")
+
+sim = CallSimulator(agent, gates=lambda gate, sim, args: True)
+sim.caller("A large tea, please.")
+sim.call("review_order", {"item": "large tea"})
+sim.caller("Yes.")
+assert sim.call("place_order").ran
+assert sim.step == "done"
+```

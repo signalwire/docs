@@ -12,6 +12,9 @@ max-toc-depth: 3
 [post-prompt]: /docs/apis/rest/webhooks/ai-post-prompt-callback
 [server-sdks]: /docs/server-sdks
 [state-management]: /docs/server-sdks/guides/state-management
+[steps-ref]: /docs/swml/reference/calling/ai/prompt
+[actions-ref]: /docs/swml/reference/calling/ai/swaig/functions/data-map#list-of-valid-actions
+[dialogue-ref]: /docs/swml/reference/calling/ai/params#paramssemantic_gate_dialogue
 
 A semantic gate is a yes/no question about the call, such as "Has the caller explicitly asked to
 cancel their ride?", that a decision model must answer yes before your AI agent can run a SWAIG
@@ -38,6 +41,9 @@ the answer is yes, and each gate compares that to the threshold you set.
 - **Every gate passes:** the function runs as usual. Your webhook is called, or the `data_map` runs.
 - **Any gate fails:** the function doesn't run. The agent gets the failing gate's `on_fail` response
   as the function's result, and answers the caller from it.
+- **A gate that allows it answers unclear, and none fails:** the function doesn't run, and the agent
+  gets that gate's `on_unclear`, which asks the caller again. See
+  [Confirm a change before it runs](#confirm-a-change-before-it-runs).
 
 All of a function's gates are checked at once, and a function can have up to eight. When more than
 one fails, the first failing gate in your list decides what the agent gets. A check that can't be
@@ -207,7 +213,7 @@ the work. It reads these inputs, under these names, and nothing else:
 
 | Name | What it holds |
 |---|---|
-| `conversation` | The most recent part of the call, oldest first: the caller's turns, the agent's replies, and what the agent was told to say outside its replies, such as `say` actions and fillers. 20 entries by default. |
+| `conversation` | The most recent part of the call, oldest first: the caller's turns, the agent's replies, and what the agent was told to say outside its replies, such as `say` actions and fillers. 20 entries by default, or only what followed a proposal (see [Confirm a change before it runs](#confirm-a-change-before-it-runs)). An agent turn the caller cut off is marked `interrupted`, with what they heard of it, and a caller turn begun over the agent is marked `while_agent_talking`. |
 | `semantic_state` | Whatever your application stored in `global_data.semantic_state`, or `{}`. See [Rely on what your application recorded](#rely-on-what-your-application-recorded). |
 | `proposed_function` | The function's name, its description, and the arguments the agent is calling it with. |
 | `visual_input` | The caller's newest video frames, when a gate asks for them. See [Look at the caller's video](#look-at-the-callers-video). |
@@ -377,12 +383,240 @@ because a blocked function must never read as a success to the agent.
 
 The object form splits the result in two. `tool_result` is what the agent sees as the function's
 result ("cancel_ride was not run."), and `tool_prompt` is an instruction placed right after it ("Ask
-the caller whether they want to cancel the ride."). Realtime (speech-to-speech) agents don't use
-`tool_prompt`, so for those, put everything the agent needs into `tool_result` or a plain string.
+the caller whether they want to cancel the ride."). Realtime (speech-to-speech) agents get the
+`tool_prompt` too, right after the tool result.
 
-Actions in `on_fail` run as you wrote them, such as a `set_global_data` that records the attempt.
-`${...}` variables in them aren't expanded, though a `SWML` action resolves the variables in its own
-document when it runs. `action` must be an array, even for a single action.
+`on_fail` can carry actions, such as a `set_global_data` that records the attempt. `action` must be
+an array, even for a single action. The whole `on_fail`, its response and its actions, is filled in
+once when the call is blocked: `${global_data.*}`, `${args.*}` (the arguments the agent called the
+function with), and `@{...}` functions are expanded, so a refusal can repeat what your application
+stored, such as `${global_data.semantic_state.proposal}`. A value brought in is never expanded
+again, and a `SWML` action keeps its own variable handling.
+
+## Confirm a change before it runs
+
+The hardest gate to get right is the one that waits for the caller's yes. A "yes" might answer an
+earlier question, come before the read-back finished, or only sound like agreement. Three settings
+make a confirmation gate judge the right moment:
+
+- **Judge only the proposal's conversation.** Store the proposal in `semantic_state` and set
+  `dialogue` to `proposal` on the gate, or [`semantic_gate_dialogue`][dialogue-ref] for the whole
+  agent. The gate then reads only what was said since `semantic_state` last changed, starting at the
+  agent's first turn after it: the read-back and the caller's reply. Until the agent has said
+  something, that conversation is empty, so a yes is never judged against a read-back that never
+  came. Any change to `semantic_state` starts a new proposal, so keep only the proposal there.
+- **Let the read-back play in full.** The [`no_barge_next_response`][actions-ref] action holds the
+  caller's words until the agent's next spoken reply has played, then delivers them. The gates see
+  the read-back as cut where the caller's answer began, so a yes begun before the change was read out
+  is judged on what the caller had heard.
+- **Ask again when the answer is unclear.** Set `unclear: true` and the decision model can answer
+  unclear as well as yes or no. An unclear answer doesn't run the function: the agent gets the gate's
+  `on_unclear`, or a built-in result telling it to ask again plainly. Two unclear answers in a row for
+  the same proposal ask again; the third counts as a fail.
+
+A three-way gate shares the probability of yes with unclear, so a plain yes comes back lower. Use a
+lower threshold there: about 0.6 where a yes/no gate would use 0.8.
+
+### Build the confirmation flow
+
+When a caller asks Ada to move a pickup, `propose_change` records the proposal and moves to a
+`confirm` step. In that step, the agent can call `confirm_change`, which carries three gates judged
+on the proposal's conversation, or `decline_change` and `note_request` when the caller says no or asks
+for something else. `look_up_ride`, `propose_change`, `decline_change`, and `note_request` are
+ordinary webhook functions, so only `confirm_change` is defined below.
+
+<CodeBlocks>
+<CodeBlock title="SWML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        params:
+          semantic_gate_dialogue: proposal
+          semantic_gate_timeout_ms: 3000
+        prompt:
+          text: You are Ada, the dispatcher for Bayview Taxi. You book and change rides.
+          contexts:
+            default:
+              steps:
+                - name: take_request
+                  text: Find out what the caller wants to change, then call propose_change.
+                  functions: [look_up_ride, propose_change]
+                  valid_steps: []
+                - name: confirm
+                  text: Read back ${global_data.semantic_state.proposal} and ask for a plain yes or no.
+                  functions: [confirm_change, decline_change, note_request]
+                  valid_steps: []
+                  history: isolate
+                - name: done
+                  text: Tell the caller the result and help with anything else.
+                  functions: [look_up_ride, propose_change]
+                  valid_steps: []
+        SWAIG:
+          defaults:
+            web_hook_url: https://example.com/swaig
+          functions:
+            - function: confirm_change
+              description: Carry out the proposal in semantic_state once the caller has said yes.
+              parameters:
+                type: object
+                properties:
+                  revision:
+                    type: integer
+                    description: The proposal's revision number.
+                required: [revision]
+              gate_fillers:
+                default:
+                  - One moment.
+              gates:
+                - id: answered
+                  question: >-
+                    Is the caller's latest turn in `conversation` an answer, rather than only a sound
+                    that shows they are listening, made while the agent was still talking? A caller
+                    turn began while the agent was still talking if it is marked
+                    `while_agent_talking`, or if the agent turn just before it is marked `interrupted`.
+                  criteria:
+                    "true": Their latest turn answers with a yes, a no, or more than a listening sound, or it began after the agent had finished.
+                    "false": Their latest turn is only a listening sound, and it began while the agent was still talking.
+                  threshold: 0.8
+                  on_fail:
+                    response: >-
+                      confirm_change was not run. The caller was only showing they were listening;
+                      finish reading the change back and ask for a plain yes or no.
+                - id: agreed
+                  question: >-
+                    Is the caller's latest answer in `conversation` a yes to the change described in
+                    `semantic_state`? A yes given once they have heard what the change is counts, even
+                    if it cut off the read-back.
+                  criteria:
+                    "true": Their latest answer says yes to this change.
+                    "false": Their latest answer says no, hesitates, or asks a question or for something else.
+                  threshold: 0.8
+                  on_fail:
+                    response:
+                      tool_result: confirm_change was not run. The caller has not said yes to this change.
+                      tool_prompt: Read the change back and ask for a plain yes or no.
+                    action:
+                      - say: "Just to be sure: ${global_data.semantic_state.proposal}. Should I go ahead?"
+                - id: read_back
+                  question: >-
+                    Did the agent read back the change in `semantic_state` before the caller's latest
+                    answer in `conversation`?
+                  criteria:
+                    "true": The agent's read-back, even if cut off by the answer, described this change.
+                    "false": The read-back described a different change, or none was given.
+                  threshold: 0.8
+                  on_fail:
+                    response: >-
+                      confirm_change was not run. What the caller answered was not a read-back of this
+                      change; read the proposal back as it stands, then ask for a yes or no.
+```
+</CodeBlock>
+</CodeBlocks>
+
+The `answered` gate stops a listening sound over the read-back from counting as an answer, `agreed`
+checks the answer itself, and `read_back` checks that the caller heard this proposal and not an
+earlier one. `agreed` repeats the proposal through `${global_data.semantic_state.proposal}`, which is
+filled in when the call is blocked.
+
+`propose_change` returns the proposal, holds the read-back from interruption, and moves to the
+`confirm` step. Because the proposal is set as of the start of the result's action list, the
+read-back that follows is the first turn the gates judge. When the caller revises the proposal while
+in `confirm`, return a new `semantic_state` with `change_step: confirm` again: naming the current
+step starts it over, so its text reads the new proposal.
+
+<CodeBlocks>
+<CodeBlock title="Server SDK (Python)">
+```python
+    def propose_change(self, args, raw_data):
+        proposal = f"move the pickup for ride {args['ride_id']} to {args['new_time']}"
+        return (
+            FunctionResult("Proposal recorded. Read it back and ask for a yes or no.")
+            .set_semantic_state({"proposal": proposal, "revision": 1})
+            .no_barge_next_response()
+            .swml_change_step("confirm")
+        )
+```
+</CodeBlock>
+<CodeBlock title="SWAIG webhook response">
+```json
+{
+  "response": "Proposal recorded. Read it back and ask for a yes or no.",
+  "action": [
+    {"set_global_data": {"semantic_state": {"proposal": "move the pickup for ride R-1042 to 6:30 PM", "revision": 1}}},
+    {"no_barge_next_response": true},
+    {"change_step": "confirm"}
+  ]
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+To let `agreed` answer unclear, give it `unclear: true`, a lower threshold, and an `on_unclear` that
+asks again rather than refuses:
+
+<CodeBlocks>
+<CodeBlock title="Server SDK (Python)">
+```python
+agreed = SemanticGate(
+    "Is the caller's latest answer in `conversation` a yes to the change described in `semantic_state`?",
+    threshold=0.6,
+    on_fail="confirm_change was not run. The caller declined. Ask whether they want something else.",
+    id="agreed",
+    true_means="Their latest answer says yes to this change.",
+    false_means="Their latest answer says no.",
+    unclear=True,
+    on_unclear=FunctionResult(
+        tool_result="confirm_change was not run: the caller's answer did not settle it.",
+        tool_prompt="Say what you were not sure of, read the change back, and ask for a plain yes or no.",
+    ),
+)
+```
+</CodeBlock>
+<CodeBlock title="SWML">
+```yaml
+- id: agreed
+  question: Is the caller's latest answer in `conversation` a yes to the change described in `semantic_state`?
+  criteria:
+    "true": Their latest answer says yes to this change.
+    "false": Their latest answer says no.
+  threshold: 0.6
+  unclear: true
+  on_fail:
+    response: confirm_change was not run. The caller declined. Ask whether they want something else.
+  on_unclear:
+    response:
+      tool_result: "confirm_change was not run: the caller's answer did not settle it."
+      tool_prompt: Say what you were not sure of, read the change back, and ask for a plain yes or no.
+```
+</CodeBlock>
+</CodeBlocks>
+
+In Python, `signalwire.patterns.Proposal` builds a propose result and the three confirmation gates
+for you.
+
+### Judge from a point you mark
+
+A proposal starts whenever `semantic_state` changes. When the moment to judge from isn't a change to
+your application's state, such as a quote the agent reads out, set a named mark with the
+`semantic_gate_mark` action and give the gate `since` with that name. The gate then judges from the
+agent's first turn after the mark; until the mark is set, its `dialogue` applies. A `say` anywhere in
+the same result comes after the mark, and setting the mark again moves it. Marks last for the whole
+call.
+
+```json
+{
+  "response": "Refund staged.",
+  "action": [
+    {"say": "To confirm: a refund of $38.60 to the card ending in 4417. Is that right?"},
+    {"semantic_gate_mark": "refund_readback"}
+  ]
+}
+```
+
+A function's gates are asked together about one conversation, so `dialogue`, `history`, and `since`
+must be the same on every gate of the function, or the function isn't added to the agent.
 
 ## Choose what the caller hears during the check
 
@@ -498,13 +732,14 @@ URL to show your own image instead.
 
 ## Tune or turn off gates for a call
 
-Three [`ai.params`][params-ref] control checking for the whole call:
+Four [`ai.params`][params-ref] control checking for the whole call:
 
 | Param | Default | What it does |
 |---|---|---|
 | `semantic_gates_enabled` | `true` | `false` turns checks off, and gated functions run without being checked. A function with an invalid gate is still left out of the agent. |
 | `semantic_gate_timeout_ms` | `2500` | How long one check may take, from 500 to 10000 milliseconds. A check that runs out of time blocks the function. |
-| `semantic_gate_history` | `20` | How many recent conversation entries the decision model reads, from 0 to 100. |
+| `semantic_gate_history` | `20` | How many recent conversation entries the decision model reads, from 0 to 100. A gate's own `history` overrides it. |
+| `semantic_gate_dialogue` | `window` | `proposal` makes gates judge only what was said since `semantic_state` last changed. A gate's own `dialogue` overrides it. |
 
 A value outside its range isn't rejected: it's brought to the nearest end of the range.
 
@@ -538,8 +773,11 @@ function should run.
 Every checked call records what happened. Its entry in the `swaig_log`, which arrives in the
 [post-prompt callback][post-prompt] and the `calling.ai.swaig` event, carries a `semantic_gates`
 object: where the check ran (`phase`: `text` for a standard agent, `oart` for a realtime
-speech-to-speech agent, or `post` for the post-prompt agent after the call), the `outcome`, whether
-the function ran (`dispatched`), and each gate's `confidence` against its `threshold`.
+speech-to-speech agent, or `post` for the post-prompt agent after the call), which conversation was
+judged (`dialogue`: `window`, `proposal`, or `since:<mark>`), the `outcome`, whether the function ran
+(`dispatched`), and each gate's `confidence` against its `threshold`. A three-way gate also records
+its `choice` (`yes`, `no`, or `unclear`), and `unclear_limit` is `true` when a third unclear answer in
+a row was turned into a fail.
 
 ```json
 "semantic_gates": {
@@ -561,7 +799,11 @@ the question or its `criteria` before raising the threshold. If a function never
 
 - `fail` means a gate answered under its threshold. Check that the question names the right input,
   and that the conversation or `semantic_state` actually holds what the gate needs.
-- `timeout` means the check ran out of time. Raise `semantic_gate_timeout_ms`.
+- `unclear` means a three-way gate found the answer didn't settle the question. It isn't an error:
+  the agent asks again. If it happens on clear answers, check the gate's question and lower its
+  threshold.
+- `timeout` means the check ran out of time. Raise `semantic_gate_timeout_ms`. On the function's
+  first timeout in a row, the agent is told to call the function again.
 - `invalid_arguments` means the agent's arguments weren't exactly one JSON object: they were
   missing, weren't valid JSON, had text after the object, repeated a key, or held a `\u0000` escape.
 - The function is missing from the agent altogether: a gate is invalid, or the function has no

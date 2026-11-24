@@ -1,0 +1,139 @@
+---
+title: "InfoBotKnowledge"
+slug: reference/python/agents/operations/info-bot-knowledge
+description: Adds a search tool that answers from your documents through a search you supply, with hooks for ranking and grounding and an optional contact tool.
+max-toc-depth: 3
+---
+
+[agent-base]: /docs/server-sdks/reference/python/agents/agent-base
+[operations]: /docs/server-sdks/reference/python/agents/operations/operations
+[field]: /docs/server-sdks/reference/python/agents/operations/field
+[wording]: /docs/server-sdks/reference/python/agents/operations/wording
+[search-service]: /docs/server-sdks/reference/python/agents/search/search-service
+[front-desk]: /docs/server-sdks/reference/python/agents/prefabs/front-desk-agent
+
+`InfoBotKnowledge` adds a `search_knowledge` tool that answers from a corpus through a
+search you supply. It hands the model one grounded block of results, and your hooks
+decide which results count and how they rank. With `contact=`, a second tool records
+the caller's details for a human follow-up.
+
+It installs on any [`AgentBase`][agent-base], in the `main` step by default, before or
+after [`Operations`][operations]; the step keeps every layer's text and tools.
+[`FrontDeskAgent`][front-desk] and `PersonalAssistantAgent` take one as `knowledge=`.
+
+```python
+from signalwire.operations.infobot import InfoBotKnowledge
+```
+
+## Parameters
+
+<ParamField path="search" type="Callable[[str], list[dict]] | None" default="None" toc={true}>
+  `search(query)` returns the raw results, each a dict with at least a `content` string
+  and a `score`. May be `async`. Or call `use_search_service()`.
+</ParamField>
+
+<ParamField path="tool" type="str" default="search_knowledge" toc={true}>
+  Keyword-only, as are all the parameters below. The search tool's name.
+</ParamField>
+
+<ParamField path="description" type="str" default="Search the documentation and answer only from the results." toc={true}>
+  What the search tool does, as the model reads it.
+</ParamField>
+
+<ParamField path="result_limit" type="int" default="5" toc={true}>
+  The most results handed to the model.
+</ParamField>
+
+<ParamField path="grounding" type="str" toc={true}>
+  The line that goes with the results unless rules are added. Defaults to an
+  instruction to answer only from the results and to say so when they don't cover the
+  question.
+</ParamField>
+
+<ParamField path="contact" type="Callable[[dict[str, Any]], None] | None" default="None" toc={true}>
+  `contact(fields)` receives the details the contact tool collects. Without it there's
+  no contact tool.
+</ParamField>
+
+<ParamField path="contact_tool" type="str" default="collect_contact" toc={true}>
+  The contact tool's name.
+</ParamField>
+
+<ParamField path="contact_fields" type="Mapping[str, Field] | None" default="None" toc={true}>
+  The contact tool's [fields][field], in place of `CONTACT_FIELDS` (`name`, `email`,
+  and `topic`, with only `email` required).
+</ParamField>
+
+<ParamField path="contact_any_of" type="Sequence[Sequence[str]] | None" default="None" toc={true}>
+  Sets of fields, any one of which is enough, such as `[["email"], ["phone"]]`.
+  Defaults to all the required fields. A field not in `contact_fields` raises
+  `ValueError`.
+</ParamField>
+
+<ParamField path="wording" type="Mapping[str, str] | None" default="None" toc={true}>
+  Replacements keyed like `KNOWLEDGE_WORDING`. See [wording][wording].
+</ParamField>
+
+<ParamField path="context" type="str" default="default" toc={true}>
+  The context of the step its tools go in.
+</ParamField>
+
+<ParamField path="step" type="str" default="main" toc={true}>
+  The step its tools go in. Created if it doesn't exist, added to if it does.
+</ParamField>
+
+## Properties
+
+<ParamField path="tools" type="list[str]" toc={true}>
+  The tools it adds: the search tool, and the contact tool when there's `contact`.
+</ParamField>
+
+## Methods
+
+### install
+
+`install(agent)` adds the tools and the step that offers them, and returns the agent.
+Raises `ValueError` when there's no search backend.
+
+### use_search_service
+
+`use_search_service(url, *, user="", password="", index_name="default", count=10, timeout=10.0)`
+uses a SignalWire [search service][search-service] at `url` as the backend, in place
+of `search`.
+
+### Hooks
+
+Each hook returns the `InfoBotKnowledge`, so they chain.
+
+- `set_exclude(fn)`: drop a result when `fn(result, query)` is true.
+- `set_demote(fn)`: rank a result after the rest when `fn(result)` is true.
+- `set_authority(fn)`: `fn(result)` returns a ranking tier, or `None`; higher ranks
+  first among results that aren't demoted.
+- `set_result_context(fn)`: `fn(result)` returns a label line shown above the result's
+  passage, or `None`.
+- `set_query_transform(fn)`: `fn(query)` rewrites the search query before it runs; the
+  grounding still uses the caller's words.
+- `set_fallback(fn)`: `fn(query)` is called when no result clears the cut; its text, if
+  any, replaces the not-covered line.
+- `set_expander(fn)`: `fn(results)` transforms the kept results before they're shown,
+  such as widening each to its full section.
+- `add_rule(text, *, when="results")`: a grounding line, added when there are results
+  (`"results"`), when there are none (`"empty"`), or `"always"`. Added rules replace
+  `grounding`.
+- `add_result_rule(predicate, text)`: a line added after the passages when
+  `predicate(query, results)` is true.
+- `add_query_type(kind, qualifier)`: adds a `query_type` argument to the search tool;
+  when the model picks `kind`, `qualifier` is appended to the search query.
+- `set_query_type_help(text)`: the `query_type` argument's description.
+
+## Example
+
+```python
+from signalwire import AgentBase
+from signalwire.operations.infobot import InfoBotKnowledge
+
+DOCS = [{"content": "We open at 9 and close at 5.", "score": 0.9}]
+
+agent = AgentBase(name="help", route="/help")
+InfoBotKnowledge(search=lambda query: DOCS).install(agent)
+```

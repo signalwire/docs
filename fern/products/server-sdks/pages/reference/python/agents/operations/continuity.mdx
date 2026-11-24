@@ -1,0 +1,89 @@
+---
+title: "Continuity"
+slug: reference/python/agents/operations/continuity
+description: Carry a conversation across a switch between voice and chat, store each leg with LegStore, and speak into a live call with say_into_call().
+max-toc-depth: 3
+---
+
+[set-dynamic-config-callback]: /docs/server-sdks/reference/python/agents/agent-base/set-dynamic-config-callback
+[on-call-end]: /docs/server-sdks/reference/python/agents/agent-base/on-call-end
+[ai-message]: /docs/server-sdks/reference/python/rest/calling/ai-message
+
+`Continuity` carries a conversation across a switch between voice and chat. At the end
+of each leg it stores the leg's transcript and medium. The next leg of the same
+conversation starts with that dialogue as its `convo` param, followed by a user turn
+that records the switch and a system note not to answer again what was already handled.
+
+`install(agent)` works through the agent's per-request configuration callback and runs
+after the one the agent already has, so set the agent's own callback with
+[`set_dynamic_config_callback()`][set-dynamic-config-callback] first. It also registers
+an [`on_call_end()`][on-call-end] handler.
+
+```python
+from signalwire.operations.infobot import Continuity, LegStore, say_into_call
+```
+
+## Parameters
+
+All parameters are keyword-only.
+
+<ParamField path="store" type="LegStore | None" default="None" toc={true}>
+  Where the legs are kept. Defaults to a new `LegStore()`.
+</ParamField>
+
+<ParamField path="include_tools" type="bool" default="True" toc={true}>
+  Whether tool calls and results from earlier legs are carried over.
+</ParamField>
+
+<ParamField path="switch_note" type="Callable[[str, str], str]" toc={true}>
+  `switch_note(previous_medium, current_medium)` returns the system note added after
+  the carried dialogue. Defaults to `default_switch_note`.
+</ParamField>
+
+<ParamField path="switch_turn" type="Callable[[str], str]" toc={true}>
+  `switch_turn(current_medium)` returns the user turn that records the switch. Defaults
+  to `default_switch_turn`.
+</ParamField>
+
+<ParamField path="resolve_id" type="Callable[[dict[str, Any]], str] | None" default="None" toc={true}>
+  Returns the conversation id for a request. Defaults to the chat's `conversation_id`,
+  else the call id.
+</ParamField>
+
+<ParamField path="report" type="Callable[[dict[str, Any]], None] | None" default="None" toc={true}>
+  Receives `{"conversation_id": ..., "legs": [...]}`, the whole conversation so far, at
+  the end of each leg.
+</ParamField>
+
+<ParamField path="visitor_context" type="Callable[[dict[str, Any]], dict[str, Any] | None] | None" default="None" toc={true}>
+  Returns global data to set from each request's body, or `None`.
+</ParamField>
+
+## LegStore
+
+`LegStore(*, cache_dir=None)` keeps one JSON file per conversation in a temporary
+directory on this host, consistent within one process. It's meant for development.
+`store.set_store(load=..., append=...)` moves storage to your own database, with
+`load(conversation_id)` returning a list of legs and `append(conversation_id, leg)`
+returning whether it was stored.
+
+`build_seed()` and `medium_of()`, which build the carried dialogue and read a request's
+medium, are also exported from `signalwire.operations.infobot`.
+
+## say_into_call
+
+`say_into_call(call_id, text, *, role="assistant", client=None)` speaks a message on a
+live AI call from elsewhere, through the REST API's
+[`calling.ai_message()`][ai-message]. Without `client`, it creates a `RestClient()`
+from the `SIGNALWIRE_PROJECT_ID`, `SIGNALWIRE_API_TOKEN`, and `SIGNALWIRE_SPACE`
+environment variables.
+
+## Example
+
+```python
+from signalwire import AgentBase
+from signalwire.operations.infobot import Continuity
+
+agent = AgentBase(name="support", route="/support")
+Continuity().install(agent)
+```

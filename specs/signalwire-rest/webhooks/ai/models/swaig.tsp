@@ -93,11 +93,50 @@ model AiSwaigToolWebhookPayload {
   ai_session_id: string;
 
   @doc("""
+    The model provider's id for this tool call. A request the platform sends again after a
+    connection error or a `5xx` response carries the same id, so your endpoint can tell a resend
+    from a new call; each call the model makes has its own. Omitted when the provider gave no id,
+    and on requests the platform makes on its own, such as `startup_hook` and `hangup_hook`.
+    """)
+  @example("call_Xz8Rq0vB3nTfKp5wLm2Yd7Ha")
+  tool_call_id?: string;
+
+  @doc("""
     The conversation ID, when the AI session has one. A text conversation held over the
     [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods) always has one, and it matches
     `call_id`.
     """)
   conversation_id?: string;
+
+  @doc("""
+    The name of the current step. Included when the agent has
+    [steps](/docs/swml/reference/calling/ai/prompt).
+    """)
+  @example("lookup")
+  step?: string;
+
+  @doc("""
+    The name of the current context. Included when the agent has
+    [contexts](/docs/swml/reference/calling/ai/prompt).
+    """)
+  @example("orders")
+  context?: string;
+
+  @doc("""
+    The language being spoken: the caller's detected language under
+    [`multilingual`](/docs/swml/reference/calling/ai/multilingual), otherwise the current voice's
+    language code.
+    """)
+  @example("en-US")
+  language?: string;
+
+  @doc("The model the agent's requests go to.")
+  @example("gpt-4o-mini")
+  `model`: string;
+
+  @doc("The number of the agent's turn, counted once per model turn the caller triggered.")
+  @example(4)
+  turn: integer;
 
   @doc("The name of your AI application.")
   @example("ai")

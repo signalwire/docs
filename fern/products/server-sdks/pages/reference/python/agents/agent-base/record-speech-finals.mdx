@@ -1,0 +1,55 @@
+---
+title: "record_speech_finals"
+slug: reference/python/agents/agent-base/record-speech-finals
+description: Keep each call's recognizer finals, with word confidences, for tool handlers to read.
+max-toc-depth: 3
+---
+
+[ref-agentbase]: /docs/server-sdks/reference/python/agents/agent-base
+[speech-finals]: /docs/server-sdks/reference/python/agents/agent-base/speech-finals
+[on-ai-event]: /docs/server-sdks/reference/python/agents/agent-base/on-ai-event
+
+Keep each call's recognizer finals, with their word confidences, for tool handlers to
+read with [`speech_finals()`][speech-finals]. A final is what the recognizer heard for
+one turn of the caller's, from the platform's `ai.speech_detect` event. Its words are
+as heard, before hearing hints and number formatting change the text, so a handler
+can ask the caller again about a word the recognizer wasn't sure of, such as a letter
+of a spelled name.
+
+Like [`on_ai_event()`][on-ai-event], it sets the call's `event_webhook_url` to the
+agent's `/ai_events` endpoint, unless you set it yourself, and needs the agent's own
+web server. A call with `redact_prompt` set sends no finals unless debug is on.
+
+## Parameters
+
+<ParamField path="max_calls" type="int" default="500" toc={true}>
+  The most calls to keep finals for. The oldest call's finals go first.
+</ParamField>
+
+<ParamField path="max_finals" type="int" default="200" toc={true}>
+  The most finals to keep for one call.
+</ParamField>
+
+## Returns
+
+[`AgentBase`][ref-agentbase] -- Self for method chaining.
+
+## Example
+
+```python {5}
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="spell", route="/spell")
+agent.prompt_add_section("Role", "You take spelled names.")
+agent.record_speech_finals()
+
+def check_name(args, raw_data):
+    finals = agent.speech_finals(raw_data["call_id"])
+    unsure = [w["word"] for f in finals for w in f["words"] if w["confidence"] < 0.6]
+    return FunctionResult(f"Unsure of: {unsure}")
+
+agent.define_tool("check_name", "Check the spelled name",
+                  {"type": "object", "properties": {}}, check_name)
+
+agent.serve()
+```

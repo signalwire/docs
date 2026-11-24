@@ -1427,10 +1427,16 @@ model FabricAiStopParams {
   ...OmitProperties<Relay.Calling.AiStopEventData, CallingEventAddressKey>;
 }
 
-@summary("Call Fabric AI post-prompt event payload")
-model FabricAiPostPromptParams {
+@summary("Call Fabric AI response heard event payload")
+model FabricAiResponseHeardParams {
   ...FabricMediaEventAddress;
-  ...OmitProperties<Relay.Calling.AiPostPromptEventData, CallingEventAddressKey>;
+  ...OmitProperties<Relay.Calling.AiResponseHeardEventData, CallingEventAddressKey>;
+}
+
+@summary("Call Fabric AI manual say event payload")
+model FabricAiManualSayParams {
+  ...FabricMediaEventAddress;
+  ...OmitProperties<Relay.Calling.AiManualSayEventData, CallingEventAddressKey>;
 }
 
 @summary("Call Fabric AI SWAIG event payload")
@@ -1550,12 +1556,19 @@ const fabricAiStop = "ai.stop";
 model FabricAiStopEvent
   is SignalwireEvent<typeof fabricAiStop, FabricAiStopParams>;
 
-const fabricAiPostPrompt = "ai.post_prompt";
-@doc("Fires on a Call Fabric call leg when the end-of-call summary is produced. Same fields as the Calling API's `calling.ai.post_prompt` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
-@summary(fabricAiPostPrompt)
-@extension("x-fern-display-name", fabricAiPostPrompt)
-model FabricAiPostPromptEvent
-  is SignalwireEvent<typeof fabricAiPostPrompt, FabricAiPostPromptParams>;
+const fabricAiResponseHeard = "ai.response_heard";
+@doc("Fires on a Call Fabric call leg as one of the agent's replies stops playing, reporting whether the caller heard all of it and, if they cut it off, an estimate of what they heard. Same fields as the Calling API's `calling.ai.response_heard` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
+@summary(fabricAiResponseHeard)
+@extension("x-fern-display-name", fabricAiResponseHeard)
+model FabricAiResponseHeardEvent
+  is SignalwireEvent<typeof fabricAiResponseHeard, FabricAiResponseHeardParams>;
+
+const fabricAiManualSay = "ai.manual_say";
+@doc("Fires on a Call Fabric call leg when text the platform speaks itself, outside the model's replies, starts to play. Same fields as the Calling API's `calling.ai.manual_say` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")
+@summary(fabricAiManualSay)
+@extension("x-fern-display-name", fabricAiManualSay)
+model FabricAiManualSayEvent
+  is SignalwireEvent<typeof fabricAiManualSay, FabricAiManualSayParams>;
 
 const fabricAiSwaig = "ai.swaig";
 @doc("Fires on a Call Fabric call leg when a SWAIG function is called. Same fields as the Calling API's `calling.ai.swaig` event. SWML or a server-side application starts the AI agent on the leg; there is no client request that starts it.")

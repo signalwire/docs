@@ -17,6 +17,14 @@ import "./user_input.tsp";
 import "./transfer.tsp";
 import "./settings.tsp";
 import "./user_event.tsp";
+import "./no_barge_next_response.tsp";
+import "./semantic_gate_mark.tsp";
+import "./back_to_back_functions.tsp";
+import "./extensive_data.tsp";
+import "./change_voice.tsp";
+import "./dynamic_hints.tsp";
+import "./speech_timeouts.tsp";
+import "./wait_for_user.tsp";
 
 namespace SWML.Calling;
 
@@ -41,4 +49,14 @@ union Action {
   TransferAction,
   SettingsAction,
   UserEventAction,
+  NoBargeNextResponseAction,
+  SemanticGateMarkAction,
+  BackToBackFunctionsAction,
+  ExtensiveDataAction,
+  ChangeVoiceAction,
+  AddDynamicHintsAction,
+  ClearDynamicHintsAction,
+  EndOfSpeechTimeoutAction,
+  SpeechEventTimeoutAction,
+  WaitForUserAction,
 }

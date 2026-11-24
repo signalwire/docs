@@ -9,21 +9,25 @@ max-toc-depth: 3
 [data-map]: /docs/swml/reference/calling/ai/swaig/functions/data-map
 [actions]: /docs/swml/reference/calling/ai/swaig/functions/data-map#list-of-valid-actions
 [history]: /docs/swml/reference/calling/ai/params#paramssemantic_gate_history
+[dialogue-param]: /docs/swml/reference/calling/ai/params#paramssemantic_gate_dialogue
+[mark]: /docs/swml/reference/calling/ai/swaig/functions/data-map#actionsemantic_gate_mark
+[no-barge]: /docs/swml/reference/calling/ai/swaig/functions/data-map#actionno_barge_next_response
 [guide]: /docs/platform/ai/semantic-gates
 [post-prompt]: /docs/apis/rest/webhooks/ai-post-prompt-callback
 
 `functions[].gates` attaches semantic gates to a [SWAIG function][functions]. A semantic gate is a
-yes/no question about the call that must come out yes before the function runs. When the AI calls
-the function, a decision model reads the conversation and answers each of the function's questions
+question about the call that must come out yes before the function runs. When the AI calls the
+function, a decision model reads the conversation and answers each of the function's questions
 first. If every gate passes, the function runs as usual. If any gate fails, the function doesn't run,
-and the AI gets the response you wrote for that gate in `on_fail` instead.
+and the AI gets the response you wrote for that gate in `on_fail` instead. A gate can also allow an
+[unclear answer](#unclear-answers), which asks the caller again.
 
 For when to use gates and how to write good questions, see the [semantic gates guide][guide].
 
 ## Properties
 
 <ParamField path="functions[].gates" type="object[]" toc={true}>
-  An array of 1 to 8 gates. Every gate is checked at once, and all must pass. When more than one fails, the first failing gate in the array supplies the `on_fail` response. A gated function needs a `description` (or the deprecated `purpose`) and a `web_hook_url` or a `data_map`. The `web_hook_url` is the function's own or comes from `SWAIG.defaults`; a function returned by `includes` takes it from the `defaults` the include returns instead.
+  An array of 1 to 8 gates. Every gate is checked at once, and all must pass. When more than one fails, the first failing gate in the array supplies the `on_fail` response; with no failing gate, the first unclear gate supplies its `on_unclear`. The gates are asked together about one conversation, so `dialogue`, `history`, and `since` must be the same on every gate of the function. A gated function needs a `description` (or the deprecated `purpose`) and a `web_hook_url` or a `data_map`. The `web_hook_url` is the function's own or comes from `SWAIG.defaults`; a function returned by `includes` takes it from the `defaults` the include returns instead.
 
   Inside a gate, a key not listed below is an error, not an ignored setting. Gate keys are matched exactly, case included, so `Question` is an unknown key. The function's own `gates` and `gate_fillers` keys are matched without regard to case, like every [function property][functions].
 </ParamField>
@@ -35,21 +39,21 @@ For when to use gates and how to write good questions, see the [semantic gates g
 </ParamField>
 
 <ParamField path="gates[].threshold" type="number" required={true} toc={true}>
-  The gate passes when the probability that the answer is yes is at or above this value. Above `0` and at most `1`. Higher is stricter; use `0.9` or above for actions that are hard to undo.
+  The gate passes when the probability that the answer is yes is at or above this value. Above `0` and at most `1`. Higher is stricter; use `0.9` or above for actions that are hard to undo. A yes under the threshold fails a yes/no gate and is unclear on a gate with `unclear: true`. A three-way gate shares the probability of yes with unclear, so a plain yes comes back lower: use about `0.6` where a yes/no gate would use `0.8`.
 </ParamField>
 
 <ParamField path="gates[].on_fail" type="object" required={true} toc={true}>
-  What the AI gets instead of the function's result when this is the first gate that fails. Shaped like a [`data_map` output][data-map], at most 8 KB as compact JSON, keys and quotes included.
+  What the AI gets instead of the function's result when this is the first gate that fails. Shaped like a [`data_map` output][data-map], at most 8 KB as compact JSON, keys and quotes included. The whole object is [filled in once](#when-a-function-is-blocked) when the call is blocked.
 </ParamField>
 
 <Indent>
 
 <ParamField path="on_fail.response" type="string | object" required={true} toc={true}>
-  What the function returns to the AI. A non-empty string, or an object with `tool_result` (required, non-empty), what the AI sees as the function's result, and `tool_prompt` (optional), an instruction placed right after it. Write it so the AI knows the action didn't happen. Realtime (speech-to-speech) agents don't use `tool_prompt`; on those, put everything the AI needs in `tool_result`.
+  What the function returns to the AI. A non-empty string, or an object with `tool_result` (required, non-empty), what the AI sees as the function's result, and `tool_prompt` (optional), an instruction placed right after it. Write it so the AI knows the action didn't happen.
 </ParamField>
 
 <ParamField path="on_fail.action" type="object[]" toc={true}>
-  [Actions][actions] to run, as a function's response would. Must be an array, even for one action. The actions run as written: `${...}` variables in them are not expanded, though a `SWML` action resolves the variables in its own document when it runs.
+  [Actions][actions] to run, as a function's response would. Must be an array, even for one action.
 </ParamField>
 
 <ParamField path="on_fail.post_process" type="boolean" default="false" toc={true}>
@@ -66,6 +70,26 @@ For when to use gates and how to write good questions, see the [semantic gates g
   What counts as yes and what counts as no, for the near misses the question alone leaves open. Set `true`, `false`, or both, each a non-empty string of at most 2 KB.
 </ParamField>
 
+<ParamField path="gates[].unclear" type="boolean" default="false" toc={true}>
+  If `true`, the decision model can also answer unclear, for a conversation that doesn't settle the question. See [Unclear answers](#unclear-answers).
+</ParamField>
+
+<ParamField path="gates[].on_unclear" type="object" toc={true}>
+  What the AI gets when this is the first unclear gate and none failed. Same shape and limits as `on_fail`: a `response` (a non-empty string, or an object with a non-empty `tool_result` and an optional `tool_prompt`), an optional `action` array, and an optional `post_process`. Write it to ask again, not to refuse. When unset, the AI gets a built-in result telling it to say what it wasn't sure of and ask again plainly.
+</ParamField>
+
+<ParamField path="gates[].dialogue" type="string" default="the agent's semantic_gate_dialogue" toc={true}>
+  Which part of the conversation the gate judges: `window` or `proposal`, case-insensitive. Overrides [`semantic_gate_dialogue`][dialogue-param] for this function. See [Which conversation a gate judges](#which-conversation-a-gate-judges).
+</ParamField>
+
+<ParamField path="gates[].history" type="integer" default="the agent's semantic_gate_history" toc={true}>
+  How many conversation entries the gate reads, a whole number from `1` to `100`. Overrides [`semantic_gate_history`][history] for this function.
+</ParamField>
+
+<ParamField path="gates[].since" type="string" toc={true}>
+  A mark name set with the [`semantic_gate_mark`][mark] action. The gate judges the conversation from the agent's first turn after the mark. Until the mark is set, the gate's `dialogue` applies.
+</ParamField>
+
 <ParamField path="gates[].visual_input" type="boolean | integer" toc={true}>
   How many of the caller's newest video frames the gate looks at: `true` is `1`, a whole number from `0` to `5`, and `false` or `0` is none. Frames are taken when the check starts, at most one per second and none older than 8 seconds. A function's gates are checked together, so each sees as many frames as the gate that asks for the most. If the call has no video frame to show, the gate fails without being asked, so a gate with `visual_input` always fails when the post-prompt AI calls the function after the call.
 </ParamField>
@@ -74,7 +98,18 @@ For when to use gates and how to write good questions, see the [semantic gates g
 
 Sizes are bytes of UTF-8 text. If any gate breaks a rule on this page, or the gated function lacks a
 `description` or a `web_hook_url` or `data_map`, the function isn't added to the agent at all, and
-the rest of the agent works without it, even with `semantic_gates_enabled` set to `false`. A `calling.error` event with `error_reason` `invalid_semantic_gate` names the function and the reason. For the rest of that `ai`
+the rest of the agent works without it, even with `semantic_gates_enabled` set to `false`. A `calling.error` event names the function and the reason:
+
+```json
+{
+  "error": "ai: Invalid semantic gate\n",
+  "error_reason": "invalid_semantic_gate",
+  "function": "confirm_change",
+  "reason": "gate 2: dialogue, history and since must be the same on every gate of a function"
+}
+```
+
+For the rest of that `ai`
 method, no other definition of that name and no MCP tool with that name is used either, so the
 function can never run without its gates.
 
@@ -94,7 +129,7 @@ The decision model reads these inputs, under these names, and nothing else:
 
 | Name | What it holds |
 |---|---|
-| `conversation` | The most recent part of the call, oldest first: [`semantic_gate_history`][history] entries, 20 by default. It holds the caller's turns, the agent's replies, and what the agent was told to say outside its replies, such as `say` actions and fillers. An agent reply the caller cut off is included without its text. |
+| `conversation` | The part of the call the gate [judges](#which-conversation-a-gate-judges), oldest first. It holds the caller's turns, the agent's replies, and what the agent was told to say outside its replies, such as `say` actions and fillers. |
 | `semantic_state` | Whatever you've stored in `global_data.semantic_state`, or `{}`. The key is matched exactly, so `Semantic_State` isn't read. |
 | `proposed_function` | The function's name, its description, and the arguments the AI is calling it with. |
 | `visual_input` | The caller's video frames, when a gate sets `visual_input`. |
@@ -105,17 +140,77 @@ decision model which input to read, so that "in `conversation`" means the conver
 given, not the ordinary word. What a gate reads is captured when the check starts: something the
 caller says while it runs doesn't change the result.
 
+The conversation marks what the caller actually heard and when they spoke:
+
+- An agent turn the caller cut off is sent with `"interrupted": true` and, when the platform has an
+  estimate, `text_heard`: what the caller heard of it. A read-back held by
+  [`no_barge_next_response`][no-barge] is sent as cut where the caller's latest words began.
+- A caller turn that began over the agent's turn without cutting it off, for example over a filler,
+  is marked `"while_agent_talking": true`. So is a bare acknowledgement ("uh-huh") begun up to a
+  second after the agent finished.
+- What the agent was told to say outside its replies (`say` text and fillers) is an agent turn
+  marked `"manual": true`. One that never played is sent as interrupted with nothing heard.
+- The caller's words said before a `say` began come before it, and a caller statement made entirely
+  before an agent turn began comes before that turn.
+
+## Which conversation a gate judges
+
+A gate's `dialogue`, or the agent's [`semantic_gate_dialogue`][dialogue-param] param, picks the
+conversation the decision model reads:
+
+- `window` (the default) sends the newest `history` entries ([`semantic_gate_history`][history], 20
+  by default).
+- `proposal` sends only what was said since `semantic_state` last changed, starting at the agent's
+  first turn after that: the read-back and the caller's reply. If the agent has said nothing since,
+  the conversation is empty, so a yes is never judged against a read-back that never came. With no
+  `semantic_state` set, the window is used.
+- `since` judges from a mark your application sets with the [`semantic_gate_mark`][mark] action,
+  starting at the agent's first turn after the mark. Until the mark is set, `dialogue` applies.
+
+A `set_global_data` that changes `semantic_state`, and a `semantic_gate_mark`, take effect as of the
+start of the result's action list, so a `say` anywhere in the same list is the first turn judged and
+a read-back can go in the same result. Setting the same `semantic_state` again marks nothing, and
+`{}` or `unset_global_data` leaves no proposal. Any change to `semantic_state` starts a new proposal,
+so keep only the proposal there. A step's `history` mode also shapes what gates see: `hide`, and
+`isolate` while its step lasts, remove the caller's earlier words.
+
+## Unclear answers
+
+Every gate is asked yes or no unless it sets `unclear: true`. Then the decision model can also
+answer unclear, for a conversation that doesn't settle the question: the caller's "yes" might answer
+something else, came before what it would answer, or was only implied.
+
+- A gate passes on a yes at or above its threshold. With `unclear: true`, a no fails, and an unclear
+  answer or a yes under the threshold is unclear.
+- An unclear result doesn't run the function and isn't an error. The AI gets the first unclear
+  gate's `on_unclear`, or a built-in result that tells it to say briefly what it wasn't sure of and
+  ask again plainly.
+- Two unclear results in a row for the same function and the same `semantic_state` ask the caller
+  again; the third counts as a fail, with the gate's `on_fail`. A changed `semantic_state`, or any
+  other result in between, starts the count over.
+
 ## When a function is blocked
 
 A blocked function doesn't run: your webhook isn't called, the `data_map` doesn't run, and nothing
 is sent to an MCP server. The function's `wait_file` doesn't play, and the call doesn't use up its
 `active` count.
 
+The gate's `on_fail` or `on_unclear`, its response and its action list, is filled in once when the
+call is blocked: `${global_data.*}`, `${args.*}` (the call's arguments), the agent's variables, the
+rest of the request data, and `@{...}` functions. So a refused confirmation can repeat what your
+application stored, such as `${global_data.semantic_state.proposal}`. A value brought in is never
+expanded again, output that wouldn't parse after expansion is used as written, and a `SWML` action
+keeps its own variable handling. With `post_process: true`, the actions run as expanded at the block.
+A blocked call's `tool_prompt` reaches realtime models too, right after the tool result.
+
 When the check can't be completed, because it timed out, the decision model failed or gave no usable
 answer, or the AI's arguments weren't exactly one JSON object (missing, not valid JSON, text after
 the object, a repeated key, or a `\u0000` escape), the function is blocked too, and
-the AI gets `There is a temporary problem and this could not be completed right now.` Every outcome
-other than a pass, a fail, or gates turned off also fires a `calling.error` event:
+the AI gets `There is a temporary problem and this could not be completed right now.` The exception
+is the function's first timeout in a row: then the AI is told the check didn't finish in time and to
+call the function again. A call the gates blocked, repeated a third time with the same arguments,
+is refused with a message that it [never ran](/docs/swml/reference/calling/ai/swaig/functions#how-the-agent-calls-functions).
+Every outcome other than a pass, a fail, or gates turned off also fires a `calling.error` event:
 
 ```json
 {
@@ -131,7 +226,11 @@ other than a pass, a fail, or gates turned off also fires a `calling.error` even
 `swaig_log`. The [post-prompt callback][post-prompt] reference lists every `outcome` and `phase`
 value that record can carry.
 
-Each checked call adds a `semantic_gates` record to its `swaig_log` entry, and the
+Each checked call adds a `semantic_gates` record to its `swaig_log` entry. The record's `dialogue`
+says which conversation was judged (`window`, `proposal`, or `since:<mark>`), each three-way gate
+has a `choice` (`yes`, `no`, or `unclear`), `unclear_limit` is `true` when a third unclear in a row
+became a fail, and `dispatched` says whether the function ran. An `outcome` of `unclear` isn't an
+error. The
 [post-prompt callback][post-prompt] adds `semantic_gates_blocked` and a `semantic_gates` tally for
 the call. When the post-prompt AI was blocked and wrote no summary, `post_prompt_data` reads
 "`<function>` was not run." for each blocked call.
@@ -288,6 +387,62 @@ gates:
       "visual_input": 1,
       "on_fail": {
         "response": "release_records was not run. Ask the caller to hold their ID up to the camera."
+      }
+    }
+  ]
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Judge a proposal, and ask again when unclear
+
+This gate judges only what was said since your application last changed `semantic_state`, and asks
+the caller again when their answer doesn't settle it. For the full confirmation flow, see the
+[semantic gates guide][guide].
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+gates:
+  - id: agreed
+    question: Is the caller's latest answer in `conversation` a yes to the change described in `semantic_state`?
+    criteria:
+      "true": Their latest answer says yes to this change.
+      "false": Their latest answer says no.
+    threshold: 0.6
+    unclear: true
+    dialogue: proposal
+    on_fail:
+      response: confirm_change was not run. The caller declined. Ask whether they want something else.
+    on_unclear:
+      response:
+        tool_result: "confirm_change was not run: the caller's answer did not settle it."
+        tool_prompt: Say what you were not sure of, read the change back, and ask for a plain yes or no.
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "gates": [
+    {
+      "id": "agreed",
+      "question": "Is the caller's latest answer in `conversation` a yes to the change described in `semantic_state`?",
+      "criteria": {
+        "true": "Their latest answer says yes to this change.",
+        "false": "Their latest answer says no."
+      },
+      "threshold": 0.6,
+      "unclear": true,
+      "dialogue": "proposal",
+      "on_fail": {
+        "response": "confirm_change was not run. The caller declined. Ask whether they want something else."
+      },
+      "on_unclear": {
+        "response": {
+          "tool_result": "confirm_change was not run: the caller's answer did not settle it.",
+          "tool_prompt": "Say what you were not sure of, read the change back, and ask for a plain yes or no."
+        }
       }
     }
   ]

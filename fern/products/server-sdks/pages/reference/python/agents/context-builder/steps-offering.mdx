@@ -1,0 +1,46 @@
+---
+title: "steps_offering"
+slug: reference/python/agents/context-builder/steps-offering
+description: List the steps whose function lists offer a tool.
+max-toc-depth: 3
+---
+
+[set-functions]: /docs/server-sdks/reference/python/agents/context-builder/step/set-functions
+[add-gather-question]: /docs/server-sdks/reference/python/agents/context-builder/step/add-gather-question
+[render-warnings]: /docs/server-sdks/reference/python/agents/context-builder/render-warnings
+
+List the steps whose function list offers a tool, including the function lists
+of their [gather questions][add-gather-question].
+
+A step without [`set_functions()`][set-functions] isn't counted: it keeps
+whatever was active before it, so what it offers depends on the step the call
+came from. When the model calls a tool the current step doesn't offer, the
+platform's reply names the same steps.
+
+## Parameters
+
+<ParamField path="function" type="str" required={true} toc={true}>
+  The tool's name.
+</ParamField>
+
+## Returns
+
+`list[tuple[str, str]]` -- `(context, step)` pairs in order. Empty when no step
+lists the tool, which also triggers the
+[`tool_offered_by_no_step`][render-warnings] warning when every step lists its
+functions.
+
+## Example
+
+```python {10}
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="orders", route="/orders")
+agent.prompt_add_section("Role", "You take orders.")
+agent.define_tool("place_order", "Place the order", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Order placed."))
+builder = agent.define_contexts()
+ctx = builder.add_context("default")
+ctx.add_step("confirm").set_text("Confirm the order.").set_functions(["place_order"])
+print(builder.steps_offering("place_order"))   # [('default', 'confirm')]
+```

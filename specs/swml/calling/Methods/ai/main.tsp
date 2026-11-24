@@ -59,8 +59,21 @@ const aiPostPromptAuthPasswordDescription: string = "The password for basic auth
 const aiVoiceDescription: string = """
   The voice the agent speaks with when neither `languages` nor `multilingual` is set.
   String format: `<engine id>.<voice id>`, with an optional `:<model id>` suffix for engines that offer a
-  choice of model, the same format as `languages[].voice`. When `languages` or `multilingual` is set, the
-  voices configured there are used instead.
+  choice of model, the same format as `languages[].voice`.
+  Supply an array of up to 8 voice strings to give the voice backups: the first voice speaks, and when it
+  fails, the agent goes on with the next voice that opens. See
+  [voice fallback](/docs/swml/reference/calling/ai#voice-fallback).
+  When `languages` or `multilingual` is set, the voices configured there are used instead; with `languages`,
+  only this voice's engine prefix is read, as the engine the entries inherit.
+  With no voice set anywhere, the agent uses the `default_voice` SWML variable when it is set, otherwise the
+  platform's default voice, `elevenlabs.mark`.
+  """;
+
+const aiFallbackVoiceDescription: string = """
+  Backup voices shared by every language, tried in order once a language's own voices (or the `voice` array,
+  without `languages` or `multilingual`) have all failed. One voice string, or an array of up to 8.
+  After these, the platform's last-resort voice, Cartesia's Kurt (`cartesia.efa653e5-314d-46ca-9f90-70ac7d6ca71e`),
+  is tried. See [voice fallback](/docs/swml/reference/calling/ai#voice-fallback).
   """;
 
 const aiAgentDescription: string = """
@@ -134,7 +147,13 @@ model AIObject {
 
   @doc(aiVoiceDescription)
   @example("elevenlabs.rachel")
-  voice?: string;
+  @maxItems(8)
+  voice?: string | string[];
+
+  @doc(aiFallbackVoiceDescription)
+  @example(#["openai.alloy", "gcloud.en-US-Neural2-C"])
+  @maxItems(8)
+  fallback_voice?: string | string[];
 }
 
 @doc("The ID of a saved AI agent.")

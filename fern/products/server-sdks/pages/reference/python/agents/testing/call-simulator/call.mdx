@@ -1,0 +1,70 @@
+---
+title: "call"
+slug: reference/python/agents/testing/call-simulator/call
+description: Have the model call a tool in the simulated call, checked against the step's function list and the tool's gates.
+max-toc-depth: 3
+---
+
+[simulated-call]: /docs/server-sdks/reference/python/agents/testing/simulated-call
+[tool-mention-error]: /docs/server-sdks/reference/python/agents/testing/tool-mention-error
+
+The model calls the tool `name` with `args`. The call is checked the way the
+platform checks it:
+
+- A tool the current step doesn't offer, or one the agent doesn't have, doesn't
+  run. The model gets the platform's reply, which names the tools it has, or the
+  agent's `unavailable_function_response` when one is set.
+- `next_step` and `change_context` move the call when the step allows the target.
+- A gated tool runs only when the gate callback passes every gate; otherwise the
+  model gets the first failing gate's `on_fail`, or an unclear gate's `on_unclear`.
+- Otherwise the tool's handler, or its stub, runs with a request like the
+  platform's, including `call_id`, `tool_call_id`, `global_data`, any
+  `request_fields`, and the conversation when `swaig_post_conversation` is on. Its
+  result's actions change the call. A `post_process` result's actions wait for
+  the next `agent_says()`, and a newer one replaces actions still waiting.
+
+## Parameters
+
+<ParamField path="name" type="str" required={true} toc={true}>
+  The tool's name.
+</ParamField>
+
+<ParamField path="args" type="Mapping[str, Any] | None" default="None" toc={true}>
+  The arguments the model sends. `None` sends none.
+</ParamField>
+
+## Returns
+
+[`SimulatedCall`][simulated-call] -- What the call came to.
+
+## Raises
+
+- `RuntimeError` -- the call has ended.
+- `ValueError` -- the tool is a DataMap tool and has no stub.
+- [`ToolMentionError`][tool-mention-error] -- with `check_tool_mentions=True`, the
+  result names a tool the step it leaves the call in doesn't offer.
+
+## Example
+
+```python {15,18}
+from signalwire import AgentBase, FunctionResult
+from signalwire.testing import CallSimulator
+
+agent = AgentBase(name="orders", route="/orders")
+agent.prompt_add_section("Role", "You take orders.")
+agent.define_tool("review_order", "Read the order back", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Read the order back.").swml_change_step("confirm"))
+agent.define_tool("place_order", "Place the order", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Order placed."))
+ctx = agent.define_contexts().add_context("default")
+ctx.add_step("take").set_text("Take the order.").set_functions(["review_order"])
+ctx.add_step("confirm").set_text("Confirm the order.").set_functions(["place_order"]).set_history("isolate")
+
+sim = CallSimulator(agent)
+blocked = sim.call("place_order")
+print(blocked.ran, blocked.blocked_by)
+# False step
+outcome = sim.call("review_order")
+print(outcome.ran, sim.step)
+# True confirm
+```

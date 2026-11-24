@@ -1,0 +1,71 @@
+---
+title: "propose"
+slug: reference/python/agents/patterns/proposal/propose
+description: Record a proposed change in semantic_state and have the agent read it back word for word.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/server-sdks/reference/python/agents/function-result
+[proposal]: /docs/server-sdks/reference/python/agents/patterns/proposal
+
+Return the result of the tool that proposes a change. The result:
+
+- turns tool chaining back on with `back_to_back_functions("forever")`;
+- records the proposal in `global_data.semantic_state`, in an action of its own before
+  the read-back, so it's recorded even when the caller talks over the read-back;
+- says `read_back` word for word, so the proposal's dialogue starts with it;
+- waits for the caller's answer.
+
+The model is told the read-back was given, and to call the confirm tool only when the
+caller says yes to it, or the decline tool when they say no or want a change.
+
+## Parameters
+
+<ParamField path="read_back" type="str" required={true} toc={true}>
+  The words to read back, ending with the question, such as `"That's a large tea for
+  pickup at five. Is that right?"`. Name everything the change covers, the way the
+  caller would say it.
+</ParamField>
+
+<ParamField path="raw_data" type="Mapping[str, Any] | None" default="None" toc={true}>
+  Keyword-only. The proposing tool's SWAIG request. With it, a repeated proposal gets
+  the next revision number, so `semantic_state` changes and the platform marks a new
+  proposal.
+</ParamField>
+
+<ParamField path="details" type="Mapping[str, Any] | None" default="None" toc={true}>
+  Keyword-only. More of what the change is, kept in `semantic_state` with it.
+</ParamField>
+
+<ParamField path="result" type="FunctionResult | None" default="None" toc={true}>
+  Keyword-only. A result to add to, in place of a new one.
+</ParamField>
+
+The recorded state is `{**details, "proposal": read_back, "revision": n}`.
+
+## Returns
+
+[`FunctionResult`][functionresult] -- The proposing tool's result.
+
+## Example
+
+```python {6-7}
+from signalwire.patterns import Proposal
+
+order = Proposal("place_order", decline_tool="review_order")
+
+def review_order(args, raw_data):
+    return order.propose(f"That's a {args['item']}. Is that right?",
+                         raw_data=raw_data, details={"item": args["item"]})
+```
+
+For `item` set to `"large tea"`, the result is:
+
+```json
+{"response": {"tool_result": "Read back to the caller: That's a large tea. Is that right?",
+              "tool_prompt": "Wait for the caller's answer. Call place_order only when they say yes to this read-back. If they say no or want a change, call review_order."},
+ "action": [{"back_to_back_functions": "forever"},
+            {"set_global_data": {"semantic_state": {"item": "large tea", "proposal": "That's a large tea. Is that right?", "revision": 1}}},
+            {"say": "That's a large tea. Is that right?"},
+            {"wait_for_user": true}]}
+```

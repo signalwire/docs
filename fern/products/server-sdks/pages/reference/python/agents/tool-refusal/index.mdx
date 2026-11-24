@@ -1,0 +1,61 @@
+---
+title: "ToolRefusal"
+slug: reference/python/agents/tool-refusal
+description: An exception a tool handler raises to decline a call with an outcome it knows.
+max-toc-depth: 3
+---
+
+[define-tool]: /docs/server-sdks/reference/python/agents/agent-base/define-tool
+[add-tool-middleware]: /docs/server-sdks/reference/python/agents/agent-base/add-tool-middleware
+[functionresult]: /docs/server-sdks/reference/python/agents/function-result
+
+Raise `ToolRefusal` from a tool handler, or from tool
+[middleware][add-tool-middleware], to decline the call with an outcome you know, such
+as an item out of stock or an account that isn't found. The model gets `tool_result`,
+which says what is true now, and `tool_prompt`, which says what to do next.
+
+Any other exception a handler raises is logged, not sent: the model is told the
+function failed before it finished, so whether it took effect is unknown. See the
+`handler` parameter of [`define_tool()`][define-tool].
+
+```python
+from signalwire import ToolRefusal
+```
+
+## Parameters
+
+<ParamField path="tool_result" type="str" required={true} toc={true}>
+  What is true now: that nothing was done, and why. It's also the exception's
+  message.
+</ParamField>
+
+<ParamField path="tool_prompt" type="str | None" default="None" toc={true}>
+  What the model should do next.
+</ParamField>
+
+## Methods
+
+<CardGroup cols={3}>
+  <Card title="result" href="/docs/server-sdks/reference/python/agents/tool-refusal/result">
+    Return the FunctionResult the model gets.
+  </Card>
+</CardGroup>
+
+## Example
+
+```python {5-6}
+from signalwire import FunctionResult, ToolRefusal
+
+def place_order(args, raw_data):
+    if args.get("item") == "tea":
+        raise ToolRefusal("place_order was not run: tea is out of stock.",
+                          "Tell the caller, and offer coffee.")
+    return FunctionResult("Order placed.")
+```
+
+The model gets:
+
+```json
+{"response": {"tool_result": "place_order was not run: tea is out of stock.",
+              "tool_prompt": "Tell the caller, and offer coffee."}}
+```

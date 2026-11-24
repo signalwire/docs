@@ -1,0 +1,77 @@
+---
+title: "Speech helpers"
+slug: reference/python/agents/speech
+description: Functions that turn digits and amounts into the words a voice should say, and read what a caller spelled out.
+max-toc-depth: 3
+---
+
+[add-pronunciation]: /docs/server-sdks/reference/python/agents/agent-base/add-pronunciation
+[say]: /docs/server-sdks/reference/python/agents/function-result/say
+
+The `signalwire.speech` module gives the words a voice should say for digits and
+amounts, and `signalwire.speech.spelling` reads letters, digits, and email addresses
+a caller spelled out. All of them work on English text.
+
+The platform normalizes text before its pronunciation rules run, so a bare number
+is already words by then: [`add_pronunciation()`][add-pronunciation] can't make
+`"10001"` read digit by digit. Put the words these functions return in a
+[`say`][say] action, or in the tool result the model reads back.
+
+```python
+from signalwire.speech import say_digits, say_last_digits, say_money, number_words
+from signalwire.speech.spelling import read_spelled, spoken_email, spelling_variants
+```
+
+## Numbers
+
+<CardGroup cols={2}>
+  <Card title="say_digits" href="/docs/server-sdks/reference/python/agents/speech/say-digits">
+    The digits in a string, one word each, in groups.
+  </Card>
+  <Card title="say_last_digits" href="/docs/server-sdks/reference/python/agents/speech/say-last-digits">
+    The last digits of a number, one word each.
+  </Card>
+  <Card title="say_money" href="/docs/server-sdks/reference/python/agents/speech/say-money">
+    An amount of money in words.
+  </Card>
+  <Card title="number_words" href="/docs/server-sdks/reference/python/agents/speech/number-words">
+    A whole number in English words.
+  </Card>
+</CardGroup>
+
+## Spelled input
+
+<CardGroup cols={2}>
+  <Card title="read_spelled" href="/docs/server-sdks/reference/python/agents/speech/read-spelled">
+    The letters, digits, and symbols a caller spelled.
+  </Card>
+  <Card title="spoken_email" href="/docs/server-sdks/reference/python/agents/speech/spoken-email">
+    An email address said aloud, as text.
+  </Card>
+  <Card title="spelling_variants" href="/docs/server-sdks/reference/python/agents/speech/spelling-variants">
+    The spellings a word could be, given letters the recognizer confuses.
+  </Card>
+</CardGroup>
+
+## Example
+
+A tool that reads an account number back digit by digit:
+
+```python {7}
+from signalwire import AgentBase, FunctionResult
+from signalwire.speech import say_digits
+
+agent = AgentBase(name="billing", route="/billing")
+
+def read_account(args, raw_data):
+    words = say_digits(args["account"], group=4)
+    return FunctionResult("Read the account number back.").say(
+        f"Your account number is {words}."
+    )
+
+agent.define_tool(
+    "read_account", "Read the caller's account number back",
+    {"type": "object", "properties": {"account": {"type": "string"}}, "required": ["account"]},
+    read_account,
+)
+```

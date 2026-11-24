@@ -1,0 +1,52 @@
+---
+title: "replay"
+slug: reference/python/agents/testing/call-simulator/replay
+description: Run recorded tool requests against the agent again, each with its own call data.
+max-toc-depth: 3
+---
+
+[request-recorder]: /docs/server-sdks/reference/python/agents/testing/request-recorder
+[simulated-call]: /docs/server-sdks/reference/python/agents/testing/simulated-call
+
+Run recorded tool requests against the agent again, as they came. Each request is a
+SWAIG request body, as [`RequestRecorder`][request-recorder] records it, with its
+own call data; the simulated call's state isn't used or changed, and the step's
+function list and gates aren't checked. Use it to check that changed code still
+gives the results it gave on real calls.
+
+## Parameters
+
+<ParamField path="requests" type="Iterable[Mapping[str, Any]]" required={true} toc={true}>
+  The recorded request bodies, such as `RequestRecorder.load(path)` returns.
+</ParamField>
+
+## Returns
+
+`list[SimulatedCall]` -- What each request came to, in order, as
+[`SimulatedCall`][simulated-call] objects.
+
+## Example
+
+```python {19}
+from signalwire import AgentBase, FunctionResult
+from signalwire.testing import CallSimulator, RequestRecorder
+
+agent = AgentBase(name="greeter", route="/greeter")
+agent.prompt_add_section("Role", "You greet callers.")
+
+def caller_number(args, raw_data):
+    return FunctionResult(f"The caller is calling from {raw_data.get('caller_id_num')}.")
+
+agent.define_tool("caller_number", "Get the caller's number", {"type": "object", "properties": {}},
+                  caller_number)
+recorder = RequestRecorder("tool_requests.jsonl")
+agent.add_tool_middleware(recorder)
+
+# Record a request, here from a simulated call
+CallSimulator(agent, request_fields={"caller_id_num": "+15551234567"}).call("caller_number")
+
+# Later, run the recorded requests against the agent again
+for outcome in CallSimulator(agent).replay(RequestRecorder.load("tool_requests.jsonl")):
+    print(outcome.name, outcome.response)
+# caller_number The caller is calling from +15551234567.
+```

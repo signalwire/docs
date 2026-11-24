@@ -56,7 +56,7 @@ model AISidecarParams {
   @example("Summarize the key points of this conversation.")
   ai_summary_prompt?: string;
 
-  @doc("The model used for the end-of-call conversation summary, distinct from `model` (the sidecar's own model). Suggested values: `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-4.1-nano`. **Default:** `gpt-4o-mini`.")
+  @doc("The model used for the end-of-call conversation summary, distinct from `model` (the sidecar's own model). Suggested values: `gpt-4o-mini`, `gpt-4.1-mini`. **Default:** `gpt-4o-mini`.")
   @example("gpt-4.1-mini")
   summary_model?: SupportedAIModels = "gpt-4o-mini";
 

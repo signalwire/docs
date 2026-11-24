@@ -1,0 +1,51 @@
+---
+title: "speech_finals"
+slug: reference/python/agents/agent-base/speech-finals
+description: Read a call's recognizer finals, with word confidences, once recording is on.
+max-toc-depth: 3
+---
+
+[record-speech-finals]: /docs/server-sdks/reference/python/agents/agent-base/record-speech-finals
+
+Return a call's recognizer finals, oldest first, once
+[`record_speech_finals()`][record-speech-finals] is on.
+
+## Parameters
+
+<ParamField path="call_id" type="str" required={true} toc={true}>
+  The call, as a tool request's `raw_data["call_id"]`.
+</ParamField>
+
+<ParamField path="since" type="float | None" default="None" toc={true}>
+  Only the finals from this time on, in seconds since the epoch.
+</ParamField>
+
+## Returns
+
+`list[dict[str, Any]]` -- The finals, each `{"text", "words", "timestamp"}`:
+
+- `text` -- the final's text.
+- `words` -- `[{"word", "confidence"}]`, as the recognizer heard them.
+- `timestamp` -- when the event was sent, in seconds since the epoch.
+
+Empty for a call with no finals, or when recording is off.
+
+## Example
+
+```python {8}
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="spell", route="/spell")
+agent.prompt_add_section("Role", "You take spelled names.")
+agent.record_speech_finals()
+
+def check_name(args, raw_data):
+    finals = agent.speech_finals(raw_data["call_id"])
+    unsure = [w["word"] for f in finals for w in f["words"] if w["confidence"] < 0.6]
+    return FunctionResult(f"Unsure of: {unsure}")
+
+agent.define_tool("check_name", "Check the spelled name",
+                  {"type": "object", "properties": {}}, check_name)
+
+agent.serve()
+```

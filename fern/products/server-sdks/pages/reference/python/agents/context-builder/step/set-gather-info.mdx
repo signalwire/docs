@@ -7,6 +7,7 @@ max-toc-depth: 3
 
 [add-gather-question]: /docs/server-sdks/reference/python/agents/context-builder/step/add-gather-question
 [ref-step]: /docs/server-sdks/reference/python/agents/context-builder/step
+[ref-set-history]: /docs/server-sdks/reference/python/agents/context-builder/step/set-history
 
 Enable info gathering for this step. Call
 [`add_gather_question()`][add-gather-question]
@@ -33,8 +34,11 @@ LLM-visible history.
 </ParamField>
 
 <ParamField path="prompt" type="str | None" default="None" toc={true}>
-  Preamble text injected once when entering the gather step, giving the AI
-  personality and context for asking the questions.
+  Preamble text that gives the model personality and context for asking the
+  questions. It's sent with every question, ahead of the question's own text,
+  and each copy replaces the one before. Under the `"keep"`
+  [history mode][ref-set-history], only the first question's copy is sent, and
+  it stays.
 </ParamField>
 
 <ParamField path="isolated" type="bool" default="False" toc={true}>
@@ -44,11 +48,25 @@ LLM-visible history.
   `isolated` overrides this. Hidden turns stay in the call log.
 </ParamField>
 
+<ParamField path="say_questions" type="bool" default="False" toc={true}>
+  When `True`, the platform says each question word for word, its `${...}`
+  values filled in, when the gather reaches it, and the model is told the
+  caller was just asked. The answer still goes through `gather_submit`: the
+  model checks it, does any confirm read-back, and asks again in its own words
+  if the answer is unclear or the caller stays silent. A question's own `say`
+  overrides this.
+
+  Realtime models ask every question themselves, and a platform release
+  without this feature ignores it, so the model asks.
+</ParamField>
+
 ## **Returns**
 
 [`Step`][ref-step] -- Self for method chaining.
 
-## **Example**
+## **Examples**
+
+### Gather with a preamble
 
 ```python {9}
 from signalwire import AgentBase
@@ -73,3 +91,24 @@ ctx.add_step("review").set_text("Review the collected information with the patie
 
 agent.serve()
 ```
+
+### Questions the platform says itself
+
+```python {8,10-11}
+from signalwire import AgentBase
+from signalwire.core.contexts import expected_answer
+
+agent = AgentBase(name="survey", route="/survey")
+agent.prompt_add_section("Role", "You run a short survey.")
+ctx = agent.define_contexts().add_context("default")
+step = ctx.add_step("survey").set_text("Ask the survey questions.").set_functions("none")
+step.set_gather_info(output_key="survey", completion_action="next_step", say_questions=True)
+step.add_gather_question("zip", "What is your ZIP code?", expected_answer=expected_answer(5))
+step.add_gather_question("pin", "What is your PIN?", say=False,
+                         expected_answer={"min_digits": 4, "max_digits": 6})
+ctx.add_step("done").set_text("Thank the caller.").set_functions("none")
+
+agent.serve()
+```
+
+The platform says the ZIP code question itself; the model asks for the PIN.

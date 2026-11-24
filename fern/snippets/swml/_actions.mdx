@@ -10,7 +10,9 @@
 </ParamField>
 
 <ParamField path="action[].say" type="string" toc={true}>
-  A message to be spoken by the AI agent.
+  Text for the agent to speak. The caller can interrupt it, as they can a reply.
+
+  The model receives the text as the agent's own words, right after the result of the function call it came from: in full when it played, cut where the caller stopped hearing it when it was interrupted, and as `…` alone when it never played. The function's `response` doesn't need to repeat it. Words the caller said before the `say` began are placed before it, and words said while or after it played come after it. On realtime models, the model speaks the text itself.
 </ParamField>
 
 <ParamField path="action[].stop" type="boolean" toc={true}>
@@ -21,15 +23,16 @@
   Whether to hang up the call. When set to `true`, the call will be terminated after the AI agent finishes speaking.
 </ParamField>
 
-<ParamField path="action[].hold" type="integer | object" toc={true}>
-  Places the caller on hold while playing hold music (configured via the [`params.hold_music`](/docs/swml/reference/calling/ai/params) parameter).
+<ParamField path="action[].hold" type="integer | string | object" toc={true}>
+  Places the caller on hold while playing hold music (configured via the [`params.hold_music`](/docs/swml/reference/calling/ai/params#paramshold_music) parameter).
   During hold, speech detection is paused and the AI agent will not respond to the caller.
 
-  The value specifies the hold timeout in seconds. Can be:
-  - An integer (e.g., `120` for 120 seconds)
+  The value is the hold timeout. Can be:
+  - A number of seconds, such as `120`
+  - A [duration string](/docs/swml/reference/calling/ai/params#duration-values), such as `"5m"` for 5 minutes
   - An object with `timeout`, and optionally `step` and `timeout_step`
 
-  Default timeout is `300` seconds (5 minutes). Maximum timeout is `900` seconds (15 minutes).
+  Default timeout is `300` seconds (5 minutes). A timeout outside `0` to `900` seconds (15 minutes) falls back to `300` seconds.
 
   <Note title="Unholding a call">
   There is no `unhold` SWAIG action because the AI agent is inactive during hold and cannot process actions.
@@ -40,8 +43,8 @@
 </ParamField>
 
 <Indent>
-<ParamField path="hold.timeout" type="integer" default="300" toc={true}>
-  The duration to hold the caller in seconds. Maximum is `900` seconds (15 minutes).
+<ParamField path="hold.timeout" type="integer | string" default="300" toc={true}>
+  How long to hold the caller: a number of seconds, or a [duration string](/docs/swml/reference/calling/ai/params#duration-values) such as `"5m"`. A value outside `0` to `900` seconds falls back to `300`.
 </ParamField>
 
 <ParamField path="hold.step" type="string" toc={true}>
@@ -61,8 +64,10 @@
 </ParamField>
 
 <ParamField path="action[].change_step" type="string" toc={true}>
-  The name of the step to switch to. The step must be defined in `prompt.contexts.{context_name}.steps` for the current context.
+  The name of the step to switch to. The step must be defined in `prompt.contexts.{context_name}.steps` for the current context; it doesn't need to be in the current step's `valid_steps`.
   This action triggers an immediate step transition during the execution of a SWAIG function.
+
+  Naming the step the agent is already in starts that step over. Its text is rebuilt from the current variables, so a `set_global_data` in the same result is reflected whatever the order of the actions. Its `history` mode applies again, and its functions are set again. Use this for a confirm step whose proposal the caller revised.
 
   Visit the [`steps`][steps] documentation for details on defining steps.
 </ParamField>
@@ -122,7 +127,7 @@
 </ParamField>
 
 <ParamField path="action[].user_input" type="string" toc={true}>
-  Used to inject text into the users queue as if they input the data themselves.
+  Adds text to the conversation as the caller's turn, as if the caller had said it, and the agent answers it. Works on realtime models too.
 </ParamField>
 
 <ParamField path="action[].context_switch" type="object" toc={true}>
@@ -158,7 +163,7 @@
 </Indent>
 
 <ParamField path="action[].settings" type="object" toc={true}>
-  Changes the AI model's settings for the rest of the conversation, as a key-value map. Only settings the selected model supports are applied. Requires [`params.swaig_allow_settings`](/docs/swml/reference/calling/ai/params#paramsswaig_allow_settings), which is on by default. The new map replaces the current settings: any setting you leave out, including one set on `prompt`, returns to the model's default.
+  Changes the AI model's settings for the rest of the call, as a key-value map such as `{"temperature": 0.3}`. Only the keys you name change; every other setting, including one set on `prompt`, keeps its current value. A key the model doesn't accept is ignored. The change lasts across steps. Requires [`params.swaig_allow_settings`](/docs/swml/reference/calling/ai/params#paramsswaig_allow_settings), which is on by default.
 </ParamField>
 
 <ParamField path="action[].user_event" type="object" toc={true}>
@@ -181,3 +186,61 @@
   Whether to include a conversation summary when transferring.
 </ParamField>
 </Indent>
+
+<ParamField path="action[].no_barge_next_response" type="boolean | string" toc={true}>
+  Makes the agent's next spoken reply play in full, such as a read-back the caller should hear completely before answering. Set it to `true` or a true string; a number such as `1` is ignored.
+
+  - It holds from the start of the next model request until a reply that speaks has played, so the caller's words neither cut the reply nor cancel its request. A reply that only calls a function leaves it for the next reply.
+  - The caller's words during the reply, short acknowledgements such as "okay" included, are held and delivered after it. `interrupt_on_noise` doesn't cut the reply; DTMF still does.
+  - It holds for at most 30 seconds from the request's start while the agent isn't speaking. A reply still playing then is held to its end.
+  - [Semantic gates](/docs/swml/reference/calling/ai/swaig/functions/gates) see the reply as cut where the caller's words began.
+
+  Not on realtime models, where barge-in is the model's own.
+</ParamField>
+
+<ParamField path="action[].semantic_gate_mark" type="string" toc={true}>
+  Sets a named mark that a semantic gate's [`since`](/docs/swml/reference/calling/ai/swaig/functions/gates#gatessince) judges the conversation from: 1 to 64 letters, digits, or underscores. The mark is set as of the start of the result's action list, so a `say` anywhere in the same list comes after it. Setting a mark again moves it. Marks last for the whole call, and step and context changes don't clear them. A call keeps up to 16 mark names, dropping the oldest past that. An invalid name sets nothing.
+</ParamField>
+
+<ParamField path="action[].back_to_back_functions" type="boolean | string" toc={true}>
+  Whether the model may call another function right after a function result, without answering the caller in words first. The setting lasts for the rest of the call.
+
+  - `"forever"` (the default): the model may chain function calls freely.
+  - `false`: the model must answer in words after a function result.
+  - `true`: while chaining is off, allows one more chained call. It doesn't change `"forever"`.
+
+  Any other value is ignored. The post-prompt and a `summarize_conversation` summary always run with `"forever"`. Not on realtime models.
+</ParamField>
+
+<ParamField path="action[].extensive_data" type="boolean" toc={true}>
+  How long the model keeps this function's result. Without this action, a result over 1024 bytes is available to the model for the rest of its turn, including the function calls and retries after it. Once the caller speaks after a reply that played out, the model sees `The appropriate answer was provided.` in its place. A smaller result stays for the whole call.
+
+  - `true`: the result is available for its turn only, whatever its size.
+  - `false`: the result stays for the whole call, whatever its size.
+
+  Also works from a `post_process` response. Not on realtime models.
+</ParamField>
+
+<ParamField path="action[].change_voice" type="string | string[] | object" toc={true}>
+  Changes the current language's voice for the rest of the call. Takes a voice string such as `elevenlabs.adam`, an array of up to 8 voice strings, or an object with `voice` set to either. In an array, the first voice speaks and the rest become its fallbacks, replacing the language's own; with one voice, the language keeps its fallbacks. Either way the fallbacks start over from the first. See [`languages[].voice`](/docs/swml/reference/calling/ai/languages#languagesvoice) for voice strings and how fallbacks are tried.
+</ParamField>
+
+<ParamField path="action[].add_dynamic_hints" type="(string | object)[]" toc={true}>
+  Adds speech recognition hints during the call, in the same forms as the `ai` method's [`hints`](/docs/swml/reference/calling/ai#aihints): strings, or objects with `hint`, or `pattern` and `replace`. Where the speech recognizer accepts hints during a call, the new list (the agent's hints, then the dynamic ones) is applied between turns without restarting recognition. Otherwise recognition restarts with the new list. Not on realtime models.
+</ParamField>
+
+<ParamField path="action[].clear_dynamic_hints" type="object" toc={true}>
+  Removes every hint added with `add_dynamic_hints`. Set it to an empty object, `{}`. The new list is applied the same way as for `add_dynamic_hints`. Not on realtime models.
+</ParamField>
+
+<ParamField path="action[].end_of_speech_timeout" type="integer | string" toc={true}>
+  Changes the agent's [`end_of_speech_timeout`](/docs/swml/reference/calling/ai/params#paramsend_of_speech_timeout). A number is milliseconds; a string can be a [duration](/docs/swml/reference/calling/ai/params#duration-values) such as `"1.5s"`. The value must be above `0`.
+</ParamField>
+
+<ParamField path="action[].speech_event_timeout" type="integer | string" toc={true}>
+  Changes the agent's [`speech_event_timeout`](/docs/swml/reference/calling/ai/params#paramsspeech_event_timeout). A number is milliseconds; a string can be a [duration](/docs/swml/reference/calling/ai/params#duration-values) such as `"500ms"`. The value must be above `0`.
+</ParamField>
+
+<ParamField path="action[].wait_for_user" type="boolean" toc={true}>
+  Whether the agent waits for the caller to speak before it takes its turn. Set after the caller has spoken, the agent waits up to [`attention_timeout`](/docs/swml/reference/calling/ai/params#paramsattention_timeout), and when that runs out it takes its turn as after any silence. Set before the caller's first words, it waits up to [`outbound_attention_timeout`](/docs/swml/reference/calling/ai/params#paramsoutbound_attention_timeout) and ends the call when that runs out.
+</ParamField>

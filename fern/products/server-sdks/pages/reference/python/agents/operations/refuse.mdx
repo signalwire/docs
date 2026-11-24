@@ -1,0 +1,53 @@
+---
+title: "Refuse"
+slug: reference/python/agents/operations/refuse
+description: Exception that declines a request breaking a rule, telling the model why and what to offer instead.
+max-toc-depth: 3
+---
+
+[operation]: /docs/server-sdks/reference/python/agents/operations/operation
+
+Raise `Refuse` from an [operation's][operation] `prepare()`, a lookup, an `identify()`
+`find` function, or a transfer function when the request breaks a rule. Nothing
+changes. The model is told why, and what can be done instead.
+
+```python
+from signalwire.operations import Refuse
+```
+
+## Parameters
+
+<ParamField path="why" type="str" required={true} toc={true}>
+  What is true now: that nothing was changed, and why.
+</ParamField>
+
+<ParamField path="then" type="str | None" default="None" toc={true}>
+  What to do next. Defaults to telling the caller and asking how they'd like to go on.
+</ParamField>
+
+<ParamField path="keep" type="bool" default="False" toc={true}>
+  Keyword-only. `True` keeps the refusal in the model's view however long it is, for a
+  refusal that lists choices the caller picks from later.
+</ParamField>
+
+## Example
+
+```python
+from signalwire.operations import Change, Field, Operation, Refuse
+
+ORDERS = {"#W1": "delivered"}
+
+
+class Cancel(Operation):
+    """Cancel a pending order."""
+
+    order_id = Field(str, "The order to cancel.")
+
+    def prepare(self, call, f):
+        if ORDERS.get(f.order_id) != "pending":
+            raise Refuse(
+                f"{f.order_id} can't be cancelled: only pending orders can.",
+                "Offer a return once it's delivered.",
+            )
+        return Change(read_back=f"Cancel order {f.order_id}. Shall I?", touches=[f"order:{f.order_id}"])
+```

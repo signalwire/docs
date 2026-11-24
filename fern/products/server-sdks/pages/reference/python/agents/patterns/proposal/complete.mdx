@@ -1,0 +1,50 @@
+---
+title: "complete"
+slug: reference/python/agents/patterns/proposal/complete
+description: Record what the confirm tool did in semantic_state, in place of the proposal.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/server-sdks/reference/python/agents/function-result
+
+Record that the change was carried out, in place of the proposal. The result sets
+`global_data.semantic_state` to `{"done": summary}`, and its first action turns tool
+chaining back on with `back_to_back_functions("forever")`.
+
+Write what was done rather than clearing the state: a state that changes starts the
+next proposal dialogue there, and the model and the gates see what's settled.
+
+## Parameters
+
+<ParamField path="summary" type="str" required={true} toc={true}>
+  What was done, such as `"Order 4471 is placed"`. Without `result`, it's also the tool
+  result the model gets.
+</ParamField>
+
+<ParamField path="result" type="FunctionResult | None" default="None" toc={true}>
+  The confirm tool's result, to add to.
+</ParamField>
+
+## Returns
+
+[`FunctionResult`][functionresult] -- The confirm tool's result.
+
+## Example
+
+```python {6-7}
+from signalwire import FunctionResult
+from signalwire.patterns import Proposal
+
+order = Proposal("place_order", decline_tool="review_order")
+
+def place_order(args, raw_data):
+    return order.complete("Order 4471 is placed",
+                          FunctionResult("Order 4471 is placed.").swml_change_step("done"))
+```
+
+```json
+{"response": "Order 4471 is placed.",
+ "action": [{"back_to_back_functions": "forever"},
+            {"change_step": "done"},
+            {"set_global_data": {"semantic_state": {"done": "Order 4471 is placed"}}}]}
+```

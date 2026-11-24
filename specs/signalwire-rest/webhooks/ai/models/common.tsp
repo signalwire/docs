@@ -57,11 +57,18 @@ model AISwaigLogEntry {
   @example(2)
   active_count?: integer | string;
 
-  @doc("The URL the function was served from. Present when the call reached your server.")
+  @doc("""
+    The URL the function was served from. Present when the call reached your server, and on a call
+    its semantic gates blocked, where it is the URL the call would have gone to.
+    """)
   @example("https://example.com/tools/get_weather")
   url?: string;
 
-  @doc("The body sent to your server. Present when the call reached it.")
+  @doc("""
+    The body sent to your server, including the call's `tool_call_id` when the model gave one.
+    Present when the call reached your server, and on a call its semantic gates blocked, where it
+    is the body that would have been sent.
+    """)
   post_data?: Record<unknown>;
 
   @doc("The response your server returned. Present when the call reached it and got a reply.")
@@ -87,7 +94,8 @@ model AISwaigLogEntry {
     The result of checking the function's
     [semantic gates](/docs/swml/reference/calling/ai/swaig/functions/gates). Present only on a call
     to a gated function. When the function was blocked, `post_response` holds what the agent got
-    instead of a reply from your server: the failing gate's `on_fail` output, or the temporary-problem
+    instead of a reply from your server: the failing gate's `on_fail` output, the unclear gate's
+    `on_unclear` output or built-in result when the check ended `unclear`, or the temporary-problem
     message when the check ended in an error. An `on_fail` with `post_process: true` and actions is
     in `delayed_post_response` instead.
     """)
@@ -100,6 +108,13 @@ model AISwaigLogEntry {
     """)
   @example(1)
   visual_input_frames?: integer;
+
+  @doc("""
+    Always `true` when present, meaning the call never ran: with `barge_functions` on, the caller
+    spoke again and overtook the turn before the call could run, so it was dropped.
+    """)
+  @example(true)
+  superseded?: boolean;
 }
 
 @doc("One gate's result within a semantic gate check, in the order the gates are listed.")
@@ -122,6 +137,13 @@ model AISemanticGateResult {
   @doc("Whether the gate passed. Present once the gate was decided.")
   @example(true)
   pass?: boolean;
+
+  @doc("""
+    The decision model's answer: `yes`, `no`, or `unclear`. Present only on a three-way gate (one
+    with `unclear: true`).
+    """)
+  @example("unclear")
+  choice?: "yes" | "no" | "unclear";
 
   @doc("`no_frame` when the gate failed because the call had no video frame to show it.")
   @example("no_frame")
@@ -153,12 +175,24 @@ model AISemanticGateRecord {
   latency_ms: integer;
 
   @doc("""
+    The conversation the gates judged: `window` (the newest entries), `proposal` (what was said
+    since `semantic_state` last changed), or `since:` followed by a mark name set with
+    `semantic_gate_mark`.
+    """)
+  @example("proposal")
+  dialogue?: string;
+
+  @doc("""
     How the check ended:
 
     - `pass`: every gate passed, and the function ran.
     - `disabled`: gates are turned off for the call (`semantic_gates_enabled: false`), and the
       function ran.
-    - `fail`: a gate answered under its threshold or had no video frame to look at.
+    - `fail`: a gate answered no, answered yes under its threshold (on a gate without `unclear`),
+      or had no video frame to look at. A third `unclear` in a row also ends as `fail`, with
+      `unclear_limit: true`.
+    - `unclear`: no gate failed, but a three-way gate answered `unclear` or answered yes under its
+      threshold. The function didn't run, and this isn't an error.
     - `timeout`: the check ran out of time (`semantic_gate_timeout_ms`).
     - `provider_error`: the decision model refused or failed.
     - `invalid_response`: the decision model's answer could not be used.
@@ -175,6 +209,7 @@ model AISemanticGateRecord {
     | "pass"
     | "disabled"
     | "fail"
+    | "unclear"
     | "timeout"
     | "provider_error"
     | "invalid_response"
@@ -182,9 +217,16 @@ model AISemanticGateRecord {
     | "config_error"
     | "aborted";
 
-  @doc("Whether the function ran.")
+  @doc("Whether the function ran. `false` means nothing was sent to your server.")
   @example(false)
   dispatched: boolean;
+
+  @doc("""
+    Always `true` when present, meaning the third `unclear` result in a row for the same function
+    and `semantic_state` was turned into a fail.
+    """)
+  @example(true)
+  unclear_limit?: boolean;
 
   @doc("A short description of the error. Present when `outcome` is an error.")
   @example("the call went away")
@@ -247,6 +289,10 @@ model AISemanticGateTally {
   @doc("How many checks ended in an error, such as a timeout.")
   @example(0)
   error: integer;
+
+  @doc("How many checks ended `unclear`. The function didn't run, and these aren't counted as errors.")
+  @example(0)
+  unclear: integer;
 
   @doc("How many checks were skipped because gates are turned off for the call.")
   @example(1)

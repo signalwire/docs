@@ -109,7 +109,7 @@ two casings, only the first is read, and the other is ignored without a warning.
 
 
 <ParamField path="functions[].gates" type="object[]" toc={true}>
-  [Semantic gates][gates]: 1 to 8 yes/no questions about the call that must all pass before the function runs. When any gate fails, the function doesn't run, and the AI gets the first failing gate's `on_fail` response instead. A gated function needs a `description` and a `web_hook_url` (its own or from `SWAIG.defaults`) or a `data_map`. If any gate is invalid, the function isn't added to the agent at all.
+  [Semantic gates][gates]: 1 to 8 questions about the call that must all pass before the function runs. When any gate fails, the function doesn't run, and the AI gets the first failing gate's `on_fail` response instead. A gate can also allow an unclear answer, which asks the caller again. A gated function needs a `description` and a `web_hook_url` (its own or from `SWAIG.defaults`) or a `data_map`. If any gate is invalid, the function isn't added to the agent at all.
 
   See [`gates`][gates] for additional details.
 </ParamField>
@@ -170,6 +170,11 @@ SignalWire. See [Verify SWML request signatures](/docs/swml/guides/webhook-secur
 
 See the [AI SWAIG tool webhook](/docs/apis/rest/webhooks/ai-swaig-tool-webhook) webhook page for the full field reference.
 
+The request carries `tool_call_id`, the model provider's id for the call. A request the platform sends
+again after a connection error or a `5xx` response keeps the same id, so your endpoint can tell a resend
+from a new call. The request also says where the agent is: `step`, `context`, `language`, `model`, and
+`turn`.
+
 ### Reply
 
 Return a JSON object with an optional `response` and an optional `action`. The `response` is the result
@@ -212,6 +217,34 @@ the AI reads next, and `action` carries objects that change what the call does n
   ]
 }
 ```
+
+## How the agent calls functions
+
+On standard (text) models, the platform applies these rules to the model's function calls:
+
+- **Consecutive calls.** The model may make up to 18 function calls in a row without answering the
+  caller. The 19th is refused, the model is told to answer the caller out loud with what it already
+  has, and its next request asks for no function call. The count starts over when the model answers
+  in words and waits for the caller.
+- **Repeated calls.** The same call, with the same function and arguments, made a third time is
+  refused. When [gates][gates] blocked the last attempt, the refusal tells the model the function
+  never ran, to speak to the caller as the block said, and that it can call the function again once
+  the caller has answered. A refused repeat plays no filler.
+- **Unavailable functions.** A call to a function that can't run right now (switched off, used up,
+  not in the current step's functions, or a name the agent doesn't have) runs nothing. The result
+  says so and lists the tools available now, and for a function another step in the current context
+  offers, the steps that offer it. Change the wording with
+  [`unavailable_function_response`](/docs/swml/reference/calling/ai/params#paramsunavailable_function_response).
+- **Tool calls written as text.** When a reply writes a function call as text instead of making it,
+  such as `confirm_change{"revision": 4}`, that text and the rest of the reply aren't spoken, and the
+  request is sent again silently; a second time, the turn goes to the
+  [`rescue_model`](/docs/swml/reference/calling/ai/params#paramsrescue_model). A reply counts as
+  writing a call when it has an offered function's name followed by `{` or `(`, or the name of an
+  offered function that contains an underscore, followed by anything. So the model can't say a
+  function name that contains an underscore aloud.
+- **Text before a function call.** A line the model writes just before its function call, such as
+  "I'll look that up for you", isn't spoken if it hasn't reached speech when the call arrives; the
+  function's filler plays instead. The rest of a sentence the caller already heard begin is finished.
 
 ## **Variables**
 

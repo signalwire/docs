@@ -1,0 +1,46 @@
+---
+title: "ToolMentionError"
+slug: reference/python/agents/testing/tool-mention-error
+description: Raised by CallSimulator when a tool result names a tool the step it leaves the call in doesn't offer.
+max-toc-depth: 3
+---
+
+[call-simulator]: /docs/server-sdks/reference/python/agents/testing/call-simulator
+[call]: /docs/server-sdks/reference/python/agents/testing/call-simulator/call
+
+A subclass of `AssertionError`. With `check_tool_mentions=True`,
+[`CallSimulator`][call-simulator] raises it from [`call()`][call] when the call's
+result, or the gate output that blocked it, names a tool that the step the call
+ends up in doesn't offer. The model reads the name and may call a tool it doesn't
+have.
+
+The check runs after the result's own step or context change. A name with an
+underscore counts anywhere in the text; a one-word name counts only in backticks or
+right before `(`. It isn't run for a call the step itself refused.
+
+```python
+from signalwire.testing import ToolMentionError
+```
+
+## Example
+
+```python {14-17}
+from signalwire import AgentBase, FunctionResult
+from signalwire.testing import CallSimulator, ToolMentionError
+
+agent = AgentBase(name="orders", route="/orders")
+agent.prompt_add_section("Role", "You look up and place orders.")
+agent.define_tool("lookup", "Look up the order", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Found it. Now call place_order."))
+agent.define_tool("place_order", "Place the order", {"type": "object", "properties": {}},
+                  lambda args, raw_data: FunctionResult("Order placed."))
+ctx = agent.define_contexts().add_context("default")
+ctx.add_step("look").set_text("Look it up.").set_functions(["lookup"])
+ctx.add_step("buy").set_text("Place the order.").set_functions(["place_order"])
+
+try:
+    CallSimulator(agent, check_tool_mentions=True).call("lookup")
+except ToolMentionError as error:
+    print(error)
+# lookup's result names place_order, which step 'look' doesn't offer: 'Found it. Now call place_order.'
+```
