@@ -27,7 +27,7 @@ model AISidecarObject {
   @minLength(1)
   lang: string | SWMLVar;
 
-  @doc("The model used for the sidecar's advice and its end-of-call summaries. Suggested values: `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-4.1-nano`. **Default:** `gpt-4o-mini`.")
+  @doc("The model used for the sidecar's advice and its end-of-call summaries. Suggested values: `gpt-4o-mini`, `gpt-4.1-mini`. **Default:** `gpt-4o-mini`.")
   @example("gpt-4.1-mini")
   `model`?: SupportedAIModels = "gpt-4o-mini";
 

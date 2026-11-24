@@ -78,8 +78,8 @@ model AIParams {
   @doc("""
     The model for the conversation, used when `prompt.model` isn't set. Name a model on the supported list:
     `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.6-luna`,
-    `gpt-6-luna`, `gpt-oss-120b`, or `gpt-oss-20b`, optionally as `model@provider` with the provider `openai`
-    or `azure-openai`. Any other name runs as `gpt-4o-mini`, and the call gets a non-fatal `calling.error`
+    `gpt-6-luna`, `gpt-oss-120b`, or `gpt-oss-20b`, optionally as `model@provider` with the provider `openai`,
+    `azure-openai`, or `anthropic`. Any other name runs as `gpt-4o-mini`, and the call gets a non-fatal `calling.error`
     whose `error` is `model_substituted`. **Default:** `gpt-4o-mini`.
     """)
   @example("gpt-4o-mini")
@@ -495,7 +495,7 @@ model AIParams {
   inactivity_timeout?: InactivityTimeout | 0 | AIDuration = 600000;
 
   @doc("Specifies the AI model to use for the inner dialog feature. Can be set to a different (often smaller/faster) model than the main conversation model. Only used when `enable_inner_dialog` is `true`.")
-  @example("gpt-4.1-nano")
+  @example("gpt-4.1-mini")
   inner_dialog_model?: SupportedAIModels;
 
   @doc("""
@@ -518,6 +518,21 @@ model AIParams {
   @maxValue(300000)
   @example(1000)
   initial_sleep_ms?: integer | AIDuration = 0;
+
+  @doc("Duration in milliseconds. Range: 0 to 10000. **Default:** `1500`.")
+  min_utterance_ms?: integer | AIDuration = 1500;
+
+  @doc("Duration in milliseconds. Range: 0 or greater. **Default:** `60000`.")
+  escalate_after_ms?: integer | AIDuration = 60000;
+
+  @doc("Duration in milliseconds. Range: Greater than 0. **Default:** `1200`.")
+  function_filler_sequence_gap_ms?: integer | AIDuration = 1200;
+
+  @doc("Duration in milliseconds. **Default:** `-1`.")
+  double_turn_wait_ms?: integer | AIDuration = -1;
+
+  @doc("Duration in milliseconds. Range: Greater than 0, or 0 to disable. **Default:** `0`.")
+  double_turn_filler_min_ms?: integer | AIDuration = 0;
 
   @doc("""
     Check for input function with check_for_input.
@@ -758,11 +773,11 @@ model AIParams {
   @example(true)
   swaig_post_swml_vars?: boolean | string[];
 
-  @doc("The model to use for the AI's thinking capabilities — for example `gpt-4o-mini`, `gpt-4.1-mini`, or `gpt-4.1-nano`. A value that is not a recognized model is ignored, and the agent's main model is used instead.")
+  @doc("The model to use for the AI's thinking capabilities — for example `gpt-4o-mini` or `gpt-4.1-mini`. A value that is not a recognized model is ignored, and the agent's main model is used instead.")
   @example("gpt-4.1-mini")
   thinking_model?: SupportedAIModels;
 
-  @doc("The AI model used for lightweight background tasks such as redaction (`redact_prompt`) and transcription cleanup (`auto_correct`). Choose a small, fast model, such as `gpt-4o-mini`, `gpt-4.1-mini`, or `gpt-4.1-nano` — these tasks run while the caller is waiting for a response. A value that is not a recognized model is ignored, and the agent's main model is used instead. **Default:** the value of the `ai_model` parameter.")
+  @doc("The AI model used for lightweight background tasks such as redaction (`redact_prompt`) and transcription cleanup (`auto_correct`). Choose a small, fast model, such as `gpt-4o-mini` or `gpt-4.1-mini` — these tasks run while the caller is waiting for a response. A value that is not a recognized model is ignored, and the agent's main model is used instead. **Default:** the value of the `ai_model` parameter.")
   @example("gpt-4o-mini")
   utility_model?: SupportedAIModels;
 
@@ -949,7 +964,7 @@ model AIParams {
   @example("https://example.com/talking.mp4")
   video_talking_file?: url;
 
-  @doc("The model to use for the AI's vision capabilities. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.")
+  @doc("The model to use for the AI's vision capabilities. Allowed values are `gpt-4o-mini` and `gpt-4.1-mini`.")
   @example("gpt-4o-mini")
   vision_model?: SupportedAIModels;
 

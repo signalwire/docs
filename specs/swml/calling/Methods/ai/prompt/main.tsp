@@ -14,7 +14,7 @@ model AIPromptBase {
     The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.
     On `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.
     Name a model on the supported list, optionally with its provider as `model@provider`, where the provider
-    is `openai` or `azure-openai` (`gpt-6-luna@azure-openai`). Any other name runs as `gpt-4o-mini`, and the
+    is `openai`, `azure-openai`, or `anthropic` (`gpt-6-luna@azure-openai`). Any other name runs as `gpt-4o-mini`, and the
     call gets a non-fatal `calling.error` whose `error` is `model_substituted` (`post_model_substituted` for
     `post_prompt`). If no model is available at all, the agent doesn't start.
     """)
