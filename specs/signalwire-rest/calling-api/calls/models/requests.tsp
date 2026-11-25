@@ -682,10 +682,11 @@ model CallUpdateParamsURL is CallUpdateParamsBase {
  * To redirect the call, send `url` or `swml` with the new SWML.
  *
  * State-transition rules:
- * - `status: canceled` is only valid while the call is `queued` or `ringing`.
+ * - `status: canceled` is only valid while the call is `queued`, `created`, or `ringing`.
  * - Canceling or completing a `queued` call stops it before it is placed: its status becomes
- *   `canceled` or `completed`, and no call state callback is sent. Canceling a `ringing` call, or
- *   completing a call that has been placed, hangs it up, and the call ends with status `ended`.
+ *   `canceled` or `completed`, and no call state callback is sent. Canceling a `created` or
+ *   `ringing` call, or completing a call that has been placed, hangs it up, and the call ends
+ *   with status `ended`.
  * - Supplying `url` or `swml` (redirect) is only valid while the call is `answered`.
  * - A call whose status is `failed`, `canceled`, or `completed` cannot be updated.
  */
