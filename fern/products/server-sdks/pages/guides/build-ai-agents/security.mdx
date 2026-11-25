@@ -113,6 +113,29 @@ agent checks the signature against that URL rather than the one the proxy forwar
 For the full list of signed requests, how the signature is computed, and how unsigned and
 redirected requests behave, see [Verify SWML request signatures](/docs/swml/guides/webhook-security).
 
+#### Rotate the signing key
+
+A new signing key doesn't replace the old one everywhere at once. After you reset the key in the
+Dashboard or call [Rotate signing key](/docs/apis/rest/projects/rotate-signing-key), the new key
+takes about a minute to become active, and until then requests can still arrive signed with the old
+key. A call already in progress keeps signing with the old key until it ends.
+
+Code that verifies signatures by hand can accept either key during that overlap. The agent can't:
+it holds one signing key, so it answers `403 Forbidden` to every request signed with the other one.
+It reads the key when it starts, so switching to the new key means restarting the agent with it.
+After the restart, calls that started before the rotation have their later function calls and their
+post-prompt summary rejected until they end, and for about a minute requests from new calls can be
+rejected too.
+
+To keep that window short:
+
+1. Have the new key ready before you rotate. When you select **Reset** next to the **Signing Key**
+   on the API Credentials page, the confirmation shows the new key before you select
+   **Proceed to Reset**. Rotate signing key returns the new key in its response.
+2. Rotate when few calls are in progress, so fewer calls lose their function calls.
+3. Right after the rotation, set the new key in `SIGNALWIRE_SIGNING_KEY`, or wherever you pass the key
+   to the agent, and restart every replica that serves the agent.
+
 ### HTTP Basic Authentication
 
 Every request to your agent is protected by HTTP Basic Auth.
