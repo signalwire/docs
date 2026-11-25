@@ -232,7 +232,8 @@ model RcsMessageRequest {
   @example("7d3e1f2a-9b8c-4d5e-a6f7-1234567890ab")
   from: uuid;
 
-  @doc("Plain-text message body. Required when `content` is not provided.")
+  @doc("Plain-text message body. Required when `content` is not provided. Maximum 3072 characters.")
+  @maxLength(3072)
   @example("Your appointment is confirmed for tomorrow at 2pm.")
   body?: string;
 
