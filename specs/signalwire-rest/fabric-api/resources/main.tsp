@@ -24,7 +24,7 @@ namespace SignalWireAPI.Fabric.Resources {
     @doc("""
       Lists every supported Fabric resource in your SignalWire project, regardless of type. Use it for project-wide inventory or when you do not yet know whether an ID belongs to an AI Agent, script, SIP resource, or another resource type. Use a type-specific collection such as [SWML Scripts](/docs/apis/rest/swml-scripts/list-swml-scripts) or [SIP Credentials](/docs/apis/rest/sip-credentials/list-sip-credentials) to create resources or work with their full configuration.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @opExample(
       #{
@@ -52,7 +52,7 @@ namespace SignalWireAPI.Fabric.Resources {
     @doc("""
       Retrieves a Fabric resource from your SignalWire project without requiring its type in advance. The response identifies what the resource is; use that resource type's own get operation when you need its full configuration.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @opExample(
       #{ returnType: #{ statusCode: 200, resource: RESOURCE_AI_EXAMPLE } },
@@ -94,7 +94,7 @@ namespace SignalWireAPI.Fabric.Resources {
     @doc("""
       Deletes a Fabric resource from your SignalWire project without requiring its type in advance. Use the type-specific delete operation instead when your application already knows the resource family and should make that intent explicit.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @delete
     delete(...ResourcePathID):

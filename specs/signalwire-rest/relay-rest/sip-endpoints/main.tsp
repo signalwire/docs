@@ -25,7 +25,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
       This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.
       </Warning>
 
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     list(...ListSipEndpointsQuery):
       | SipEndpointListResponse
@@ -42,7 +42,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
       This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.
       </Warning>
 
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @post
     create(@body body: CreateSipEndpointRequest):
@@ -60,7 +60,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
       This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.
       </Warning>
 
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     read(...SipEndpointPathID):
       | SipEndpointResponse
@@ -78,7 +78,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
       This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.
       </Warning>
 
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @put
     update(...SipEndpointPathID, @body body: UpdateSipEndpointRequest):
@@ -97,7 +97,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
       This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.
       </Warning>
 
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @delete
     delete(...SipEndpointPathID):

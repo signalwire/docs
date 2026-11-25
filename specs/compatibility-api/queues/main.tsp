@@ -20,7 +20,7 @@ namespace CompatibilityAPI.Queues {
     @doc("""
       Lists the account's voice queues. Queues hold callers until an application is ready to handle them, and each is managed by Queue SID. The SignalWire REST [Queues API](/docs/apis/rest/queues/list-queues) exposes the same queues through JSON routes.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     list(
       ...QueuesAccountSidPath,
@@ -53,7 +53,7 @@ namespace CompatibilityAPI.Queues {
     @doc("""
       Creates a voice queue in the account to hold callers until an application dequeues them. Queue names must be unique among the account's active queues; a deleted queue's name can be reused. Use SignalWire REST [Create queue](/docs/apis/rest/queues/create-queue) for JSON requests; a queue created through either route is available through both APIs.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @post
     create(
@@ -71,7 +71,7 @@ namespace CompatibilityAPI.Queues {
     @doc("""
       Retrieves one voice queue by SID so you can inspect its configuration and current occupancy. Use [List All Queues](/docs/compatibility-api/rest/queues/list-queues) to discover SIDs, or SignalWire REST [Get queue](/docs/apis/rest/queues/get-queue) for a resource ID.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @route("/{Sid}")
     read(...QueuesAccountSidPath, ...QueueSidPath):
@@ -85,7 +85,7 @@ namespace CompatibilityAPI.Queues {
     @doc("""
       Changes how a voice queue is identified or how many callers it can hold. A new name must remain unique among the account's active queues. Use Queue Members operations to inspect or dequeue callers currently waiting.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @post
     @route("/{Sid}")
@@ -106,7 +106,7 @@ namespace CompatibilityAPI.Queues {
     @doc("""
       Deletes an empty call queue by SID. A queue with waiting members cannot be deleted and returns a validation error; dequeue its callers before retrying. This removes the same queue that SignalWire REST [Delete queue](/docs/apis/rest/queues/delete-queue) manages.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @delete
     @route("/{Sid}")
@@ -127,7 +127,7 @@ namespace CompatibilityAPI.Queues {
     @doc("""
       Returns the callers currently waiting in one queue, ordered by enqueue time. Use it to inspect position and wait duration or locate a Call SID to dequeue. The SignalWire REST [Queue Members API](/docs/apis/rest/queue-members/list-queue-members) reads the same waiting calls, identifying each by a member ID rather than a Call SID.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     list(
       ...QueuesAccountSidPath,
@@ -162,7 +162,7 @@ namespace CompatibilityAPI.Queues {
     @doc("""
       Retrieves one waiting caller by Call SID, or the caller at the front of the queue when `Front` is used. Use [List All Queue Members](/docs/compatibility-api/rest/queue-members/list-all-queue-members) to inspect the full waiting order. The native API reads the same waiting calls by member ID, with [Get next queue member](/docs/apis/rest/queue-members/retrieve-next-queue-member) in place of the `Front` selector.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @route("/{CallSid}")
     read(
@@ -180,7 +180,7 @@ namespace CompatibilityAPI.Queues {
     @doc("""
       Dequeues a waiting caller and redirects the call to cXML instructions at the supplied URL. Identify the caller by Call SID, or use `Front` to dequeue the first caller. This is live call control; native [Queue Members](/docs/apis/rest/queue-members/list-queue-members) can inspect waiting calls but do not provide this cXML redirect operation.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @post
     @route("/{CallSid}")

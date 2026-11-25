@@ -20,7 +20,7 @@ namespace CompatibilityAPI.Applications {
     @doc("""
       Lists the account's Applications, which provide reusable voice and messaging routing. These applications are also available as addressable [cXML Applications](/docs/apis/rest/cxml-applications/list-cxml-applications) in the SignalWire REST API. Use this collection for code built around Application SIDs.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, or _Fax_">}
       """)
     list(
       ...AccountSidPath,
@@ -58,7 +58,7 @@ namespace CompatibilityAPI.Applications {
     @doc("""
       Creates a reusable voice and messaging routing application in the account. The new Application also becomes an addressable [cXML Application](/docs/apis/rest/cxml-applications/list-cxml-applications). The cXML Applications API manages existing applications but does not create them, so create Applications here.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, or _Fax_">}
       """)
     @post
     create(
@@ -76,7 +76,7 @@ namespace CompatibilityAPI.Applications {
     @doc("""
       Retrieves one Application by SID so you can inspect its reusable voice and messaging routing. The application can also be read with [Get cXML application](/docs/apis/rest/cxml-applications/get-cxml-application), which addresses it by resource ID rather than SID.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, or _Fax_">}
       """)
     @route("/{Sid}")
     read(...AccountSidPath, ...ApplicationPathSid):
@@ -90,7 +90,7 @@ namespace CompatibilityAPI.Applications {
     @doc("""
       Changes how an Application routes voice and messaging requests or status callbacks while preserving its SID. The change is also visible through [Update cXML application](/docs/apis/rest/cxml-applications/update-cxml-application), because both operations manage the same application.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, or _Fax_">}
       """)
     @post
     @route("/{Sid}")
@@ -111,7 +111,7 @@ namespace CompatibilityAPI.Applications {
     @doc("""
       Deletes an Application by SID. This also removes its [cXML Application](/docs/apis/rest/cxml-applications/list-cxml-applications) representation and resource addresses, and clears the Application from phone numbers that route through it. Server-backed [cXML Webhooks](/docs/apis/rest/cxml-webhook/list-cxml-webhooks) are separate resources and are not affected.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, or _Fax_">}
       """)
     @delete
     @route("/{Sid}")

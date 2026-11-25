@@ -23,7 +23,7 @@ namespace SignalWireAPI.Fabric.CXMLWebhooks {
     @doc("""
       Returns the project's cXML Webhook resources, whose configured servers return cXML for each request. Use it to discover server-backed cXML handlers before retrieving or changing one. Use [cXML Scripts](/docs/apis/rest/cxml-scripts/list-cxml-scripts) when the cXML should be stored in SignalWire instead.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
       | CXMLWebhookListResponse
@@ -36,7 +36,7 @@ namespace SignalWireAPI.Fabric.CXMLWebhooks {
     @doc("""
       Retrieves one cXML Webhook by resource ID so you can inspect the server-backed handler. Use [List cXML webhooks](/docs/apis/rest/cxml-webhook/list-cxml-webhooks) to discover IDs, or a [cXML Script](/docs/apis/rest/cxml-scripts/create-cxml-script) for cXML stored in SignalWire.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     read(...CXMLWebhookID):
       | {
@@ -52,7 +52,7 @@ namespace SignalWireAPI.Fabric.CXMLWebhooks {
     @doc("""
       Creates a resource that requests cXML from your server when the handler runs. Use it when call or message instructions depend on current application state; use [Create cXML Script](/docs/apis/rest/cxml-scripts/create-cxml-script) when the cXML can be stored in SignalWire, or [Create SWML webhook](/docs/apis/rest/swml-webhook/create-swml-webhook) when the server returns SWML.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post
     create(...CXMLWebhookCreateRequest):
@@ -70,7 +70,7 @@ namespace SignalWireAPI.Fabric.CXMLWebhooks {
     @doc("""
       Changes where and how a cXML Webhook requests instructions from your server. Use it when the server-backed handler's routing changes; use [Update cXML Script](/docs/apis/rest/cxml-scripts/update-cxml-script) for cXML stored in SignalWire.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @patch(#{ implicitOptionality: true })
     update(...CXMLWebhookID, ...CXMLWebhookUpdateRequest):
@@ -88,7 +88,7 @@ namespace SignalWireAPI.Fabric.CXMLWebhooks {
     @doc("""
       Deletes a cXML Webhook resource by ID. Use it when SignalWire should stop requesting cXML from that server configuration; deleting a stored [cXML Script](/docs/apis/rest/cxml-scripts/delete-cxml-script) requires the script endpoint instead.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @delete
     delete(...CXMLWebhookID):

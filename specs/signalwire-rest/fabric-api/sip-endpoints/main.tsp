@@ -25,7 +25,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
     @doc("""
       Returns the project's SIP Credential resources. Use it to inventory credentials used by SIP devices that register with SignalWire. Use [Subscriber SIP Credentials](/docs/apis/rest/subscribers/sip-credentials/list-subscriber-sip-credentials) when credentials must belong to one Subscriber, or [SIP Gateways](/docs/apis/rest/sip-gateway/list-sip-gateways) for external SIP destinations that SignalWire dials.
 
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
       | FabricSipEndpointListResponse
@@ -38,7 +38,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
     @doc("""
       Retrieves one project-scoped SIP Credential by resource ID so you can inspect how its device registers and places calls through SignalWire. Use [List SIP credentials](/docs/apis/rest/sip-credentials/list-sip-credentials) to discover IDs, or the Subscriber endpoint for a credential owned by one Subscriber.
 
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     read(...SipEndpointPathID):
       | {
@@ -54,7 +54,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
     @doc("""
       Creates a project-scoped SIP Credential for a SIP device to register with SignalWire. Use it for a shared or independently managed device; use [Create Subscriber SIP credential](/docs/apis/rest/subscribers/sip-credentials/create-subscriber-sip-credential) when the credential belongs to a specific Subscriber. To attach an already-existing resource as the credential's outbound call handler, use [Assign Resource to SIP credential](/docs/apis/rest/sip-credentials/assign-resource-to-sip-credential) instead.
 
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post
     create(@body request: SipEndpointCreateRequest):
@@ -72,7 +72,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
     @doc("""
       Changes how a project-scoped SIP device registers with SignalWire or handles outbound calls. Update a Subscriber-owned credential through [Update Subscriber SIP credential](/docs/apis/rest/subscribers/sip-credentials/update-subscriber-sip-credential).
 
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @put
     update(...SipEndpointPathID, @body request: SipEndpointUpdateRequest):
@@ -90,7 +90,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
     @doc("""
       Deletes a project-scoped SIP Credential by ID so its device can no longer register with those credentials. Use it for a project-owned credential; delete a Subscriber-owned credential through [Delete Subscriber SIP credential](/docs/apis/rest/subscribers/sip-credentials/delete-subscriber-sip-credential), and delete an outbound SIP Gateway through its own endpoint.
 
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @delete
     delete(...SipEndpointPathID):

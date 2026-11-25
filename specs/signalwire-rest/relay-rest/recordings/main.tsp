@@ -20,7 +20,7 @@ namespace SignalWireAPI.RelayRest.Recordings {
     @doc("""
       Returns the project's voice call recordings for later review or cleanup. Use it to browse recordings across calls; use [Get recording](/docs/apis/rest/recordings/get-call-recording) when you already have the recording ID. Compatibility [Recordings](/docs/compatibility-api/rest/recordings/list-recordings) include per-call creation and management, while [Room Recordings](/docs/apis/rest/video/room-recordings/list-room-recordings) contain video-room media.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     list():
       | RecordingListResponse
@@ -34,7 +34,7 @@ namespace SignalWireAPI.RelayRest.Recordings {
     @doc("""
       Retrieves one voice call recording by ID. Use it after listing recordings or when a call event saved the recording identifier. Use Compatibility [Retrieve recording](/docs/compatibility-api/rest/recordings/retrieve-recording) for SID-based recording routes, or [Get room recording](/docs/apis/rest/video/room-recordings/get-room-recording) for video-room media.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     read(...RecordingPathID):
       | RecordingResponse
@@ -48,7 +48,7 @@ namespace SignalWireAPI.RelayRest.Recordings {
     @doc("""
       Permanently deletes one voice call recording by ID. Use it to remove voice media that is no longer needed; Compatibility call recordings and Video Room recordings have separate delete operations on their respective API surfaces.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @delete
     delete(...RecordingPathID):

@@ -21,7 +21,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     @doc("""
       Lists the voice call queues in your SignalWire project. Queues hold callers until your call workflow is ready to handle them. The Compatibility API's [List queues](/docs/compatibility-api/rest/queues/list-queues) exposes the same queues through SID-based routes.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     list(): QueueListResponse | StatusCode401 | ValidationError | StatusCode500;
 
@@ -30,7 +30,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     @doc("""
       Creates a voice call queue in the project for calls that need to wait for later handling. Queue names must be unique among active queues; a deleted queue's name can be reused. The call workflow is responsible for placing callers into the queue. Use Compatibility [Create queue](/docs/compatibility-api/rest/queues/create-queue) for form-encoded requests.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @post
     create(@body body: CreateQueueRequest):
@@ -47,7 +47,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     @doc("""
       Retrieves one voice call queue from your SignalWire project. Use [List queues](/docs/apis/rest/queues/list-queues) to find queues or [List queue members](/docs/apis/rest/queue-members/list-queue-members) to inspect the calls currently waiting in one.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     read(...QueuePathID):
       | QueueResponse
@@ -61,7 +61,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     @doc("""
       Changes how a project voice queue is identified or how many callers it can hold. A new name must remain unique among the project's active queues. Queue-member positions and wait times are read through the Queue Members endpoints. The Compatibility API updates the same queues through its SID-based route.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @put
     update(...QueuePathID, @body body: UpdateQueueRequest):
@@ -79,7 +79,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     @doc("""
       Deletes a voice call queue by ID. The queue must be empty; a queue with waiting callers returns a validation error. This removes the same queue that the Compatibility [Delete queue](/docs/compatibility-api/rest/queues/delete-queue) operation manages.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @delete
     delete(...QueuePathID):
@@ -101,7 +101,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     @doc("""
       Lists the calls currently waiting in one voice queue. Use it to monitor the queue and decide which caller to handle next; use [List queues](/docs/apis/rest/queues/list-queues) to find queues, or Compatibility [List all queue members](/docs/compatibility-api/rest/queue-members/list-all-queue-members) for SID-based routes.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @get
     listMembers(...QueueIdPath):
@@ -115,7 +115,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     @doc("""
       Retrieves the call at the front of one voice queue without removing it. Use it to inspect which waiting caller would be handled next; use [Get queue member](/docs/apis/rest/queue-members/retrieve-queue-member) for a specific member ID. This read does not dequeue or redirect the call.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @route("/next")
     @get
@@ -130,7 +130,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     @doc("""
       Retrieves one call that is waiting in a voice queue. Use [List queue members](/docs/apis/rest/queue-members/list-queue-members) to find waiting calls or [Get next queue member](/docs/apis/rest/queue-members/retrieve-next-queue-member) to inspect the caller at the front of the queue.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @route("/{id}")
     @get
