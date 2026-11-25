@@ -191,15 +191,15 @@ model CallStateParams {
   @example(4.4)
   audio_in_mos?: float64;
 
-  @doc("For calls placed by or to a Call Fabric subscriber, the Fabric address ID involved. Absent otherwise.")
+  @doc("For a call placed by or to a Subscriber, the ID of the Resource Address involved in the call. Absent otherwise.")
   @example("f1e2d3c4-b5a6-4978-8a9b-0c1d2e3f4a5b")
   address_id?: string;
 
-  @doc("For calls placed by or to a Call Fabric subscriber, the subscriber's ID. Absent otherwise.")
+  @doc("For a call placed by or to a Subscriber, the Subscriber's ID. Absent otherwise.")
   @example("0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d")
   subscriber_id?: string;
 
-  @doc("For calls placed by or to a Call Fabric subscriber, the subscriber's display name. Absent otherwise.")
+  @doc("For a call placed by or to a Subscriber, the Subscriber's display name, when one is set. Absent otherwise.")
   @example("Alice")
   subscriber_name?: string;
 }
