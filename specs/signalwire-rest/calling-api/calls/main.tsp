@@ -74,7 +74,7 @@ namespace SignalWireAPI.Calling.Calls {
       | `calling.refer` | Transfer a SIP call via SIP REFER |
       | `calling.user_event` | Fire a custom user event on the call |
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @opExample(
       #{ parameters: userEventCallExample },

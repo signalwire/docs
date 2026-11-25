@@ -21,7 +21,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @doc("""
       Lists external phone numbers your SignalWire project has submitted for outbound caller-ID verification. Verified Caller IDs let calls present a number the project does not own; project-owned numbers are managed through [Phone Numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) and do not need this verification flow. Results are sorted by creation date, most recent first.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     list(
       @query
@@ -39,7 +39,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
 
       Creating the record immediately places a voice call to `number` that reads out a 6-digit verification code, so have the phone ready before you send the request. Complete the flow by submitting that code with [Validate verification code](/docs/apis/rest/verified-caller-id/validate-verification-code). Verification calls to the same number are limited to one per minute; requesting another call sooner, through this operation or [Redial verification call](/docs/apis/rest/verified-caller-id/redial-verification-call), returns `422`.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @post
     create(@body body: CreateVerifiedCallerIDRequest):
@@ -56,7 +56,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @doc("""
       Retrieves one external caller-ID verification record from your SignalWire project. Use it to check or display an existing verification; use [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number) for a project-owned number instead.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     read(...VerifiedCallerIDPathID):
       | VerifiedCallerIDResponse
@@ -69,7 +69,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @doc("""
       Changes the configurable label of an external verified caller-ID record by ID. Use it to maintain the record after verification; updating a project-owned phone number uses [Update phone number](/docs/apis/rest/phone-numbers/update-phone-number) instead.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @put
     update(
@@ -87,7 +87,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @doc("""
       Places another verification call for a pending external caller-ID record. Use it when the original verification call or code was missed, then submit the new code through [Validate verification code](/docs/apis/rest/verified-caller-id/validate-verification-code). Wait at least a minute after the previous verification call, including the one placed by [Create verified caller ID](/docs/apis/rest/verified-caller-id/create-verified-caller-id); a sooner request returns `422`.
 
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @route("/{id}/verification")
     @post
@@ -103,7 +103,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @doc("""
       Submits the code received by an external phone number and marks the caller-ID record verified when it matches. Use it to finish the flow started by [Create verified caller ID](/docs/apis/rest/verified-caller-id/create-verified-caller-id); purchased project numbers do not use this flow.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @route("/{id}/verification")
     @put
@@ -122,7 +122,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @doc("""
       Deletes an external verified caller-ID record by ID so it is no longer available for outbound caller ID. This does not release or delete a project-owned [Phone Number](/docs/apis/rest/phone-numbers/release-phone-number).
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @delete
     delete(...VerifiedCallerIDPathID):

@@ -23,7 +23,7 @@ namespace SignalWireAPI.Fabric.SubscriberTokens {
 
       Use [Create Subscriber guest token](/docs/apis/rest/subscribers/tokens/create-subscriber-guest-token) for temporary access limited to selected resource addresses, or [Create API token](/docs/apis/rest/project-tokens/create-token) for server-side REST authentication.
 
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     create(...SubscriberTokenRequest):
       | SubscriberTokenResponse

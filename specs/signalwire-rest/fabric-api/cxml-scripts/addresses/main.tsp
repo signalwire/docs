@@ -19,7 +19,7 @@ namespace SignalWireAPI.Fabric.CXMLScript.Addresses {
     @doc("""
       Returns the project-scoped resource addresses assigned to one cXML Script. Use these callable handles to see how calls or messages can reach the stored cXML; use [List cXML Scripts](/docs/apis/rest/cxml-scripts/list-cxml-scripts) for the resources themselves, or the cXML Webhook address operation for server-generated cXML handlers.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...CXMLScriptAddressPathID):
       | CXMLScriptAddressListResponse

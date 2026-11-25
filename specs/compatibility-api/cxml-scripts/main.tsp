@@ -20,7 +20,7 @@ namespace CompatibilityAPI.CxmlScripts {
     @doc("""
       Lists the account's stored cXML scripts from the `LamlBins` collection. These scripts are also available as addressable [cXML Scripts](/docs/apis/rest/cxml-scripts/list-cxml-scripts) in the SignalWire REST API. Use these routes for integrations built around LamlBin SIDs, or [cXML Webhooks](/docs/apis/rest/cxml-webhook/list-cxml-webhooks) when your server generates instructions per request. Results are sorted by creation date, most recent first.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, or _Fax_">}
       """)
     list(
       ...CxmlScriptsAccountSidPath,
@@ -57,7 +57,7 @@ namespace CompatibilityAPI.CxmlScripts {
     @doc("""
       Creates a stored cXML document through the `LamlBins` route. The new script is also available as an addressable cXML Script resource. Use this form-encoded route when existing code expects a LamlBin SID, [Create cXML Script](/docs/apis/rest/cxml-scripts/create-cxml-script) for a JSON request, or [Create cXML webhook](/docs/apis/rest/cxml-webhook/create-cxml-webhook) when instructions come from your server.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, or _Fax_">}
       """)
     @post
     create(
@@ -75,7 +75,7 @@ namespace CompatibilityAPI.CxmlScripts {
     @doc("""
       Retrieves one stored cXML script by LamlBin SID. The same script can be read with [Get cXML Script](/docs/apis/rest/cxml-scripts/get-cxml-script), which addresses it by resource ID rather than SID.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, or _Fax_">}
       """)
     @route("/{Sid}")
     read(...CxmlScriptsAccountSidPath, ...CxmlScriptSidPath):
@@ -89,7 +89,7 @@ namespace CompatibilityAPI.CxmlScripts {
     @doc("""
       Changes the name or stored cXML document of a LamlBin by SID. The change is also visible through [Update cXML Script](/docs/apis/rest/cxml-scripts/update-cxml-script), because both operations manage the same script; server-backed [cXML Webhooks](/docs/apis/rest/cxml-webhook/update-cxml-webhook) are separate resources.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, or _Fax_">}
       """)
     @post
     @route("/{Sid}")
@@ -110,7 +110,7 @@ namespace CompatibilityAPI.CxmlScripts {
     @doc("""
       Deletes a stored cXML script from the `LamlBins` collection by SID. This also removes its [cXML Script](/docs/apis/rest/cxml-scripts/delete-cxml-script) representation and resource addresses, so calls and messages can no longer reach it. Server-backed cXML Webhooks are separate resources and are not affected.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, or _Fax_">}
       """)
     @delete
     @route("/{Sid}")

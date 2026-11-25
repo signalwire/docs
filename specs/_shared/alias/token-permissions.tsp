@@ -10,7 +10,7 @@
  * @doc("""
  * Operation description here.
  *
- * ${tokenPermissions<"_Voice_">}
+ * ${tokenPermissions<"_Calling_">}
  * """)
  * ```
  */
@@ -29,7 +29,7 @@ alias tokenPermissions<Scope extends string> = """
  *
  * @example
  * ```typespec
- * ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+ * ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
  * ```
  */
 alias anyTokenPermissions<Scopes extends string> = """

@@ -23,7 +23,7 @@ namespace SignalWireAPI.Fabric.SipGateways {
     @doc("""
       Lists the SIP Gateways in your SignalWire project. A gateway forwards outbound calls from SignalWire to an external SIP provider, PBX, or other destination. Use [SIP Credentials](/docs/apis/rest/sip-credentials/list-sip-credentials) when a device registers with SignalWire, or [SIP Addresses](/docs/apis/rest/sip-addresses/list-sip-addresses) for standalone SIP URIs with inbound handlers.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
       | SipGatewayListResponse
@@ -36,7 +36,7 @@ namespace SignalWireAPI.Fabric.SipGateways {
     @doc("""
       Retrieves one SIP Gateway from your SignalWire project. Use [List SIP gateways](/docs/apis/rest/sip-gateway/list-sip-gateways) to find gateways. A device that registers with SignalWire belongs under [SIP Credentials](/docs/apis/rest/sip-credentials/list-sip-credentials) instead.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     read(...SipGatewayID):
       | {
@@ -52,7 +52,7 @@ namespace SignalWireAPI.Fabric.SipGateways {
     @doc("""
       Creates a SIP Gateway resource that forwards calls to an external SIP destination. Use it for outbound routing to a provider, PBX, or other SIP system that SignalWire dials. Use [Create SIP credential](/docs/apis/rest/sip-credentials/create-sip-credential) when the external device registers with SignalWire instead.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post
     create(...SipGatewayRequest):
@@ -72,7 +72,7 @@ namespace SignalWireAPI.Fabric.SipGateways {
 
       This is not a partial update: send every field, including the ones you aren't changing. A field you leave out isn't kept from the current gateway, and the request fails validation.
 
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @patch(#{ implicitOptionality: false })
     update(...SipGatewayID, ...SipGatewayRequest):
@@ -90,7 +90,7 @@ namespace SignalWireAPI.Fabric.SipGateways {
     @doc("""
       Deletes a SIP Gateway resource by ID so calls can no longer be forwarded to its external SIP destination. This does not delete a [SIP Credential](/docs/apis/rest/sip-credentials/delete-sip-credential) or a standalone SIP Address.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @delete
     delete(...SipGatewayID):

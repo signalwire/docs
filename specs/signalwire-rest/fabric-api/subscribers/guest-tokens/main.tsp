@@ -23,7 +23,7 @@ namespace SignalWireAPI.Fabric.SubscriberGuestTokens {
 
       Use [Create Subscriber token](/docs/apis/rest/subscribers/tokens/create-subscriber-token) for a known subscriber, or [Create guest embed token](/docs/apis/rest/subscribers/tokens/create-guest-embed-token) when exchanging a public Click-to-Call token.
 
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post
     create(...SubscriberGuestTokenCreateRequest):

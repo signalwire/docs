@@ -20,7 +20,7 @@ namespace CompatibilityAPI.Transcriptions {
     @doc("""
       Lists saved text transcriptions created from the account's voice recordings. Each transcription has a SID used for retrieval or deletion. For live call transcription commands rather than saved recording transcripts, use the [Calling API](/docs/apis/rest/calls/call-commands). Results are ordered by creation date, newest first.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     list(
       ...TranscriptionsAccountSidPath,
@@ -68,7 +68,7 @@ namespace CompatibilityAPI.Transcriptions {
     @doc("""
       Retrieves one saved recording transcription by SID so you can inspect the resulting text and processing outcome. Use [List all Transcriptions](/docs/compatibility-api/rest/recording-transcriptions/list-transcriptions) to discover SIDs; this is not a live transcription stream.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @route("/{Sid}")
     read(...TranscriptionsAccountSidPath, ...TranscriptionSidPath):
@@ -82,7 +82,7 @@ namespace CompatibilityAPI.Transcriptions {
     @doc("""
       Deletes one saved recording transcription from the account and returns no body on success. This removes the transcript without deleting its source recording. Live Calling API transcription is controlled through call commands instead.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @delete
     @route("/{Sid}")

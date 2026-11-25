@@ -19,7 +19,7 @@ namespace SignalWireAPI.Fabric.RelayApplication.Addresses {
     @doc("""
       Returns the project-scoped resource addresses assigned to one Relay Application. Use these callable handles to see how calls or messages can reach the Relay Server SDK topic; use [List Relay applications](/docs/apis/rest/relay-application/list-relay-applications) for the resources themselves, or the address operation for the handler type you actually use.
       
-      ${anyTokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      ${anyTokenPermissions<"_Calling_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...RelayApplicationAddressPathID):
       | RelayApplicationAddressListResponse

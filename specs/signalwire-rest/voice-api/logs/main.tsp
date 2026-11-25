@@ -58,7 +58,7 @@ namespace SignalWireAPI.Voice.Logs {
       
       ${logListBehavior}
 
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     list(...LogListQuery):
       | LogListResponse
@@ -72,7 +72,7 @@ namespace SignalWireAPI.Voice.Logs {
     @doc("""
       Retrieves one historical voice activity record by log ID for reporting or troubleshooting a known call segment. This read-only endpoint does not retrieve or control a live call; use [Send call commands](/docs/apis/rest/calls/call-commands) for live control.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     retrieve(...LogPathID):
       | LogRetrieveResponse
@@ -87,7 +87,7 @@ namespace SignalWireAPI.Voice.Logs {
     @doc("""
       Returns the recorded event timeline for one historical voice log. Use it to troubleshoot the sequence of events for a known call segment; use [Get voice log](/docs/apis/rest/voice-logs/get-voice-log) for the log summary. This endpoint reports history and does not subscribe to or control live call events.
       
-      ${tokenPermissions<"_Voice_">}
+      ${tokenPermissions<"_Calling_">}
       """)
     @route("/{id}/events")
     listEvents(...LogPathID):

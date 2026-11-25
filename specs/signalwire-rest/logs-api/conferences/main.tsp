@@ -25,7 +25,7 @@ namespace SignalWireAPI.Logs.Conferences {
       
       ${logListBehavior}
 
-      ${anyTokenPermissions<"_Voice_ or _Video_">}
+      ${anyTokenPermissions<"_Calling_ or _Video_">}
       """)
     list(...ConferenceLogListRequest):
       | ConferencesResponse
