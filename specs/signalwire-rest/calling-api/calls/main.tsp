@@ -73,6 +73,8 @@ namespace SignalWireAPI.Calling.Calls {
       | `calling.receive_fax.stop` | Stop active fax receive |
       | `calling.refer` | Transfer a SIP call via SIP REFER |
       | `calling.user_event` | Fire a custom user event on the call |
+
+      A command other than `dial` or `update` sent to a call that has already finished returns 422 with the error code `call_already_ended`. A call has finished once its status is `ended`, `failed`, `canceled`, or `completed`.
       
       ${tokenPermissions<"_Voice_">}
       """)
