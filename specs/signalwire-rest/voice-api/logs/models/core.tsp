@@ -16,6 +16,27 @@ model LogPathID {
   id: uuid;
 }
 
+@doc("Paging for the voice log events list.")
+model LogEventListQuery {
+  @doc("The page index, starting at `0`. Any value above `0` also requires `page_token`.")
+  @example(0)
+  @query
+  @minValue(0)
+  page_number?: int32 = 0;
+
+  @doc("The number of results per page. The default is `50` and the maximum is `1000`.")
+  @example(50)
+  @query
+  @minValue(1)
+  @maxValue(1000)
+  page_size?: int32 = 50;
+
+  @doc("The cursor for any page after the first. Take it from the `links.next` or `links.prev` URL of the previous response.")
+  @example("PAb7182dc2-00f3-40e4-a5ce-20f164b329df")
+  @query
+  page_token?: string;
+}
+
 @doc("Details on charges associated with this log.")
 model ChargeDetail {
   @doc("Description for this charge.")

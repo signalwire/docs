@@ -42,6 +42,9 @@ model LogRetrieveResponse {
 
 @doc("Response model for log events list endpoint")
 model LogEventsListResponse {
+  @doc("Pagination links")
+  links: LogPaginationResponse;
+
   @doc("Array of event entries for the log")
   data: LogEvent[];
 }

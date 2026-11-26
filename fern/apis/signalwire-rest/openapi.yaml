@@ -17384,6 +17384,8 @@ paths:
       description: |-
         Returns the recorded event timeline for one historical voice log. Use it to troubleshoot the sequence of events for a known call segment; use [Get voice log](/docs/apis/rest/voice-logs/get-voice-log) for the log summary. This endpoint reports history and does not subscribe to or control live call events.
 
+        Events are sorted oldest first and paged, 50 per page by default. Follow `links.next` to read the rest.
+
         #### Permissions
 
         The API token used to authenticate must have the following scope enabled to make a successful request: _Voice_.
@@ -17391,6 +17393,9 @@ paths:
         [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
       parameters:
         - $ref: '#/components/parameters/Voice.LogPathID'
+        - $ref: '#/components/parameters/Voice.LogEventListQuery.page_number'
+        - $ref: '#/components/parameters/Voice.LogEventListQuery.page_size'
+        - $ref: '#/components/parameters/Voice.LogEventListQuery.page_token'
       responses:
         '200':
           description: The request has succeeded.
@@ -17425,7 +17430,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Types.StatusCodes.StatusCode422'
+                $ref: '#/components/schemas/Voice.VoiceLogsListStatusCode422'
         '500':
           description: An internal server error occurred.
           content:
@@ -19007,6 +19012,37 @@ components:
       description: Unique ID of the stream.
       schema:
         $ref: '#/components/schemas/uuid'
+    Voice.LogEventListQuery.page_number:
+      name: page_number
+      in: query
+      required: false
+      description: The page index, starting at `0`. Any value above `0` also requires `page_token`.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+      explode: false
+    Voice.LogEventListQuery.page_size:
+      name: page_size
+      in: query
+      required: false
+      description: The number of results per page. The default is `50` and the maximum is `1000`.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 1000
+        default: 50
+      explode: false
+    Voice.LogEventListQuery.page_token:
+      name: page_token
+      in: query
+      required: false
+      description: The cursor for any page after the first. Take it from the `links.next` or `links.prev` URL of the previous response.
+      schema:
+        type: string
+      explode: false
     Voice.LogPathID:
       name: id
       in: path
@@ -61867,8 +61903,13 @@ components:
     Voice.LogEventsListResponse:
       type: object
       required:
+        - links
         - data
       properties:
+        links:
+          allOf:
+            - $ref: '#/components/schemas/Voice.LogPaginationResponse'
+          description: Pagination links
         data:
           type: array
           items:
