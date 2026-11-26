@@ -86,16 +86,18 @@ namespace SignalWireAPI.Voice.Logs {
     @summary("List voice log events")
     @doc("""
       Returns the recorded event timeline for one historical voice log. Use it to troubleshoot the sequence of events for a known call segment; use [Get voice log](/docs/apis/rest/voice-logs/get-voice-log) for the log summary. This endpoint reports history and does not subscribe to or control live call events.
-      
+
+      Events are sorted oldest first and paged, 50 per page by default. Follow `links.next` to read the rest.
+
       ${tokenPermissions<"_Voice_">}
       """)
     @route("/{id}/events")
-    listEvents(...LogPathID):
+    listEvents(...LogPathID, ...LogEventListQuery):
       | LogEventsListResponse
       | StatusCode400
       | StatusCode401
       | StatusCode404
-      | StatusCode422
+      | VoiceLogsListStatusCode422
       | StatusCode500;
   }
 }
